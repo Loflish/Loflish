@@ -1,0 +1,88 @@
+# Nos mots mémoriaux — tout le musée sur un serveur.
+#   1. copier .env.exemple en .env et le remplir
+#   2. docker compose up -d --build
+# Le guide complet : DEPLOIEMENT.md
+
+name: nos-mots-memoriaux
+
+services:
+  # la base de données (PostgreSQL) : comptes, traces, fragments, médias (fiches), œuvre commune, journal
+  base:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nmm
+      POSTGRES_USER: nmm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?à définir dans .env}
+    volumes:
+      - base:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nmm -d nmm']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # le musée : le site + l'API (/api) + les fichiers déposés
+  musee:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      base:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://nmm:${POSTGRES_PASSWORD}@base:5432/nmm
+      SITE_URL: https://${DOMAINE:?à définir dans .env}
+      SECRET: ${SECRET:?à définir dans .env}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-Nos mots mémoriaux <bonjour@nosmotsmemoriaux.org>}
+      STOCKAGE: ${STOCKAGE:-disque}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+    volumes:
+      - fichiers:/donnees/fichiers
+
+  # l'entrée publique en HTTPS
+  web:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - musee
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      DOMAINE: ${DOMAINE}
+    volumes:
+      - ./deploiement/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_donnees:/data
+      - caddy_config:/config
+
+  # une sauvegarde par jour : la base + les fichiers, dans ./sauvegardes
+  sauvegarde:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      base:
+        condition: service_healthy
+    environment:
+      PGHOST: base
+      PGUSER: nmm
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: nmm
+      GARDER_JOURS: ${SAUVEGARDE_JOURS:-30}
+    volumes:
+      - ./sauvegardes:/sauvegardes
+      - fichiers:/fichiers:ro
+      - ./deploiement/sauvegarde.sh:/sauvegarde.sh:ro
+    entrypoint: ['sh', '/sauvegarde.sh', 'chaque-jour']
+
+volumes:
+  base:
+  fichiers:
+  caddy_donnees:
+  caddy_config:

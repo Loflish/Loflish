@@ -8,3 +8,4 @@ server/node_modules/
 server/dist/
 server/donnees/
 server/.env
+.env

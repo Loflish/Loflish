@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:en-ligne": "vite --mode en-ligne",
     "build": "tsc -b && vite build",
+    "build:en-ligne": "tsc -b && vite build --mode en-ligne",
     "preview": "vite preview",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "serveur": "npm --prefix server run dev",
+    "serveur:test": "npm --prefix server test"
   },
   "dependencies": {
     "@fontsource-variable/newsreader": "^5.3.0",

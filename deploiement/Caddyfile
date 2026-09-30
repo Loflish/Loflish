@@ -1,0 +1,10 @@
+# Caddy : l'adresse publique du musée, en HTTPS (certificat obtenu et renouvelé tout seul).
+{$DOMAINE} {
+	encode zstd gzip
+	reverse_proxy musee:8787
+}
+
+# l'adresse avec « www. » renvoie vers l'adresse principale
+www.{$DOMAINE} {
+	redir https://{$DOMAINE}{uri} permanent
+}

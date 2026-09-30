@@ -32,8 +32,9 @@ export async function migrer(dossier = join(dirname(fileURLToPath(import.meta.ur
   return appliquees;
 }
 
-// lancé directement : npm run migrer
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+// lancé directement : npm run migrer (le nom du fichier compte : une fois le serveur
+// empaqueté dans dist/index.js, ce module ne doit pas se croire lancé seul)
+if (/migrer\.[cm]?[jt]s$/.test(process.argv[1] ?? '') && fileURLToPath(import.meta.url) === process.argv[1]) {
   migrer()
     .then((a) => {
       console.log(a.length ? `Migrations appliquées : ${a.join(', ')}` : 'La base est à jour.');

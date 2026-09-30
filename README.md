@@ -1,18 +1,29 @@
-# Nos mots mémoriaux — premier jet du site
+# Nos mots mémoriaux
 
 Un musée vivant où chacun peut laisser sa trace : ses dernières volontés, ses mots, ses souvenirs.
-Ce dépôt contient le **premier jet front-end** construit à partir du cahier des charges maître
-(conversation de conception) et de la **nouvelle direction artistique**.
+Ce dépôt contient **le site** (React + Vite, construit à partir du cahier des charges maître et de
+la direction artistique) et **le serveur du musée** (`server/` : comptes, traces, médias, règles,
+modération, archives, sauvegardes).
 
-> Prototype : les présences affichées sont des **données de démonstration**. En production,
-> aucune fausse bulle (cahier des charges, Bloc 3A).
+> Deux modes. Le **prototype** (`npm run dev`, `npm run build`) garde tout dans le navigateur et
+> montre des présences de démonstration : c'est l'aperçu publié sur claude.ai. Le mode **en ligne**
+> (`npm run build:en-ligne`) parle au serveur : aucune fausse bulle (cahier des charges, Bloc 3A).
+>
+> Mettre le musée en ligne, gérer ses données, sauvegarder : **[DEPLOIEMENT.md](DEPLOIEMENT.md)**.
 
 ## Lancer
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
-npm run build    # build statique dans dist/ (chemins relatifs, hébergeable partout)
+npm run dev              # le prototype autonome, http://localhost:5173
+npm run build            # build statique dans dist/ (chemins relatifs, hébergeable partout)
+
+# avec le serveur (voir DEPLOIEMENT.md § 8)
+npm --prefix server install
+npm run serveur          # l'API, http://localhost:8787 (PostgreSQL requis)
+npm run dev:en-ligne     # le site relié à l'API
+npm run serveur:test     # les tests du serveur, sur une vraie base jetable
+docker compose up -d --build   # tout le musée en production (site, API, base, HTTPS, sauvegardes)
 ```
 
 ## Ce qui est en place
@@ -23,9 +34,10 @@ npm run build    # build statique dans dist/ (chemins relatifs, hébergeable par
 | **Archives** (`/archives`, `/archives/:edition`) | Chaque édition (`src/data/archives.ts`, titre renommable : « 2026 », « 2028 »…) s'ouvre sur sa propre constellation, identique à l'accueil, avec les présences déposées jusqu'à la fin de son année. |
 | **Se perdre** | Une présence à la fois, hasard équitable, glisser / boutons / flèches, aucun signal de popularité. |
 | **Profil** (`/trace/:id`) | Architecture « Proposition A révisée » : une seule zone bulle, identité, type de trace, pays, dates clés ; les 4 questions obligatoires (les 200 caractères brodés) ; les 18 rubriques de fragments d'existence, dont les 5 sens côte à côte (Voir, Entendre, Sentir, Goûter, Toucher : chacun est une rubrique à part, avec les mêmes limites que les autres) ; médias & documents ; paramètres non publics (vue auteur). Chaque rubrique s'ouvre en « salle » : 5 fragments mis en avant, puis « Voir tout » ; la limite dépend de ce qu'on dépose (10 pour les réponses brèves, 7 pour les souvenirs, ce que je n'ai jamais dit et la parole libre, 15 pour les personnes et les lieux). Pour qui visite, les rubriques encore vides se replient ; une tuile sans image montre son fragment comme une citation. Même scellés, l'auteur choisit ses mis en avant et leur ordre (↑ ↓). Médias & documents : 20 au plus, 5 mis en avant (triables aussi) ; chaque fragment peut porter un média. Photos, vidéos, enregistrements, documents (PDF lisible sur place) et liens (YouTube et Vimeo lus sur place) s'ouvrent dans une visionneuse. Deux profils de démonstration remplis entièrement, avec de vrais fichiers (photos, vidéos, enregistrements, lettres en PDF, liens) : `/trace/sakinah` (trace personnelle) et `/trace/jeannot` (mémoire déposée par sa petite-fille). |
-| **L'œuvre commune** (`/oeuvre-commune`) | Chaque personne coud un seul trait : un clic pour le départ, un clic pour l'arrivée, une confirmation (définitif), puis le trait se coud point par point, au point avant, dans le fil bordeaux du logo. Tous les traits forment une broderie immense. Publié sur claude.ai, les traits sont partagés en direct (stockage partagé de l'Artifact : un document par personne) ; ailleurs, le trait reste sur l'appareil. En pâle, des traits d'exemple le temps que l'œuvre commence. |
+| **L'œuvre commune** (`/oeuvre-commune`) | Chaque personne coud un seul trait : un clic pour le départ, un clic pour l'arrivée, une confirmation (définitif), puis le trait se coud point par point, au point avant, dans le fil bordeaux du logo. Tous les traits forment une broderie immense. Publié sur claude.ai, les traits sont partagés en direct (stockage partagé de l'Artifact : un document par personne) ; en ligne, le serveur garde les traits (un par compte et par appareil) ; ailleurs, le trait reste sur l'appareil. En pâle, des traits d'exemple le temps que l'œuvre commence. |
 | **Ma trace** (`/ma-trace`) | L'espace de l'auteur : voir son profil, retrouver sa bulle dans le musée, compléter ses 14 rubriques. Deux bulles au plus par personne : sa propre trace et une mémoire pour une personne décédée. Dans la constellation, sa propre bulle est entourée d'un fil « ta trace », visible uniquement sur son appareil. |
 | **Créer ma trace** | Choisir → Compte (18+, avec un mot du créateur du musée et findahelpline.com) → Identité (couleur GRIS et matière d'aquarelle au choix) → 4 questions (1200 / 200 caractères) → Aperçu → Enrichir → Vérifier → **Sceller et publier**. Le brouillon reste privé ; publier scelle les réponses pour cinq ans et rend la trace publique. Ensuite, chaque fragment et chaque média est scellé au moment où il est déposé, après une confirmation explicite. Parcours distinct « mémoire pour une personne décédée ». |
+| **L’équipe du musée** (`/admin`, en ligne) | État du musée, signalements, traces (masquer, retirer un fragment ou un média), œuvre commune, comptes et rôles, éditions d’archives (figer), journal, export. |
 | **Menu** | Dock centré en bas : Explorer · Se perdre · Créer ma trace (devient « Ma trace » une fois publiée) · Menu → Le projet, L'œuvre commune, Archives, Ressources & aide, Soutenir, Juridique & confidentialité, Compte. |
 
 ## Direction artistique — où elle vit dans le code
@@ -96,8 +108,11 @@ Préparation des images : `python3 design/hd/preparer.py fond|lin|papier …`, m
 - Fond rendu en basse résolution à cadence réduite ; bulles générées progressivement avec un budget
   de temps par image ; moins de bulles sur mobile.
 
-## Suite prévue (cahier des charges, Bloc 10)
+## Le serveur (`server/`)
 
-Le cahier retient Next.js / TypeScript + PixiJS + PostgreSQL. Ce premier jet est en React + Vite
-pour pouvoir être prévisualisé partout sans serveur ; les composants se portent tels quels dans
-Next.js lorsque l'API, les comptes et le stockage des médias seront branchés.
+Fastify + PostgreSQL + stockage des fichiers sur disque ou S3, en TypeScript. Entrée par lien
+e-mail (sans mot de passe), règles du musée appliquées côté serveur (18+, deux bulles, scellement
+de cinq ans, limites par rubrique, un trait par personne et par appareil, vérification du type
+réel des fichiers), signalements et modération, éditions d'archives figées, journal de toutes les
+décisions, export et effacement des données (RGPD). L'espace de l'équipe est dans le site, à
+`/admin`. Tout est décrit dans [DEPLOIEMENT.md](DEPLOIEMENT.md).
