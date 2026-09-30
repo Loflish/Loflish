@@ -54,10 +54,14 @@ entièrement procédural). Si un fichier manque, le site revient seul au rendu p
   techniques : mouillé, granulation, sur lin, auréole séchée, fleurs d'eau, glacis, pinceau sec),
   teintées dans la couleur GRIS exacte de chaque personne.
 - **Carte** : les océans sont une aquarelle d'eau peinte.
-- **Fond vivant d'Explorer** : boucle vidéo (Kling) qui part du fond peint et y revient, lumière qui
-  respire à peine ; image fixe sur téléphone ou en mode économie de données.
-- **Entrer dans sa mémoire** : une vraie tache filmée (Kling), réduite à un masque
-  (`design/hd/masque_encre.py`), s'ouvre depuis la bulle cliquée dans sa couleur GRIS exacte.
+- **Fond vivant d'Explorer** : boucle de 15 s générée en 4K (Kling) qui part du fond peint et y
+  revient, raccord fondu sur une demi-seconde ; les nappes coulent et respirent, lentement mais
+  visiblement. Livrée en 2560 ou 1920 px selon l'écran, en AV1, VP9 puis H.264 ; la peinture fixe
+  s'affiche d'abord, la vidéo ne se charge qu'une fois la page prête et se met en pause quand
+  l'onglet est caché ; image fixe sur téléphone ou en mode économie de données.
+- **Entrer dans sa mémoire** : une vraie goutte d'aquarelle filmée en 4K sur papier (Kling), réduite
+  à un masque de 1440 px (`design/hd/masque_encre.py` : papier soustrait, intérieur en lavis égal,
+  bord capillaire, tache recentrée), s'ouvre depuis la bulle cliquée dans sa couleur GRIS exacte.
 - **Matière des bulles** : chacun la choisit en créant sa trace, dans le catalogue complet des 77 taches
   (posées comme sur une feuille, déjà dans sa couleur ; « Au hasard » pour se laisser surprendre).
   Une matière est proposée d'avance au hasard ; les présences sans choix gardent une matière tirée de

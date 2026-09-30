@@ -36,11 +36,24 @@ const indices = petitEcran
   ? Array.from({ length: 30 }, (_, i) => Math.floor((i * NB_TACHES) / 30) + 1)
   : Array.from({ length: NB_TACHES }, (_, i) => i + 1);
 
+function fondVideo(): { src: string; type: string }[] {
+  const grand = typeof window !== 'undefined' && window.screen.width * window.devicePixelRatio > 2200;
+  const f = `${base}fond-explorer-${grand ? 2560 : 1920}`;
+  return [
+    { src: `${f}.av1.mp4`, type: 'video/mp4; codecs="av01.0.08M.08"' },
+    { src: `${f}.webm`, type: 'video/webm; codecs="vp9"' },
+    { src: `${f}.mp4`, type: 'video/mp4' },
+  ];
+}
+
 export const HD_FILES = {
-  /** Diffusion d'encre filmée, recolorée dans la couleur de la bulle (transition vers une mémoire). */
+  /** Diffusion d'encre filmée en 4K, recolorée dans la couleur de la bulle (transition vers une mémoire). */
   encre: [`${base}encre.webm`, `${base}encre.mp4`],
-  /** Le fond d'Explorer qui vit : boucle vidéo partant et revenant au fond peint. */
-  fondVideo: [`${base}fond-explorer.webm`, `${base}fond-explorer.mp4`],
+  /**
+   * Le fond d'Explorer qui vit : boucle 4K (Kling) partant et revenant au fond peint,
+   * livrée en 2560 ou 1920 px selon l'écran, en AV1, puis VP9, puis H.264.
+   */
+  fondVideo: fondVideo(),
   lin: `${base}lin.webp`,
   eau: `${base}carte-eau.webp`,
 };

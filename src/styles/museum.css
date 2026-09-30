@@ -610,6 +610,14 @@
 .fond-peint.is-on {
   opacity: 0.5;
 }
+/* Explorer : la peinture vivante (boucle 4K) est plus présente, les nappes du shader s'effacent un peu */
+.fond-peint.fond-explorer.is-on {
+  opacity: 0.7;
+}
+.mode-explore .backdrop-atmosphere.sur-fond-peint,
+.mode-perdre .backdrop-atmosphere.sur-fond-peint {
+  opacity: 0.3;
+}
 @keyframes fond-respire {
   from { transform: scale(1) translate(0, 0); }
   to { transform: scale(1.06) translate(-1.2%, 0.8%); }

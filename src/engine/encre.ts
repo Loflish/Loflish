@@ -91,7 +91,7 @@ export class Encre {
     const gl = this.gl;
     if (!gl || !this.ready) return Promise.resolve();
     const [cr, cg, cb] = hexToRgb(hex).map((v) => v / 255);
-    const diag = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) * 2.6;
+    const diag = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) * 3;
     const c = this.canvas;
     c.style.left = '0px';
     c.style.top = '0px';
@@ -108,7 +108,8 @@ export class Encre {
         const k = Math.min(1, t / 2.2);
         const ease = 1 - Math.pow(1 - k, 3);
         const size = Math.max(r * 6, r * 6 + (diag - r * 6) * ease);
-        const px = Math.round(Math.min(size, 1400));
+        // l'encre filmée en 4K reste nette jusqu'aux grands écrans
+        const px = Math.round(Math.min(size, 2048));
         if (c.width !== px) {
           c.width = c.height = px;
           gl.viewport(0, 0, px, px);

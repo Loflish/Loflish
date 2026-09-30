@@ -27,16 +27,39 @@ const FOND_BY_MODE: Record<keyof typeof MODES, Fond> = {
 function FondsPeints({ actif }: { actif: Fond }) {
   const [vus, setVus] = useState<Fond[]>([actif]);
   const [video, setVideo] = useState(true);
+  // la peinture fixe s'affiche d'abord ; la vidéo ne se charge qu'une fois la page prête
+  const [pret, setPret] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => setVus((v) => (v.includes(actif) ? v : [...v, actif])), [actif]);
+  useEffect(() => {
+    let t = 0;
+    const go = () => (t = window.setTimeout(() => setPret(true), 1200));
+    if (document.readyState === 'complete') go();
+    else window.addEventListener('load', go, { once: true });
+    // onglet caché : la vidéo se repose
+    const vis = () => {
+      const v = videoRef.current;
+      if (!v) return;
+      if (document.hidden) v.pause();
+      else void v.play().catch(() => undefined);
+    };
+    document.addEventListener('visibilitychange', vis);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener('load', go);
+      document.removeEventListener('visibilitychange', vis);
+    };
+  }, []);
   return (
     <>
       {vus.map((f) => (
-        <div key={f} className={`fond-peint${f === actif ? ' is-on' : ''}`} aria-hidden="true">
+        <div key={f} className={`fond-peint fond-${f}${f === actif ? ' is-on' : ''}`} aria-hidden="true">
           {/* la vidéo ne tourne que dans l'espace actif : ailleurs, l'image fixe suffit */}
-          {f === 'explorer' && f === actif && !LEGER && video ? (
-            <video poster={FONDS.explorer.large} autoPlay muted loop playsInline>
-              <source src={HD_FILES.fondVideo[0]} type="video/webm" />
-              <source src={HD_FILES.fondVideo[1]} type="video/mp4" onError={() => setVideo(false)} />
+          {f === 'explorer' && f === actif && !LEGER && video && pret ? (
+            <video ref={videoRef} poster={FONDS.explorer.large} autoPlay muted loop playsInline>
+              {HD_FILES.fondVideo.map((s, i, all) => (
+                <source key={s.src} src={s.src} type={s.type} onError={i === all.length - 1 ? () => setVideo(false) : undefined} />
+              ))}
             </video>
           ) : (
             <picture>
