@@ -1,5 +1,5 @@
 import { hexToRgb, hsl, rgbToHsl } from '../lib/palette';
-import { matiereFor, tacheFor } from '../lib/hd';
+import { MATIERE_COUSUE, matiereFor, tacheFor } from '../lib/hd';
 import { gaussian, hashString, rng } from '../lib/random';
 
 /**
@@ -71,7 +71,7 @@ export function clearSpriteCache(): void {
 
 export interface SpriteOptions {
   size?: number;
-  /** matière choisie (1 à NB_MATIERES) ; sinon tirée au hasard, fixe, depuis la graine */
+  /** matière choisie (0 = aquarelle cousue, 1 à NB_MATIERES = taches) ; sinon tirée au hasard, fixe, depuis la graine */
   matiere?: number;
 }
 
@@ -96,7 +96,7 @@ export function bubbleSprite(seedKey: string, hex: string, opts: SpriteOptions =
 
   const base = deform(r, basePolygon(r, c, c, R, 12), 4, 0.13);
 
-  const tache = tacheFor(matiere);
+  const tache = matiere === MATIERE_COUSUE ? null : tacheFor(matiere);
   if (tache) {
     paintTache(ctx, tache, hex, c, R, r);
   } else {

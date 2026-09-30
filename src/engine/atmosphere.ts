@@ -91,6 +91,7 @@ export class Atmosphere {
   private targetIntensity = 1;
   private calm: [number, number, number] = [110, 90, 140];
   private still = false;
+  private paused = false;
   private scale = 0.34;
   private u: Record<string, WebGLUniformLocation | null> = {};
 
@@ -143,6 +144,11 @@ export class Atmosphere {
     this.calm = [x * this.scale, y * this.scale, r * this.scale];
   }
 
+  /** Hors de la constellation, le shader ne tourne plus du tout. */
+  pause(p: boolean): void {
+    this.paused = p;
+  }
+
   setStill(still: boolean): void {
     this.still = still;
     if (still) {
@@ -167,6 +173,7 @@ export class Atmosphere {
       this.raf = requestAnimationFrame(loop);
       const settling = Math.abs(this.intensity - this.targetIntensity) > 0.002;
       // ~20 images/s suffisent pour un mouvement aussi lent
+      if (this.paused || document.hidden) return;
       if (now - this.last < 50) return;
       if (this.still && !settling) return;
       this.intensity += (this.targetIntensity - this.intensity) * 0.08;

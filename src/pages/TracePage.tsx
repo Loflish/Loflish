@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { BubbleImage, Footer } from '../components/Chrome';
 import { TexteBrode } from '../components/TexteBrode';
+import { BoutonPartager, lienTrace } from '../components/Partager';
 import { Icon } from '../components/Icon';
 import { FragmentEditor } from '../components/FragmentEditor';
 import { ChoixMedia, MediaThumb, MediaVue, OuvrirMedia, type MediaChoisi } from '../components/Media';
@@ -9,6 +10,8 @@ import {
   addMedia,
   basculerEnAvant,
   basculerMediaEnAvant,
+  deplacerEnAvant,
+  deplacerMediaEnAvant,
   dateLongue,
   enAvantDabord,
   estScelle,
@@ -22,7 +25,7 @@ import {
   TYPE_LABEL,
   useMesTraces,
 } from '../data/store';
-import { LIMITES, MAX_EN_AVANT, MAX_MEDIAS, QUESTIONS, RUBRIQUES, SENS_QUESTIONS, type Element, type Media, type Rubrique, type RubriqueId, type Trace } from '../data/types';
+import { LIMITES, MAX_EN_AVANT, MAX_MEDIAS, QUESTIONS, RUBRIQUES, SENS_QUESTIONS, type Element, type Media, type Rubrique, type RubriqueId, type Sens, type Trace, groupe } from '../data/types';
 import { creerMedia } from '../lib/fichiers';
 import { colorById } from '../lib/palette';
 import { useMuseumMode } from '../lib/museum';
@@ -33,7 +36,6 @@ type SalleState =
   | { kind: 'rubrique'; r: Rubrique }
   | { kind: 'medias' }
   | { kind: 'ajout-media' }
-  | { kind: 'versions' }
   | { kind: 'question'; i: number };
 
 export function TracePage() {
@@ -46,7 +48,6 @@ export function TracePage() {
   const mine = id === 'sakinah' || editable;
   const [auteur, setAuteur] = useState(mine);
   const [salle, setSalle] = useState<SalleState | null>(null);
-  const [copied, setCopied] = useState(false);
   const scellee = !!trace && estScellee(trace);
   // l'auteur dépose des fragments et des médias (chacun scellé à son dépôt) ;
   // ses réponses, scellées à la publication, ne changent qu'après cinq ans
@@ -75,21 +76,6 @@ export function TracePage() {
     );
   }
 
-  const share = async () => {
-    const url = window.location.href;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2400);
-    } catch {
-      try {
-        await navigator.share?.({ title: `${trace.nom} — Nos mots mémoriaux`, url });
-      } catch {
-        /* partage indisponible */
-      }
-    }
-  };
-
   const color = colorById(trace.couleur);
 
   return (
@@ -110,9 +96,7 @@ export function TracePage() {
               </button>
             </div>
           )}
-          <button className="lien-discret" onClick={share}>
-            <Icon name="partager" size={16} /> {copied ? 'Lien copié' : 'Partager'}
-          </button>
+          <BoutonPartager titre={trace.nom} url={lienTrace(trace.id)} />
         </div>
       </nav>
 
@@ -241,29 +225,10 @@ export function TracePage() {
         </ul>
       </section>
 
-      {/* ——— Médias, versions, paramètres */}
+      {/* ——— Médias, paramètres */}
       <div className={`trace-bas emerge${auteur ? '' : ' sans-parametres'}`}>
         <BlocMedias trace={trace} auteur={canAjouter} onVoirTout={() => setSalle({ kind: 'medias' })} onAjouter={() => setSalle({ kind: 'ajout-media' })} />
 
-        <section className="bloc versions" aria-labelledby="h-versions">
-          <div className="bloc-entete">
-            <h2 id="h-versions" className="bloc-titre">
-              <Icon name="horloge" size={22} /> Historique des versions
-            </h2>
-          </div>
-          <ol className="versions-liste">
-            {trace.versions.slice(0, 3).map((v) => (
-              <li key={v.v}>
-                <span className="version-v">v{v.v}</span>
-                <span className="version-date">{v.date}</span>
-                <span className="version-note">{v.note}</span>
-              </li>
-            ))}
-          </ol>
-          <button className="lien-discret petit" onClick={() => setSalle({ kind: 'versions' })}>
-            Voir tout l’historique <Icon name="fleche" size={14} />
-          </button>
-        </section>
 
         {auteur && trace.parametres && (
           <section className="bloc parametres" aria-labelledby="h-param">
@@ -309,23 +274,6 @@ export function TracePage() {
           )}
           {salle.kind === 'medias' && <MediasTout trace={trace} auteur={canAjouter} />}
           {salle.kind === 'ajout-media' && <MediaAjout trace={trace} onDone={() => setSalle({ kind: 'medias' })} />}
-          {salle.kind === 'versions' && (
-            <div className="salle-versions">
-              <ol className="versions-liste versions-longue">
-                {trace.versions.map((v) => (
-                  <li key={v.v}>
-                    <span className="version-v">v{v.v}</span>
-                    <span className="version-date">{v.date}</span>
-                    <span className="version-note">{v.note}</span>
-                  </li>
-                ))}
-              </ol>
-              <p className="muted petit">
-                Les réponses sont scellées à la publication ; chaque fragment et chaque média, au moment où il est déposé. Rien de
-                ce qui est scellé ne change pendant cinq ans. Chaque version reste datée dans l’historique.
-              </p>
-            </div>
-          )}
         </Salle>
       )}
       {vue && <MediaVue m={vue} onClose={() => setVue(null)} />}
@@ -422,8 +370,6 @@ function salleTitre(s: SalleState, t: Trace): string {
       return 'Médias & documents';
     case 'ajout-media':
       return 'Déposer un média ou un document';
-    case 'versions':
-      return 'Historique des versions';
     case 'question':
       return `${t.nom} — question ${s.i + 1}`;
   }
@@ -436,7 +382,10 @@ function mediasOf(items: Element[], trace: Trace): Media[] {
 
 function FragmentTile({ r, trace, canEdit, onOpen }: { r: Rubrique; trace: Trace; canEdit: boolean; onOpen: () => void }) {
   const items = trace.rubriques[r.id] ?? [];
-  const { avant } = enAvantDabord(items);
+  const avant =
+    r.id === 'sens'
+      ? (Object.keys(SENS_QUESTIONS) as Sens[]).flatMap((s) => enAvantDabord(groupe(items, 'sens', s)).avant)
+      : enAvantDabord(items).avant;
   const medias = mediasOf(avant, trace).slice(0, 3);
   const first = avant[0];
   const empty = items.length === 0;
@@ -473,6 +422,7 @@ function ElementView({
   auteur,
   pleinAvant,
   onBasculer,
+  onDeplacer,
   onRemove,
 }: {
   e: Element;
@@ -480,6 +430,7 @@ function ElementView({
   auteur?: boolean;
   pleinAvant?: boolean;
   onBasculer?: () => void;
+  onDeplacer?: (sens: -1 | 1) => void;
   onRemove?: () => void;
 }) {
   const medias = (e.medias ?? []).map((id) => trace.medias.find((m) => m.id === id)).filter(Boolean) as Media[];
@@ -508,6 +459,7 @@ function ElementView({
               {e.enAvant ? 'Ne plus mettre en avant' : pleinAvant ? `${MAX_EN_AVANT} déjà mis en avant` : 'Mettre en avant'}
             </button>
           )}
+          {onDeplacer && e.enAvant && <Trier onDeplacer={onDeplacer} />}
           {onRemove && (
             <button className="lien-discret petit element-retirer" onClick={onRemove}>
               Retirer ce fragment
@@ -519,45 +471,71 @@ function ElementView({
   );
 }
 
-function RubriqueDetail({ r, trace, canEdit }: { r: Rubrique; trace: Trace; canEdit: boolean }) {
-  const items = trace.rubriques[r.id] ?? [];
+/** Monter ou descendre un élément mis en avant : l'auteur choisit l'ordre de ses cinq, même après le scellement. */
+function Trier({ onDeplacer }: { onDeplacer: (sens: -1 | 1) => void }) {
+  return (
+    <span className="trier" role="group" aria-label="Ordre sur le profil">
+      <button className="lien-discret petit" onClick={() => onDeplacer(-1)} aria-label="Monter">
+        ↑
+      </button>
+      <button className="lien-discret petit" onClick={() => onDeplacer(1)} aria-label="Descendre">
+        ↓
+      </button>
+    </span>
+  );
+}
+
+/**
+ * Une liste de fragments qui partagent les mêmes limites (une rubrique, ou un
+ * seul des 5 sens) : les 5 mis en avant, dans l'ordre choisi, puis « Voir tout ».
+ */
+function ListeFragments({ items, r, trace, canEdit }: { items: Element[]; r: Rubrique; trace: Trace; canEdit: boolean }) {
   const [tout, setTout] = useState(false);
   const { avant, reste } = enAvantDabord(items);
   const visibles = tout ? [...avant, ...reste] : avant;
   const pleinAvant = items.filter((e) => e.enAvant).length >= MAX_EN_AVANT;
-  const editor = canEdit ? <FragmentEditor key={items.length} traceId={trace.id} rubrique={r.id} items={items} /> : null;
-  const vueElement = (e: Element) => (
-    <ElementView
-      key={e.id}
-      e={e}
-      trace={trace}
-      auteur={canEdit}
-      pleinAvant={pleinAvant}
-      onBasculer={canEdit ? () => basculerEnAvant(trace.id, r.id, e.id) : undefined}
-      // un fragment scellé ne se retire qu'une fois ses cinq ans passés
-      onRemove={canEdit && !estScelle(e) ? () => removeElement(trace.id, r.id, e.id) : undefined}
-    />
+  return (
+    <>
+      {visibles.map((e) => (
+        <ElementView
+          key={e.id}
+          e={e}
+          trace={trace}
+          auteur={canEdit}
+          pleinAvant={pleinAvant}
+          onBasculer={canEdit ? () => basculerEnAvant(trace.id, r.id, e.id) : undefined}
+          onDeplacer={canEdit ? (sens) => deplacerEnAvant(trace.id, r.id, e.id, sens) : undefined}
+          // un fragment scellé ne se retire qu'une fois ses cinq ans passés
+          onRemove={canEdit && !estScelle(e) ? () => removeElement(trace.id, r.id, e.id) : undefined}
+        />
+      ))}
+      {reste.length > 0 && (
+        <button className="lien-discret voir-tout" onClick={() => setTout((x) => !x)}>
+          {tout ? 'Ne montrer que les fragments mis en avant' : `Voir tout (${items.length} fragments)`} <Icon name="fleche" size={14} />
+        </button>
+      )}
+    </>
   );
-  const voirTout = reste.length > 0 && (
-    <button className="lien-discret voir-tout" onClick={() => setTout((x) => !x)}>
-      {tout ? 'Ne montrer que les fragments mis en avant' : `Voir tout (${items.length} fragments)`} <Icon name="fleche" size={14} />
-    </button>
-  );
+}
 
+function RubriqueDetail({ r, trace, canEdit }: { r: Rubrique; trace: Trace; canEdit: boolean }) {
+  const items = trace.rubriques[r.id] ?? [];
+  const editor = canEdit ? <FragmentEditor key={items.length} traceId={trace.id} rubrique={r.id} items={items} /> : null;
+
+  // les 5 sens : chacun est un fragment à part entière, avec ses 10 places, ses 5 mis en avant et son « Voir tout »
   if (r.id === 'sens') {
     return (
       <div className="sens-detail">
-        {(Object.keys(SENS_QUESTIONS) as (keyof typeof SENS_QUESTIONS)[]).map((s) => {
-          const list = visibles.filter((e) => e.sens === s);
+        {(Object.keys(SENS_QUESTIONS) as Sens[]).map((s) => {
+          const list = groupe(items, 'sens', s);
           if (!list.length) return null;
           return (
             <section key={s} className="sens-groupe">
               <h3 className="salle-q">{SENS_QUESTIONS[s].question}</h3>
-              {list.map(vueElement)}
+              <ListeFragments items={list} r={r} trace={trace} canEdit={canEdit} />
             </section>
           );
         })}
-        {voirTout}
         {editor}
       </div>
     );
@@ -566,8 +544,7 @@ function RubriqueDetail({ r, trace, canEdit }: { r: Rubrique; trace: Trace; canE
   return (
     <div className="rubrique-detail">
       {items.length === 0 && canEdit && <p className="muted">Rien encore ici. Ce que tu déposes est publié sur ta trace, et scellé.</p>}
-      {visibles.map(vueElement)}
-      {voirTout}
+      <ListeFragments items={items} r={r} trace={trace} canEdit={canEdit} />
       {editor}
     </div>
   );
@@ -620,9 +597,12 @@ function MediasTout({ trace, auteur }: { trace: Trace; auteur: boolean }) {
         <div key={m.id} className="media-case">
           <MediaThumb m={m} size="l" />
           {auteur && (
-            <button className="lien-discret petit" onClick={() => basculerMediaEnAvant(trace.id, m.id)} disabled={!m.enAvant && plein}>
-              {m.enAvant ? 'Ne plus mettre en avant' : plein ? `${MAX_EN_AVANT} déjà mis en avant` : 'Mettre en avant'}
-            </button>
+            <span className="media-case-actions">
+              <button className="lien-discret petit" onClick={() => basculerMediaEnAvant(trace.id, m.id)} disabled={!m.enAvant && plein}>
+                {m.enAvant ? 'Ne plus mettre en avant' : plein ? `${MAX_EN_AVANT} déjà mis en avant` : 'Mettre en avant'}
+              </button>
+              {m.enAvant && <Trier onDeplacer={(sens) => deplacerMediaEnAvant(trace.id, m.id, sens)} />}
+            </span>
           )}
         </div>
       ))}

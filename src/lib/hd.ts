@@ -13,6 +13,12 @@ const base = `${import.meta.env.BASE_URL}hd/`;
 
 /** Nombre de taches d'aquarelle préparées (public/hd/taches) : le catalogue complet des matières. */
 export const NB_MATIERES = 77;
+/**
+ * La matière 0 : l'aquarelle cousue, peinte par le moteur lui-même (voiles
+ * d'aquarelle, papier, fil au point avant sur le bord). La toute première
+ * bulle du musée, gardée telle quelle et proposée en tête du catalogue.
+ */
+export const MATIERE_COUSUE = 0;
 const NB_TACHES = NB_MATIERES;
 
 /** Les fonds, en format ordinateur (large) et téléphone (haut). */
@@ -103,7 +109,7 @@ export function loadTaches(): Promise<void> {
 
 /** Charge des matières précises (celles que des personnes ont choisies). */
 export function loadMatieres(list: (number | undefined)[]): Promise<void> {
-  return Promise.all([loadTaches(), ...list.filter((n): n is number => !!n).map(charger)]).then(() => undefined);
+  return Promise.all([loadTaches(), ...list.filter((n): n is number => !!n && n > 0).map(charger)]).then(() => undefined);
 }
 
 /** Le catalogue complet, pour choisir sa matière. */
@@ -113,7 +119,8 @@ export function loadCatalogue(): Promise<void> {
 
 /** Sans choix, la matière d'une personne est tirée de son identifiant : au hasard, mais fixe. */
 export function matiereFor(seed: number): number {
-  return (seed % NB_TACHES) + 1;
+  // l'aquarelle cousue (0) fait partie du tirage, comme chacune des 77 taches
+  return seed % (NB_TACHES + 1);
 }
 
 /**

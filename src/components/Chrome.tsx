@@ -22,6 +22,28 @@ export function Logo({ size = 'normal' }: { size?: 'normal' | 'petit' }) {
   );
 }
 
+/**
+ * File de peinture des bulles : chacune se peint dans un petit budget par
+ * image (8 ms), la plus grande d'abord ; un catalogue de cent vignettes ne
+ * bloque jamais un clic ni une animation.
+ */
+const file: (() => void)[] = [];
+let planifie = false;
+function vider() {
+  const t0 = performance.now();
+  while (file.length && performance.now() - t0 < 8) file.shift()!();
+  if (file.length) requestAnimationFrame(vider);
+  else planifie = false;
+}
+function peindre(job: () => void, prioritaire: boolean) {
+  if (prioritaire) file.unshift(job);
+  else file.push(job);
+  if (!planifie) {
+    planifie = true;
+    requestAnimationFrame(vider);
+  }
+}
+
 /** Une bulle, identique à celle de la constellation (même graine, même matière). */
 export function BubbleImage({
   id,
@@ -41,7 +63,9 @@ export function BubbleImage({
   useEffect(() => {
     let alive = true;
     // attend les taches HD (si elles existent) pour être identique à la constellation
-    loadMatieres([m]).then(() => alive && setSrc(bubbleDataUrl(id, colorById(couleur).hex, Math.round(size * 2.2), m)));
+    loadMatieres([m]).then(() =>
+      peindre(() => alive && setSrc(bubbleDataUrl(id, colorById(couleur).hex, Math.round(size * 2.2), m)), size >= 120),
+    );
     return () => {
       alive = false;
     };
@@ -139,11 +163,16 @@ export function Dock() {
   );
 }
 
-/** En-tête léger des pages intérieures : logo + retour au musée. */
+/**
+ * En-tête léger des pages intérieures : la signature, petite, qui ramène au
+ * musée (le seul autre endroit où le logo apparaît, en grand, est la constellation).
+ */
 export function PageTop({ back = true }: { back?: boolean }) {
   return (
     <header className="page-top">
-      <Logo size="petit" />
+      <Link to="/" className="page-top-logo" aria-label="Nos mots mémoriaux — retour au musée">
+        <Logo size="petit" />
+      </Link>
       {back && (
         <Link to="/" className="lien-discret">
           <Icon name="retour" size={16} /> Retour au musée
@@ -156,7 +185,6 @@ export function PageTop({ back = true }: { back?: boolean }) {
 export function Footer() {
   return (
     <footer className="site-footer">
-      <Logo size="petit" />
       <nav aria-label="Liens de bas de page">
         <Link to="/ressources">Ressources & aide</Link>
         <Link to="/juridique">Juridique & confidentialité</Link>

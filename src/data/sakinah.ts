@@ -11,6 +11,8 @@ export const SAKINAH: Trace = {
   pseudo: 'spacehey',
   type: 'personnelle',
   couleur: 'b3',
+  // l'aquarelle cousue, la première bulle du musée
+  matiere: 0,
   pays: 'France',
   creeLe: '12 juin 2024',
   majLe: '3 mars 2025',
@@ -115,11 +117,6 @@ export const SAKINAH: Trace = {
     { id: 'm13', kind: 'audio', titre: 'Mamani chante', duree: '1:48', teinte: '#D5D0E3', enAvant: true },
     { id: 'm14', kind: 'lien', titre: 'Essaouira', url: 'https://fr.wikipedia.org/wiki/Essaouira', teinte: '#CFDCDD', enAvant: true },
     { id: 'm15', kind: 'document', titre: 'Recette des msemen', nom: 'recette-msemen.pdf', teinte: '#E7DDCF' },
-  ],
-  versions: [
-    { v: 3, date: '3 mars 2025', note: 'Mise à jour de plusieurs sections' },
-    { v: 2, date: '12 janvier 2025', note: 'Ajout de médias' },
-    { v: 1, date: '12 juin 2024', note: 'Création du profil' },
   ],
   parametres: {
     droitsReutilisation: true,

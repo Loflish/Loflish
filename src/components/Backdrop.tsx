@@ -201,6 +201,9 @@ export function Backdrop() {
       setEntering(false);
     }
     atmo.current?.setIntensity(ATMOSPHERE_BY_MODE[mode]);
+    // le shader s'efface avec la constellation (fondu CSS), puis s'arrête
+    const t = window.setTimeout(() => atmo.current?.pause(mode !== 'explore'), mode === 'explore' ? 0 : 1900);
+    return () => window.clearTimeout(t);
   }, [mode, engine]);
 
   useEffect(() => {
@@ -250,7 +253,8 @@ export function Backdrop() {
       {HD ? (
         <>
           <div className="lin-hd" aria-hidden="true" style={{ backgroundImage: `url(${HD_FILES.lin})` }} />
-          {/* les fibres du papier chiffon, sur le tissu de toutes les pages sauf la constellation */}
+          {/* toutes les pages sauf la constellation : le papier de la carte d'aperçu, ivoire, et ses fibres de chiffon */}
+          <div className="papier-page" aria-hidden="true" />
           <div className="fibres" aria-hidden="true" />
         </>
       ) : (

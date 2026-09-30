@@ -30,11 +30,12 @@ interface ModeSpec {
 
 export const MODES: Record<Mode, ModeSpec> = {
   explore: { alpha: 1, speed: 1, interactive: true },
-  perdre: { alpha: 0.42, speed: 0.6, interactive: false },
-  trace: { alpha: 0.26, speed: 0.4, interactive: false },
-  creer: { alpha: 0.14, speed: 0.35, interactive: false },
-  texte: { alpha: 0.3, speed: 0.5, interactive: false },
-  minimal: { alpha: 0.05, speed: 0, interactive: false },
+  // hors de la constellation, les pages reposent sur le papier seul : plus aucune bulle derrière
+  perdre: { alpha: 0, speed: 0.6, interactive: false },
+  trace: { alpha: 0, speed: 0.4, interactive: false },
+  creer: { alpha: 0, speed: 0.35, interactive: false },
+  texte: { alpha: 0, speed: 0.5, interactive: false },
+  minimal: { alpha: 0, speed: 0, interactive: false },
 };
 
 interface Bubble {
@@ -88,6 +89,8 @@ export class Constellation {
   private w = 0;
   private h = 0;
   private bubbles: Bubble[] = [];
+  /** l'édition des archives affichée (null : le musée d'aujourd'hui) */
+  edition: string | null = null;
   private byId = new Map<string, Bubble>();
   private worldW = 2000;
   private worldH = 1400;
@@ -573,6 +576,7 @@ export class Constellation {
   private step(dt: number): void {
     this.time += dt;
     const spec = MODES[this.mode];
+    // en quittant la constellation, les bulles s'effacent un peu plus vite (le moteur s'arrête ensuite)
     this.modeAlpha += (spec.alpha - this.modeAlpha) * Math.min(1, dt * 1.6);
     // « réduire les animations » du système : le mouvement ralentit mais ne s'arrête jamais
     const targetSpeed = spec.speed * (this.reduced ? 0.35 : 1);
@@ -797,9 +801,12 @@ export class Constellation {
       this.raf = requestAnimationFrame(loop);
       const dt = Math.min(0.05, (now - (this.last || now)) / 1000);
       this.last = now;
-      if (this.mode === 'minimal' && this.modeAlpha < 0.06 && !this.spriteQueue.length) {
-        // quasiment invisible : on ne dessine qu'occasionnellement
-        if (Math.floor(now / 500) === Math.floor((now - dt * 1000) / 500)) return;
+      // hors de la constellation, plus rien à calculer ni à dessiner : la toile s'efface
+      // par un fondu CSS (sur la carte graphique) ; les sprites continuent de se préparer,
+      // pour un retour immédiat
+      if (!MODES[this.mode].interactive && !this.enteringId) {
+        if (this.spriteQueue.length) this.step(dt);
+        return;
       }
       this.step(dt);
       this.draw();

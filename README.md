@@ -19,9 +19,10 @@ npm run build    # build statique dans dist/ (chemins relatifs, hébergeable par
 
 | Surface | Contenu |
 | --- | --- |
-| **Explorer** (`/`) | Constellation plein écran : fond pictural vivant, bulles qui se promènent, survol = nom seul, clic = aperçu (les 200 caractères), « Entrer dans sa mémoire » = transition douce vers le profil, retour au même endroit. Recherche et filtres discrets. |
+| **Explorer** (`/`) | Constellation plein écran : fond pictural vivant, bulles qui se promènent, survol = nom seul, clic = aperçu (les 200 caractères), « Entrer dans sa mémoire » = transition douce vers le profil, retour au même endroit. Recherche et filtres discrets. Le logo brodé n'apparaît en grand qu'ici. |
+| **Archives** (`/archives`, `/archives/:edition`) | Chaque édition (`src/data/archives.ts`, titre renommable : « 2026 », « 2028 »…) s'ouvre sur sa propre constellation, identique à l'accueil, avec les présences déposées jusqu'à la fin de son année. |
 | **Se perdre** | Une présence à la fois, hasard équitable, glisser / boutons / flèches, aucun signal de popularité. |
-| **Profil** (`/trace/:id`) | Architecture « Proposition A révisée » : une seule zone bulle, identité, type de trace, pays, dates clés ; les 4 questions obligatoires (les 200 caractères brodés) ; les 14 fragments d'existence ; médias & documents ; historique des versions ; paramètres non publics (vue auteur). Chaque rubrique s'ouvre en « salle » : 10 fragments au plus (10 par sens pour les 5 sens), dont 5 mis en avant, puis « Voir tout ». Médias & documents : 20 au plus, 5 mis en avant ; chaque fragment peut porter un média. Photos, vidéos, enregistrements, documents (PDF lisible sur place) et liens (YouTube et Vimeo lus sur place) s'ouvrent dans une visionneuse. Profil de référence : `/trace/sakinah`. |
+| **Profil** (`/trace/:id`) | Architecture « Proposition A révisée » : une seule zone bulle, identité, type de trace, pays, dates clés ; les 4 questions obligatoires (les 200 caractères brodés) ; les 14 fragments d'existence ; médias & documents ; paramètres non publics (vue auteur). Chaque rubrique s'ouvre en « salle » : 10 fragments au plus, dont 5 mis en avant, puis « Voir tout ». Chacun des 5 sens compte comme un fragment à part entière : 10 par sens, 5 mis en avant par sens, son propre « Voir tout ». Même scellés, l'auteur choisit ses mis en avant et leur ordre (↑ ↓). Médias & documents : 20 au plus, 5 mis en avant (triables aussi) ; chaque fragment peut porter un média. Photos, vidéos, enregistrements, documents (PDF lisible sur place) et liens (YouTube et Vimeo lus sur place) s'ouvrent dans une visionneuse. Profil de référence : `/trace/sakinah`. |
 | **Ma trace** (`/ma-trace`) | L'espace de l'auteur : voir son profil, retrouver sa bulle dans le musée, compléter ses 14 rubriques. Deux bulles au plus par personne : sa propre trace et une mémoire pour une personne décédée. Dans la constellation, sa propre bulle est entourée d'un fil « ta trace », visible uniquement sur son appareil. |
 | **Créer ma trace** | Choisir → Compte (18+, avec un mot du créateur du musée et findahelpline.com) → Identité (couleur GRIS et matière d'aquarelle au choix) → 4 questions (1200 / 200 caractères) → Aperçu → Enrichir → Vérifier → **Sceller et publier**. Le brouillon reste privé ; publier scelle les réponses pour cinq ans et rend la trace publique. Ensuite, chaque fragment et chaque média est scellé au moment où il est déposé, après une confirmation explicite. Parcours distinct « mémoire pour une personne décédée ». |
 | **Menu** | Dock centré en bas : Explorer · Se perdre · Créer ma trace (devient « Ma trace » une fois publiée) · Menu → Le projet, Archives, Ressources & aide, Soutenir, Juridique & confidentialité, Compte. |
@@ -35,11 +36,15 @@ npm run build    # build statique dans dist/ (chemins relatifs, hébergeable par
 - **Mouvement** (promenade autonome, évitement doux, pas d'orbite ni de rebond, espace sans bords) —
   `src/engine/constellation.ts`.
 - **Fond vivant** (lin + nappes de pigment façon Monet, très lent) — `src/engine/atmosphere.ts`.
-- **Typographies** : Newsreader (expressive) + Manrope (fonctionnelle) — `src/styles/tokens.css`.
-- **Alphabet brodé** (les 200 caractères) : lettres brodées au point arrière, générées « dans l'esprit »
-  d'un abécédaire fait main puis découpées (`design/hd/alphabet.py` → `public/hd/alphabet.webp` +
-  `src/data/alphabet.json`), composant `TexteBrode`. Latin et accents français brodés ; toute autre
-  écriture (arabe, cyrillique, chinois, hindi…) s'écrit dans la typographie du site, sans rien perdre.
+- **Typographies** : Newsreader (expressive) + IBM Plex Sans (fonctionnelle, avec ses versions arabe, hébraïque,
+  devanagari et thaï ; cyrillique et grec inclus ; japonais, chinois et coréen dans la police du système) — `src/styles/tokens.css`.
+- **Alphabet brodé** (les 200 caractères) : les lettres d'IBM Plex Sans cousues en contour au point avant
+  (planches Higgsfield découpées par `design/hd/alphabet.py … plex` → `public/hd/alphabet.webp` +
+  `src/data/alphabet.json`), composant `TexteBrode` : minuscules, capitales, chiffres, ponctuation et les
+  lettres accentuées des langues latines (é è ê ë à â ä á ã å ç î ï í ô ö ó õ û ü ú ù ñ ß œ æ ø). Toute autre
+  écriture (arabe, hébreu, cyrillique, grec, hindi, thaï, chinois…) s'écrit en IBM Plex Sans, couleur du fil,
+  un mot toujours d'un seul tenant (liaisons et sens de lecture respectés). Le premier abécédaire, écrit à
+  la main, reste reproductible (`alphabet.py … main`). Un mot sans fin se coupe : rien ne sort du cadre.
 - **Icônes brodées** : les symboles des rubriques et des questions (`public/hd/icones`) ; les icônes
   d'interface restent au trait.
 - **Logo brodé** : détouré depuis la photo du tableau, fibres et points conservés, bordeaux
@@ -51,9 +56,10 @@ npm run build    # build statique dans dist/ (chemins relatifs, hébergeable par
 Couche optionnelle, activée par `HD` dans `src/lib/hd.ts` (mettre `false` pour revenir au rendu
 entièrement procédural). Si un fichier manque, le site revient seul au rendu procédural.
 
-- **Fond d'Explorer** : peinture 4K (et sa boucle vivante, ci-dessous). **Partout ailleurs** (profil, Se
-  perdre, Créer, pages) : un tissu de coton ivoire aux plis doux (`fond-tissu`), avec les fibres du papier
-  chiffon par-dessus ; les bulles continuent de passer, légères.
+- **Fond d'Explorer** : peinture 4K (et sa boucle vivante, ci-dessous). **Partout ailleurs** (profil, salles,
+  Se perdre, Créer, pages) : le papier de la carte d'aperçu, ivoire dense avec les fibres du papier chiffon,
+  posé sur un tissu de coton qui transparaît à peine ; aucune bulle derrière. La constellation s'efface par
+  un fondu et son moteur (comme le shader des nappes) s'arrête hors de l'Explorer.
 - **Lin HD** raccordable, par-dessus tout, très discret.
 - **Bulles** : leur matière vient de vraies taches d'aquarelle (planches générées en 4K, plusieurs
   techniques : mouillé, granulation, sur lin, auréole séchée, fleurs d'eau, glacis, pinceau sec),
@@ -66,12 +72,14 @@ entièrement procédural). Si un fichier manque, le site revient seul au rendu p
 - **Entrer dans sa mémoire** : une vraie goutte d'aquarelle filmée en 4K sur papier (Kling), réduite
   à un masque de 1440 px (`design/hd/masque_encre.py` : papier soustrait, intérieur en lavis égal,
   bord capillaire, tache recentrée), s'ouvre depuis la bulle cliquée dans sa couleur GRIS exacte.
-- **Matière des bulles** : chacun la choisit en créant sa trace, dans le catalogue complet des 77 taches
-  (posées comme sur une feuille, déjà dans sa couleur ; « Au hasard » pour se laisser surprendre).
+- **Matière des bulles** : chacun la choisit en créant sa trace, dans le catalogue complet : en tête,
+  l'**aquarelle cousue** (matière 0, la première bulle du musée, peinte par le moteur : voiles d'aquarelle,
+  papier, fil au point avant sur le bord), puis les 77 taches (posées comme sur une feuille, déjà dans sa
+  couleur ; « Au hasard » pour se laisser surprendre).
   Une matière est proposée d'avance au hasard ; les présences sans choix gardent une matière tirée de
   leur identifiant, fixe.
-- **Papier fait main** (chiffon de coton, washi) : seules les fibres, en calque translucide, sur les
-  panneaux qui s'ouvrent (aperçu, menu, recherche, Se perdre, salles des rubriques).
+- **Papier fait main** (chiffon de coton) : seules les fibres, en calque translucide, sur les pages et les
+  panneaux qui s'ouvrent (aperçu, menu, recherche, Se perdre, salles des rubriques, visionneuse).
 
 Préparation des images : `python3 design/hd/preparer.py fond|lin|taches|papier …` (voir l'en-tête du script).
 

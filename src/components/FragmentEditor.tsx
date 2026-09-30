@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { addElement } from '../data/store';
-import { CATEGORIES_OEUVRES, MAX_EN_AVANT, MAX_FRAGMENTS, SENS_QUESTIONS, placesRestantes, type Element, type Media, type RubriqueId, type Sens } from '../data/types';
+import { CATEGORIES_OEUVRES, MAX_EN_AVANT, MAX_FRAGMENTS, SENS_QUESTIONS, groupe, placesRestantes, type Element, type Media, type RubriqueId, type Sens } from '../data/types';
 import { creerMedia } from '../lib/fichiers';
 import { Icon } from './Icon';
 import { ChoixMedia, type MediaChoisi } from './Media';
@@ -46,9 +46,10 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
     categorie: rubrique === 'oeuvres' ? 'Livre' : '',
     sens: (sensLibres[0] ?? 'voir') as Sens,
   });
-  const pleinAvant = items.filter((e) => e.enAvant).length >= MAX_EN_AVANT;
+  // 5 mis en avant par rubrique ; pour les 5 sens, 5 par sens
+  const pleinAvant = groupe(items, rubrique, f.sens).filter((e) => e.enAvant).length >= MAX_EN_AVANT;
   const [media, setMedia] = useState<MediaChoisi>(null);
-  const [enAvant, setEnAvant] = useState(!pleinAvant);
+  const [enAvant, setEnAvant] = useState(true);
   const [confirmer, setConfirmer] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState('');
@@ -185,7 +186,7 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
         <span>
           {pleinAvant
             ? `Les ${MAX_EN_AVANT} places mises en avant sont prises : ce fragment sera visible avec « Voir tout ».`
-            : `Mettre en avant sur mon profil (${MAX_EN_AVANT} par rubrique)`}
+            : `Mettre en avant sur mon profil (${MAX_EN_AVANT} ${rubrique === 'sens' ? 'par sens' : 'par rubrique'})`}
         </span>
       </label>
       {erreur && (

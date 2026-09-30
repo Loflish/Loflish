@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { editionParId, tracesDeLEdition } from '../data/archives';
+import { colorById } from '../lib/palette';
 import { allTraces, TYPE_LABEL, useMesTraces } from '../data/store';
 import { RUBRIQUES, type RubriqueId, type Trace } from '../data/types';
 import { Dock, Logo } from '../components/Chrome';
@@ -17,8 +19,17 @@ function searchable(t: Trace): string {
 export function Explorer() {
   useMuseumMode('explore');
   const { engine } = useMuseum();
-  const maTrace = useMesTraces()[0];
-  const [moved, setMoved] = useState(false);
+  // une édition des archives : la même constellation, avec les présences de cette édition seulement
+  const edition = editionParId(useParams().edition);
+  const traces = useMemo(() => (edition ? tracesDeLEdition(allTraces(), edition) : allTraces()), [edition]);
+  useEffect(() => {
+    const c = engine.current;
+    const voulu = edition?.id ?? null;
+    if (!c || c.edition === voulu) return;
+    c.setPresences(traces.map((t) => ({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex, matiere: t.matiere })));
+    c.edition = voulu;
+  }, [engine, edition, traces]);
+  const maTrace = useMesTraces().find((t) => traces.includes(t));
   const [hint, setHint] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   // une seule phrase, à la toute première visite, puis elle s'efface
@@ -61,14 +72,9 @@ export function Explorer() {
     const c = engine.current;
     if (!c) return;
     const prev = c.events.onMoved;
-    c.events.onMoved = () => {
-      setHint(false);
-      setMoved(c.isMoved);
-    };
-    const id = window.setInterval(() => setMoved(c.isMoved), 800);
+    c.events.onMoved = () => setHint(false);
     return () => {
       c.events.onMoved = prev;
-      window.clearInterval(id);
     };
   }, [engine]);
 
@@ -88,9 +94,17 @@ export function Explorer() {
 
   return (
     <div className="explorer">
-      <h1 className="sr-only">Nos mots mémoriaux — la constellation des présences</h1>
+      <h1 className="sr-only">Nos mots mémoriaux — {edition ? `archives, édition ${edition.titre}` : 'la constellation des présences'}</h1>
       <div className="explorer-logo" ref={logoRef}>
         <Logo />
+        {edition && (
+          <p className="explorer-edition">
+            <Link to="/archives" className="lien-discret petit">
+              <Icon name="archive" size={14} /> Archives · édition {edition.titre}
+            </Link>
+            <span>— {traces.length.toLocaleString('fr-FR')} présences</span>
+          </p>
+        )}
       </div>
 
       <div className="explorer-actions">
@@ -103,12 +117,6 @@ export function Explorer() {
           </button>
         )}
       </div>
-
-      {moved && (
-        <button className="explorer-reset lien-discret" onClick={() => engine.current?.resetView()}>
-          Revenir à l’ensemble
-        </button>
-      )}
 
       <p className={`explorer-hint${hint ? '' : ' is-hidden'}`} aria-hidden={!hint}>
         <span className="hint-large">Glisser pour se promener · molette pour s’approcher · cliquer sur une bulle pour la rencontrer</span>
@@ -123,13 +131,13 @@ export function Explorer() {
 
       <p className="demo-note">Prototype — les présences affichées sont des données de démonstration.</p>
 
-      {searchOpen && <SearchPanel onClose={() => setSearchOpen(false)} />}
+      {searchOpen && <SearchPanel traces={traces} onClose={() => setSearchOpen(false)} />}
       <Dock />
     </div>
   );
 }
 
-function SearchPanel({ onClose }: { onClose: () => void }) {
+function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: () => void }) {
   const { engine } = useMuseum();
   const [q, setQ] = useState('');
   const [type, setType] = useState<'tous' | Trace['type']>('tous');
@@ -137,7 +145,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
   const [pays, setPays] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const traces = useMemo(() => allTraces().map((t) => ({ t, text: searchable(t) })), []);
+  const traces = useMemo(() => source.map((t) => ({ t, text: searchable(t) })), [source]);
   const allPays = useMemo(() => [...new Set(traces.map((x) => x.t.pays).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b, 'fr')), [traces]);
 
   const active = q.trim() !== '' || type !== 'tous' || rubs.length > 0 || pays !== '';

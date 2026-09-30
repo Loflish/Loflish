@@ -28,6 +28,7 @@ export function App() {
           <Route path="/soutenir" element={<Soutenir />} />
           <Route path="/juridique" element={<Juridique />} />
           <Route path="/archives" element={<Archives />} />
+          <Route path="/archives/:edition" element={<Explorer />} />
           <Route path="/compte" element={<Compte />} />
           <Route path="*" element={<Explorer />} />
         </Routes>

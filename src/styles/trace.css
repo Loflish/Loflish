@@ -420,40 +420,6 @@
   line-height: 1.2;
   text-align: center;
 }
-.versions-liste li {
-  display: grid;
-  grid-template-columns: 2.2rem 7.5rem 1fr;
-  gap: 0.6rem;
-  align-items: baseline;
-  padding: 0.35rem 0 0.35rem 0.9rem;
-  border-left: 1px solid var(--filet-fort);
-  position: relative;
-  font-size: var(--t-s);
-}
-.versions-liste li::before {
-  content: '';
-  position: absolute;
-  left: -3.5px;
-  top: 0.85rem;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--encre-2);
-}
-.version-v {
-  font-weight: 600;
-}
-.version-date {
-  color: var(--encre-2);
-}
-.version-note {
-  color: var(--encre-2);
-  font-size: var(--t-xs);
-}
-.versions + .lien-discret,
-.versions .lien-discret {
-  margin-top: 0.8rem;
-}
 .parametres-liste {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -482,7 +448,7 @@
 
 .site-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   gap: 1rem;
   border-top: 1px solid var(--filet);
@@ -494,6 +460,10 @@
   gap: 1.6rem;
   font-size: var(--t-xs);
   color: var(--encre-2);
+}
+.page-top-logo {
+  display: inline-flex;
+  text-decoration: none;
 }
 .site-footer a {
   text-decoration: none;
@@ -808,9 +778,9 @@ div.trace-bandeau > p {
   width: min(980px, 100%);
   max-height: 100%;
   overflow: auto;
-  background: var(--lin-clair);
-  background-image: var(--papier-washi);
-  background-size: 640px 640px;
+  background: #f3f1ec;
+  background-image: var(--papier-chiffon);
+  background-size: 520px 520px;
   border-radius: var(--rayon);
   padding: 1rem 1.2rem 1.4rem;
 }
@@ -937,6 +907,20 @@ div.trace-bandeau > p {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
   gap: 1.4rem 1.2rem;
+}
+.trier {
+  display: inline-flex;
+  gap: 0.2rem;
+}
+.trier .lien-discret {
+  min-width: 2rem;
+  justify-content: center;
+}
+.media-case-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.8rem;
 }
 .media-case {
   display: grid;

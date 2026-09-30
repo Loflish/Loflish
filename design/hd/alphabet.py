@@ -7,8 +7,11 @@ assemble un atlas unique :
   public/hd/alphabet.webp   (les lettres détourées, fil conservé, fond transparent)
   src/data/alphabet.json    (position et mesures de chaque lettre, en 1/120 d'em)
 
-Usage : python3 alphabet.py <dossier_des_planches>
-  planches attendues : min.png, maj2.png, acc.png, ponct.png
+Usage : python3 alphabet.py <dossier_des_planches> [plex|main]
+  plex (par défaut) : les lettres d'IBM Plex Sans cousues au point avant, en contour
+    planches : min.png, maj.png, acc.png, ponct.png
+  main : le premier abécédaire, écriture à la main au point arrière
+    planches : min.png, maj2.png, acc.png, ponct.png
 """
 import json
 import sys
@@ -24,17 +27,25 @@ EM = 120  # pixels d'atlas par em
 XH = 0.46  # hauteur des minuscules, en em
 CAP = 0.66  # hauteur des capitales et des chiffres, en em
 
-PLANCHES = [
-    ('min.png', ['abcdefg', 'hijklmn', 'opqrstu', 'vwxyz'], 'x'),
-    ('maj2.png', ['ABCDEFG', 'HIJKLMN', 'OPQRSTU', 'VWXYZ'], 'cap'),
-    ('acc.png', ['éèêëàâ', 'çîïôûù', 'œÉÈÀÇï'], 'x'),
-    ('ponct.png', ['0123456', '789.,;:', "!?’«»-("], 'cap'),
-]
-DESCENDANTES = set('gjpqyçÇ,;(')
+JEU = sys.argv[2] if len(sys.argv) > 2 else 'plex'
+PLANCHES = {
+    'main': [
+        ('min.png', ['abcdefg', 'hijklmn', 'opqrstu', 'vwxyz'], 'x'),
+        ('maj2.png', ['ABCDEFG', 'HIJKLMN', 'OPQRSTU', 'VWXYZ'], 'cap'),
+        ('acc.png', ['éèêëàâ', 'çîïôûù', 'œÉÈÀÇï'], 'x'),
+        ('ponct.png', ['0123456', '789.,;:', "!?’«»-("], 'cap'),
+    ],
+    'plex': [
+        ('min.png', ['abcdefg', 'hijklmn', 'opqrstu', 'vwxyz'], 'x'),
+        ('maj.png', ['ABCDEFG', 'HIJKLMN', 'OPQRSTU', 'VWXYZ'], 'cap'),
+        ('acc.png', ['éèêëàâä', 'áãåçîïí', 'ôöóõûüú', 'ùñßœæø'], 'x'),
+        ('ponct.png', ['0123456', '789?!&@', '.,:;-()'], 'cap'),
+    ],
+}[JEU]
 # ce qui repose sur la ligne de base (les guillemets, tirets et apostrophes flottent au-dessus)
-SUR_BASE = set('abcdefhiklmnorstuvwxzéèêëàâîïôûùœABCDEFGHIJKLMNOPRSTUVWXYZÉÈÀ0123456789!?.:')
+SUR_BASE = set('abcdefhiklmnorstuvwxzéèêëàâäáãåîïíôöóõûüúùñßœæøABCDEFGHIJKLMNOPRSTUVWXYZÉÈÀ0123456789!?.:&')
 # lettres dont le corps donne la hauteur de référence de la rangée
-REF_X = set('acemnorsuvwxzéèêëàâçîïôûùœ')
+REF_X = set('acemnorsuvwxzéèêëàâäáãåçîïíôöóõûüúùñœæø')
 REF_CAP = set('ABCDEFGHIJKLMNOPRSTUVWXYZ0123456789ÉÈÀÇ')
 
 
@@ -152,9 +163,10 @@ def main():
             pad = 6
             y0, y1, x0, x1 = g['y0'] - pad, g['y1'] + pad, g['x0'] - pad, g['x1'] + pad
             masque = np.isin(lab[y0:y1, x0:x1], g['ids'])
-            masque = ndi.binary_dilation(masque, iterations=4)
-            a = np.clip(d[y0:y1, x0:x1] * 1.25, 0, 1) * masque
-            col = np.clip(rgb[y0:y1, x0:x1] * 0.55, 0, 255)
+            masque = ndi.binary_dilation(masque, iterations=3)
+            # le fil seul, bien couvrant : le grain du tissu autour (un léger voile gris) est retiré
+            a = np.clip((d[y0:y1, x0:x1] - 0.07) * 2.1, 0, 1) * masque
+            col = np.clip(rgb[y0:y1, x0:x1] * 0.5, 0, 255)
             im = Image.fromarray(np.dstack([col, a * 255]).astype(np.uint8), 'RGBA')
             w, h = im.size
             im = im.resize((max(1, round(w * echelle)), max(1, round(h * echelle))), Image.LANCZOS)
@@ -179,11 +191,16 @@ def main():
         neuve.paste(im, (0, extra), im)
         neuve.paste(pt, ((neuve.width - pt.width) // 2 + (2 if ch == 'i' else 4), max(0, top_corps + extra - gap - pt.height)), pt)
         p['im'] = neuve
-    # parenthèse fermante : la parenthèse ouvrante, en miroir
-    par = next(p for p in atlas_parts if p['ch'] == '(')
-    atlas_parts.append({'ch': ')', 'im': par['im'].transpose(Image.FLIP_LEFT_RIGHT), 'desc': par['desc']})
-    # apostrophe droite = apostrophe typographique
-    ap = next(p for p in atlas_parts if p['ch'] == '’')
+    # parenthèse fermante : la parenthèse ouvrante, en miroir (si elle n'a pas été brodée)
+    if not any(p['ch'] == ')' for p in atlas_parts):
+        par = next(p for p in atlas_parts if p['ch'] == '(')
+        atlas_parts.append({'ch': ')', 'im': par['im'].transpose(Image.FLIP_LEFT_RIGHT), 'desc': par['desc']})
+    # apostrophe : brodée, ou la virgule remontée à la hauteur des capitales
+    ap = next((p for p in atlas_parts if p['ch'] == '’'), None)
+    if ap is None:
+        v = next(p for p in atlas_parts if p['ch'] == ',')
+        ap = {'ch': '’', 'im': v['im'], 'desc': -(CAP - v['im'].height / EM)}
+        atlas_parts.append(ap)
     atlas_parts.append({'ch': "'", 'im': ap['im'], 'desc': ap['desc']})
 
     # assemblage de l'atlas (rangées de 1024 px)

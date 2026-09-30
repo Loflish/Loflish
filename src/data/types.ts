@@ -75,12 +75,6 @@ export type RubriqueId =
   | 'aimeVivre'
   | 'petitesChoses';
 
-export interface Version {
-  v: number;
-  date: string;
-  note: string;
-}
-
 export interface Parametres {
   droitsReutilisation: boolean;
   archivageLongueDuree: boolean;
@@ -114,7 +108,6 @@ export interface Trace {
   };
   rubriques: Partial<Record<RubriqueId, Element[]>>;
   medias: Media[];
-  versions: Version[];
   /**
    * Date (ISO) à laquelle l'auteur a scellé ses réponses : la trace devient alors
    * publique, et ses réponses ne changent plus pendant cinq ans.
@@ -177,8 +170,12 @@ export const MAX_MEDIAS = 20;
 
 /** Combien de fragments peut encore recevoir une rubrique (ou un sens). */
 export function placesRestantes(items: Element[], rubrique: RubriqueId, sens?: Sens): number {
-  const list = rubrique === 'sens' ? items.filter((e) => e.sens === sens) : items;
-  return Math.max(0, MAX_FRAGMENTS - list.length);
+  return Math.max(0, MAX_FRAGMENTS - groupe(items, rubrique, sens).length);
+}
+
+/** Les fragments qui se partagent les mêmes limites : la rubrique entière, ou un seul sens (chaque sens compte comme une rubrique). */
+export function groupe(items: Element[], rubrique: RubriqueId, sens?: Sens): Element[] {
+  return rubrique === 'sens' ? items.filter((e) => e.sens === sens) : items;
 }
 
 /** Catégories proposées pour « Œuvres / cultures » (saisie libre possible avec « Autre »). */

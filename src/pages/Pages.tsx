@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Footer, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
+import { EDITIONS, tracesDeLEdition } from '../data/archives';
 import { allTraces } from '../data/store';
 import { useMuseumMode } from '../lib/museum';
 
@@ -170,17 +171,26 @@ export function Juridique() {
 }
 
 export function Archives() {
-  const n = allTraces().length;
+  const traces = allTraces();
   return (
     <Page className="archives">
       <h1 className="page-titre">Archives</h1>
       <p className="lead">La croissance du musée fait partie de son histoire. Ce n’est pas une popularité : c’est la taille de la mémoire collective.</p>
       <div className="frise-cadre">
         <ol className="frise">
-          <li>
-            <span className="frise-date">2026</span>
-            <span className="frise-texte">Ouverture du musée — {n.toLocaleString('fr-FR')} présences (démonstration)</span>
-          </li>
+          {EDITIONS.map((e) => (
+            <li key={e.id}>
+              <Link to={`/archives/${e.id}`} className="frise-lien">
+                <span className="frise-date">{e.titre}</span>
+                <span className="frise-texte">
+                  {e.note} — {tracesDeLEdition(traces, e).length.toLocaleString('fr-FR')} présences (démonstration)
+                  <span className="frise-ouvrir">
+                    Ouvrir la constellation <Icon name="fleche" size={14} />
+                  </span>
+                </span>
+              </Link>
+            </li>
+          ))}
           <li>
             <span className="frise-date">À venir</span>
             <span className="frise-texte">Premier instantané daté du musée, confié à une archive de très longue durée.</span>

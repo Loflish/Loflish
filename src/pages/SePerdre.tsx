@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BubbleImage, Dock, Logo } from '../components/Chrome';
+import { BubbleImage, Dock } from '../components/Chrome';
 import { TexteBrode } from '../components/TexteBrode';
+import { BoutonPartager, lienTrace } from '../components/Partager';
 import { Icon } from '../components/Icon';
 import { allTraces, apercu, TYPE_LABEL } from '../data/store';
 import { shuffle } from '../lib/random';
@@ -55,9 +56,6 @@ export function SePerdre() {
 
   return (
     <div className="perdre">
-      <div className="explorer-logo">
-        <Logo />
-      </div>
       <h1 className="sr-only">Se perdre — rencontrer une présence au hasard</h1>
 
       <div className="perdre-scene">
@@ -90,20 +88,7 @@ export function SePerdre() {
         <button className="lien-discret" onClick={() => go(-1)} disabled={i === 0}>
           <Icon name="retour" size={16} /> Précédent
         </button>
-        <button
-          className="lien-discret"
-          onClick={async () => {
-            const url = `${window.location.origin}${window.location.pathname}#/trace/${t.id}`;
-            try {
-              if (navigator.share) await navigator.share({ title: t.nom, url });
-              else await navigator.clipboard.writeText(url);
-            } catch {
-              /* annulé */
-            }
-          }}
-        >
-          <Icon name="partager" size={16} /> Partager
-        </button>
+        <BoutonPartager titre={t.nom} url={lienTrace(t.id)} />
         <button className="lien-discret" onClick={() => go(1)}>
           Suivant <Icon name="fleche" size={16} />
         </button>

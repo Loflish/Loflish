@@ -3,7 +3,7 @@ import { hashString, pick, rng, shuffle } from '../lib/random';
 import { MEMOIRES, NOMS, PAYS, POOL, PRENOMS, PSEUDOS, Q1, Q2, Q3, Q4, SENS_POOL } from './pools';
 import { SAKINAH } from './sakinah';
 import { useSyncExternalStore } from 'react';
-import { MAX_EN_AVANT, MAX_MEDIAS, placesRestantes, type Element, type Media, type RubriqueId, type Trace } from './types';
+import { MAX_EN_AVANT, MAX_MEDIAS, groupe, placesRestantes, type Element, type Media, type RubriqueId, type Trace } from './types';
 
 /**
  * Registre des traces du prototype.
@@ -64,7 +64,6 @@ function generate(count: number): Trace[] {
       majLe: cree,
       rubriques,
       medias: [],
-      versions: [{ v: 1, date: cree, note: 'Création du profil' }],
       demo: true,
     };
     if (isMemoire) {
@@ -79,6 +78,25 @@ function generate(count: number): Trace[] {
 }
 
 const LOCAL_KEY = 'nmm:mes-traces';
+
+/**
+ * Une fois, au premier chargement de cette version : on efface les traces
+ * créées pendant les essais du prototype (traces, brouillon, fichiers
+ * déposés), pour repartir d'un musée propre sur cet appareil.
+ */
+const PURGE = 'nmm:purge-essais-1';
+function purgerEssais(): void {
+  try {
+    if (localStorage.getItem(PURGE)) return;
+    localStorage.removeItem(LOCAL_KEY);
+    localStorage.removeItem('nmm:brouillon');
+    indexedDB?.deleteDatabase('nmm-fichiers');
+    localStorage.setItem(PURGE, '1');
+  } catch {
+    /* stockage indisponible : rien à effacer */
+  }
+}
+purgerEssais();
 
 /**
  * Traces enregistrées avec un ancien format : l'ancienne rubrique « Objets /
@@ -164,15 +182,13 @@ export function isMine(id: string): boolean {
   return local.some((t) => t.id === id);
 }
 
-function touch(t: Trace, note: string): Trace {
+function touch(t: Trace): Trace {
   const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  const last = t.versions[0];
-  const versions = last && last.date === today ? t.versions : [{ v: (last?.v ?? 0) + 1, date: today, note }, ...t.versions];
-  return { ...t, majLe: today, versions };
+  return { ...t, majLe: today };
 }
 
-export function updateLocal(id: string, fn: (t: Trace) => Trace, note = 'Mise à jour des fragments'): void {
-  local = local.map((t) => (t.id === id ? touch(fn(t), note) : t));
+export function updateLocal(id: string, fn: (t: Trace) => Trace): void {
+  local = local.map((t) => (t.id === id ? touch(fn(t)) : t));
   save();
 }
 
@@ -222,22 +238,18 @@ export function peutCreer(type: Trace['type']): boolean {
 export function modifierReponses(id: string, questions: Trace['questions'], apercuMemoire?: string): void {
   const t = local.find((x) => x.id === id);
   if (!t || estScellee(t)) return;
-  updateLocal(
-    id,
-    (t) => ({
-      ...t,
-      questions: questions ?? t.questions,
-      memoire: t.memoire && apercuMemoire !== undefined ? { ...t.memoire, aperçu: apercuMemoire } : t.memoire,
-    }),
-    'Nouvelles réponses',
-  );
-  updateLocal(id, (x) => ({ ...x, scelleeLe: new Date().toISOString() }), 'Nouvelles réponses');
+  updateLocal(id, (t) => ({
+    ...t,
+    questions: questions ?? t.questions,
+    memoire: t.memoire && apercuMemoire !== undefined ? { ...t.memoire, aperçu: apercuMemoire } : t.memoire,
+    scelleeLe: new Date().toISOString(),
+  }));
 }
 
 /**
  * Dépose un fragment (avec au plus un média) : il est scellé aussitôt. Refusé
  * si la rubrique (ou le sens) a déjà ses 10 fragments. Posé en avant s'il reste
- * une des 5 places.
+ * une des 5 places de la rubrique (ou du sens).
  */
 export function addElement(id: string, rubrique: RubriqueId, e: Element, medias: Media[] = []): boolean {
   const t = local.find((x) => x.id === id);
@@ -245,7 +257,7 @@ export function addElement(id: string, rubrique: RubriqueId, e: Element, medias:
   const maintenant = new Date().toISOString();
   updateLocal(id, (t) => {
     const list = t.rubriques[rubrique] ?? [];
-    const enAvant = !!e.enAvant && list.filter((x) => x.enAvant).length < MAX_EN_AVANT;
+    const enAvant = !!e.enAvant && groupe(list, rubrique, e.sens).filter((x) => x.enAvant).length < MAX_EN_AVANT;
     const el: Element = { ...e, enAvant, scelleLe: maintenant, medias: e.medias?.slice(0, 1) };
     const ms = medias.slice(0, 1).map((m) => ({ ...m, origine: rubrique, scelleLe: maintenant }));
     return { ...t, rubriques: { ...t.rubriques, [rubrique]: [...list, el] }, medias: [...t.medias, ...ms] };
@@ -261,23 +273,50 @@ export function removeElement(id: string, rubrique: RubriqueId, elementId: strin
   }));
 }
 
-/** Poser en avant (ou non) un fragment : c'est un choix d'affichage, toujours possible, 5 au plus. */
+/**
+ * Déplace un élément mis en avant d'un cran parmi les autres mis en avant
+ * (même rubrique, même sens) : l'ordre du profil suit l'ordre de la liste.
+ */
+function deplacer<T extends { id: string; enAvant?: boolean }>(list: T[], idEl: string, sens: -1 | 1, meme: (x: T) => boolean): T[] {
+  const i = list.findIndex((x) => x.id === idEl);
+  if (i < 0 || !list[i]!.enAvant) return list;
+  let j = i + sens;
+  while (j >= 0 && j < list.length && !(list[j]!.enAvant && meme(list[j]!))) j += sens;
+  if (j < 0 || j >= list.length) return list;
+  const out = list.slice();
+  [out[i], out[j]] = [out[j]!, out[i]!];
+  return out;
+}
+
+/**
+ * Poser en avant (ou non) un fragment : c'est un choix d'affichage, toujours
+ * possible, même scellé ; 5 au plus par rubrique (par sens pour les 5 sens).
+ */
 export function basculerEnAvant(id: string, rubrique: RubriqueId, elementId: string): void {
-  updateLocal(
-    id,
-    (t) => {
-      const list = t.rubriques[rubrique] ?? [];
-      const n = list.filter((e) => e.enAvant).length;
-      return {
-        ...t,
-        rubriques: {
-          ...t.rubriques,
-          [rubrique]: list.map((e) => (e.id === elementId ? { ...e, enAvant: e.enAvant ? false : n < MAX_EN_AVANT } : e)),
-        },
-      };
-    },
-    'Mise en avant modifiée',
-  );
+  updateLocal(id, (t) => {
+    const list = t.rubriques[rubrique] ?? [];
+    const cible = list.find((e) => e.id === elementId);
+    if (!cible) return t;
+    const n = groupe(list, rubrique, cible.sens).filter((e) => e.enAvant).length;
+    return {
+      ...t,
+      rubriques: {
+        ...t.rubriques,
+        [rubrique]: list.map((e) => (e.id === elementId ? { ...e, enAvant: e.enAvant ? false : n < MAX_EN_AVANT } : e)),
+      },
+    };
+  });
+}
+
+/** Trier les fragments mis en avant : monter (-1) ou descendre (+1) d'un cran. */
+export function deplacerEnAvant(id: string, rubrique: RubriqueId, elementId: string, sens: -1 | 1): void {
+  updateLocal(id, (t) => {
+    const list = t.rubriques[rubrique] ?? [];
+    const cible = list.find((e) => e.id === elementId);
+    if (!cible) return t;
+    const meme = (e: Element) => rubrique !== 'sens' || e.sens === cible.sens;
+    return { ...t, rubriques: { ...t.rubriques, [rubrique]: deplacer(list, elementId, sens, meme) } };
+  });
 }
 
 /** Les médias & documents de la trace elle-même (les médias joints aux fragments n'en font pas partie). */
@@ -289,27 +328,22 @@ export function mediasLibres(t: Trace): Media[] {
 export function addMedia(id: string, m: Media): boolean {
   const t = local.find((x) => x.id === id);
   if (!t || mediasLibres(t).length >= MAX_MEDIAS) return false;
-  updateLocal(
-    id,
-    (t) => {
-      const libres = mediasLibres(t);
-      const enAvant = libres.filter((x) => x.enAvant).length < MAX_EN_AVANT;
-      return { ...t, medias: [...t.medias, { ...m, origine: undefined, enAvant, scelleLe: new Date().toISOString() }] };
-    },
-    'Ajout de médias',
-  );
+  updateLocal(id, (t) => {
+    const enAvant = mediasLibres(t).filter((x) => x.enAvant).length < MAX_EN_AVANT;
+    return { ...t, medias: [...t.medias, { ...m, origine: undefined, enAvant, scelleLe: new Date().toISOString() }] };
+  });
   return true;
 }
 
 export function basculerMediaEnAvant(id: string, mediaId: string): void {
-  updateLocal(
-    id,
-    (t) => {
-      const n = mediasLibres(t).filter((m) => m.enAvant).length;
-      return { ...t, medias: t.medias.map((m) => (m.id === mediaId && !m.origine ? { ...m, enAvant: m.enAvant ? false : n < MAX_EN_AVANT } : m)) };
-    },
-    'Mise en avant modifiée',
-  );
+  updateLocal(id, (t) => {
+    const n = mediasLibres(t).filter((m) => m.enAvant).length;
+    return { ...t, medias: t.medias.map((m) => (m.id === mediaId && !m.origine ? { ...m, enAvant: m.enAvant ? false : n < MAX_EN_AVANT } : m)) };
+  });
+}
+
+export function deplacerMediaEnAvant(id: string, mediaId: string, sens: -1 | 1): void {
+  updateLocal(id, (t) => ({ ...t, medias: deplacer(t.medias, mediaId, sens, (m) => !m.origine) }));
 }
 
 /** Les éléments posés en avant d'abord (5 au plus), puis tous les autres. */

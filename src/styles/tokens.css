@@ -14,6 +14,8 @@
   --papier-dense: rgba(243, 241, 236, 0.92);
 
   --encre: #2f2c33;
+  /* le fil des broderies (lettres, icônes) */
+  --fil: #3a3640;
   --encre-2: #57535c;
   --encre-3: #85808b;
   --filet: rgba(47, 44, 51, 0.14);
@@ -22,7 +24,8 @@
   --focus: #2f2c33;
 
   --serif: 'Newsreader Variable', 'Newsreader', 'Iowan Old Style', Georgia, serif;
-  --sans: 'Manrope Variable', 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sans: 'IBM Plex Sans', 'IBM Plex Sans Arabic', 'IBM Plex Sans Hebrew', 'IBM Plex Sans Devanagari', 'IBM Plex Sans Thai',
+    'Hiragino Sans', 'Noto Sans CJK JP', 'Noto Sans JP', 'Apple SD Gothic Neo', 'Malgun Gothic', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* échelle typographique — respirante */
   --t-xs: 0.78rem;

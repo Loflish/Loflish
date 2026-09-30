@@ -376,6 +376,21 @@ ul {
 .brode-mot {
   display: inline-block;
   white-space: nowrap;
+  max-width: 100%;
+}
+.brode-mot.brode-long {
+  display: inline;
+  white-space: normal;
+}
+/* aucun texte déposé ne sort de son cadre, même un mot sans fin */
+.texte-brode,
+.apercu-texte,
+.perdre-texte,
+.question-reponse,
+.element-texte,
+.salle-reponse {
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 .brode-lettre {
   position: relative;
@@ -389,12 +404,54 @@ ul {
   background-repeat: no-repeat;
   mix-blend-mode: multiply;
 }
-.brode-repli {
-  font-family: var(--serif);
-  font-style: italic;
+/* ce qui n'a pas sa broderie : IBM Plex Sans, le même dessin de lettre, dans la couleur du fil */
+.brode-repli,
+.texte-plex {
+  font-family: var(--sans);
+  font-style: normal;
+  font-weight: 400;
+  font-size: 0.9em;
+  /* un gris de fil : les lettres brodées, cousues en contour, paraissent plus légères qu'un texte plein */
+  color: #56525b;
+  unicode-bidi: isolate;
+}
+.texte-plex {
+  font-size: 0.94em;
+  line-height: 1.6;
 }
 .apercu-texte .texte-brode,
 .perdre-texte .texte-brode,
-.question-200 .texte-brode {
+.question-200 .texte-brode,
+.apercu-texte .texte-plex,
+.perdre-texte .texte-plex,
+.question-200 .texte-plex {
   font-size: 1.28em;
+}
+
+/* partager : quand le navigateur refuse la copie, le lien s'affiche */
+.partager {
+  position: relative;
+  display: inline-flex;
+}
+.partager-manuel {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.7rem;
+  width: min(26rem, 86vw);
+  background: var(--papier-dense);
+  background-image: var(--papier-chiffon);
+  background-size: 520px 520px;
+  border: 1px solid var(--filet);
+  border-radius: var(--rayon);
+  animation: emerge 400ms var(--doux) both;
+}
+.partager-manuel input {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-xs);
 }

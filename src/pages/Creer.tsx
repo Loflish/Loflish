@@ -5,7 +5,7 @@ import { TexteBrode } from '../components/TexteBrode';
 import { Icon } from '../components/Icon';
 import { peutCreer, publishLocal, useMesTraces } from '../data/store';
 import { LIMITES, QUESTIONS, type Trace } from '../data/types';
-import { NB_MATIERES, loadCatalogue } from '../lib/hd';
+import { MATIERE_COUSUE, NB_MATIERES, loadCatalogue } from '../lib/hd';
 import { GRIS_PALETTE, colorById } from '../lib/palette';
 import { hashString } from '../lib/random';
 import { useMuseum, useMuseumMode } from '../lib/museum';
@@ -26,7 +26,7 @@ interface Draft {
   nom: string;
   pays: string;
   couleur: string;
-  /** matière d'aquarelle de la bulle (1 à 77), choisie dans le catalogue complet */
+  /** matière de la bulle (0 = aquarelle cousue, 1 à 77 = taches), choisie dans le catalogue complet ; -1 tant qu'elle n'est pas tirée */
   matiere: number;
   q: [string, string, string, string];
   relation: string;
@@ -44,7 +44,7 @@ const EMPTY: Draft = {
   nom: '',
   pays: '',
   couleur: '',
-  matiere: 0,
+  matiere: -1,
   q: ['', '', '', ''],
   relation: '',
   origine: '',
@@ -54,6 +54,11 @@ const EMPTY: Draft = {
 };
 
 const KEY = 'nmm:brouillon';
+
+/** Une matière au hasard dans tout le catalogue : l'aquarelle cousue (0) ou l'une des 77 taches. */
+function matiereAuHasard(): number {
+  return Math.floor(Math.random() * (NB_MATIERES + 1));
+}
 
 export function Creer() {
   useMuseumMode('creer');
@@ -66,9 +71,9 @@ export function Creer() {
       // un brouillon pour une bulle déjà émise ne peut pas aboutir (deux bulles au plus, différentes)
       if (x.kind && !peutCreer(x.kind)) x.kind = null;
       // une matière est déjà posée au hasard : on peut la garder ou en choisir une autre
-      return x.matiere ? x : { ...x, matiere: 1 + Math.floor(Math.random() * NB_MATIERES) };
+      return x.matiere >= 0 ? x : { ...x, matiere: matiereAuHasard() };
     } catch {
-      return { ...EMPTY, matiere: 1 + Math.floor(Math.random() * NB_MATIERES) };
+      return { ...EMPTY, matiere: matiereAuHasard() };
     }
   });
   const [step, setStep] = useState(0);
@@ -126,7 +131,7 @@ export function Creer() {
       nom: displayName,
       type: d.kind === 'memoire' ? 'memoire' : 'personnelle',
       couleur: d.couleur,
-      matiere: d.matiere,
+      matiere: d.matiere >= 0 ? d.matiere : undefined,
       pays: d.pays || undefined,
       creeLe: today,
       majLe: today,
@@ -137,7 +142,6 @@ export function Creer() {
           : undefined,
       rubriques: d.kind === 'memoire' ? { souvenirs: [{ id: 'm0', texte: d.souvenir }] } : {},
       medias: [],
-      versions: [{ v: 1, date: today, note: 'Création du profil' }],
       parametres: {
         droitsReutilisation: d.opts.broderie || d.opts.musee,
         archivageLongueDuree: d.opts.archives,
@@ -457,7 +461,8 @@ function BulleChoix({
   useEffect(() => {
     void loadCatalogue();
   }, []);
-  const matieres = useMemo(() => Array.from({ length: NB_MATIERES }, (_, i) => i + 1), []);
+  // l'aquarelle cousue d'abord, puis les 77 taches
+  const matieres = useMemo(() => Array.from({ length: NB_MATIERES + 1 }, (_, i) => i), []);
   return (
     <div className="bulle-choix">
       <div className="bulle-choix-apercu">
@@ -487,7 +492,8 @@ function BulleChoix({
                   key={n}
                   role="radio"
                   aria-checked={matiere === n}
-                  aria-label={`Matière ${n} sur ${NB_MATIERES}`}
+                  aria-label={n === MATIERE_COUSUE ? 'Aquarelle cousue' : `Tache d’aquarelle ${n} sur ${NB_MATIERES}`}
+                  title={n === MATIERE_COUSUE ? 'Aquarelle cousue' : undefined}
                   className="couleur matiere"
                   style={{ transform: `translate(${dx}px, ${dy}px)` }}
                   onClick={() => onChange({ matiere: n })}
@@ -497,7 +503,7 @@ function BulleChoix({
               );
             })}
           </div>
-          <button type="button" className="lien-discret matiere-hasard" onClick={() => onChange({ matiere: 1 + Math.floor(Math.random() * NB_MATIERES) })}>
+          <button type="button" className="lien-discret matiere-hasard" onClick={() => onChange({ matiere: matiereAuHasard() })}>
             Au hasard
           </button>
         </fieldset>

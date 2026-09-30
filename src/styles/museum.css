@@ -21,6 +21,11 @@
   cursor: grab;
   transition: opacity var(--lent) var(--doux);
 }
+/* hors de la constellation, la toile s'efface d'un fondu (le moteur, lui, s'arrête aussitôt) */
+.backdrop:not(.mode-explore) .backdrop-constellation {
+  opacity: 0;
+  transition-duration: 700ms;
+}
 .backdrop-constellation:focus-visible {
   outline: none;
 }
@@ -197,12 +202,14 @@
   align-items: flex-end;
   gap: 0.2rem;
 }
-.explorer-reset {
-  position: fixed;
-  left: clamp(1rem, 2.6vw, 2.2rem);
-  bottom: 1.6rem;
-  z-index: 4;
-  animation: apercu-in 700ms var(--doux) both;
+.explorer-edition {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  margin: 0.2rem 0 0 0.3rem;
+  font-size: var(--t-xs);
+  color: var(--encre-2);
+  pointer-events: auto;
 }
 .explorer-hint {
   position: fixed;
@@ -242,9 +249,6 @@
   }
   .explorer-hint {
     bottom: 6.2rem;
-  }
-  .explorer-reset {
-    bottom: 5.4rem;
   }
 }
 
@@ -617,9 +621,24 @@
 .fond-peint.fond-tissu.is-on {
   opacity: 1;
 }
-/* sur le tissu, les nappes du shader se font presque oublier */
+/* hors de la constellation, plus de nappes : le papier seul */
 .backdrop:not(.mode-explore) .backdrop-atmosphere.sur-fond-peint {
-  opacity: 0.12;
+  opacity: 0;
+}
+.backdrop-atmosphere {
+  transition: opacity 1800ms var(--doux);
+}
+/* le papier de la carte d'aperçu, posé sur le tissu : ivoire dense, le tissu transparaît à peine */
+.papier-page {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--papier-dense);
+  opacity: 0;
+  transition: opacity 1800ms var(--doux);
+}
+.backdrop:not(.mode-explore) .papier-page {
+  opacity: 1;
 }
 .fibres {
   position: absolute;
@@ -633,8 +652,7 @@
 .backdrop:not(.mode-explore) .fibres {
   opacity: 1;
 }
-.mode-explore .backdrop-atmosphere.sur-fond-peint,
-.mode-perdre .backdrop-atmosphere.sur-fond-peint {
+.mode-explore .backdrop-atmosphere.sur-fond-peint {
   opacity: 0.3;
 }
 @keyframes fond-respire {
