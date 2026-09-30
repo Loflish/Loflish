@@ -208,7 +208,7 @@ export function TracePage() {
               <MediaThumb key={m.id} m={m} size="s" />
             ))}
             {auteur && (
-              <button className="media-ajout" onClick={() => alert('Prototype : l’ajout de médias sera branché au stockage.')}>
+              <button className="media-ajout" title="Prototype : l’ajout de médias sera branché au stockage des fichiers.">
                 <Icon name="plus" size={20} />
                 <span>Ajouter des médias</span>
               </button>
