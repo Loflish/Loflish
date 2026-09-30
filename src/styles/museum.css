@@ -228,6 +228,25 @@
 .explorer-hint.is-hidden {
   opacity: 0;
 }
+.explorer-vide {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  max-width: min(24rem, calc(100vw - 2rem));
+  text-align: center;
+  font-family: var(--serif, inherit);
+  font-size: 1.15rem;
+  color: var(--encre-2, var(--encre-3));
+  line-height: 1.6;
+}
+.explorer-vide a {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+}
+
 .demo-note {
   position: fixed;
   right: clamp(1rem, 2.6vw, 2.2rem);

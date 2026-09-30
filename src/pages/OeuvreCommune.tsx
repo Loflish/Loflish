@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Dock, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { useMuseumMode } from '../lib/museum';
@@ -284,6 +285,8 @@ export function OeuvreCommune() {
   const n = traits.length;
   const consigne = oeuvre.mien
     ? 'Ton trait est cousu. Il fait partie de l’œuvre, pour toujours. Merci.'
+    : oeuvre.connexion
+      ? 'Pour coudre ton trait, entre d’abord dans le musée (un lien arrive par e-mail) : un seul trait par personne.'
     : !oeuvre.peutCoudre
       ? 'Ton accès à cette page permet de regarder l’œuvre, pas d’y coudre.'
       : arrivee
@@ -322,6 +325,11 @@ export function OeuvreCommune() {
               Recommencer
             </button>
           </div>
+        )}
+        {oeuvre.connexion && !oeuvre.mien && (
+          <Link to="/compte" className="lien-entrer">
+            Entrer dans le musée <Icon name="fleche" size={16} />
+          </Link>
         )}
         {depart && !arrivee && (
           <button className="lien-discret petit" onClick={recommencer}>

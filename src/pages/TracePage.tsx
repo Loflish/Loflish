@@ -7,7 +7,7 @@ import { Icon } from '../components/Icon';
 import { FragmentEditor } from '../components/FragmentEditor';
 import { ChoixMedia, MediaThumb, MediaVue, OuvrirMedia, type MediaChoisi } from '../components/Media';
 import {
-  addMedia,
+  deposerMedia,
   basculerEnAvant,
   basculerMediaEnAvant,
   deplacerEnAvant,
@@ -16,17 +16,18 @@ import {
   enAvantDabord,
   estScelle,
   estScellee,
-  getTrace,
   isMine,
   mediasLibres,
   modifierReponses,
   removeElement,
   reouverture,
   TYPE_LABEL,
+  useDerniereErreur,
   useMesTraces,
+  useTrace,
 } from '../data/store';
 import { LIMITES, MAX_EN_AVANT, MAX_MEDIAS, QUESTIONS, RUBRIQUES, type Element, type Media, type Rubrique, type RubriqueId, type Trace } from '../data/types';
-import { creerMedia } from '../lib/fichiers';
+import { appel, EN_LIGNE } from '../lib/api';
 import { colorById } from '../lib/palette';
 import { useMuseumMode } from '../lib/museum';
 
@@ -36,16 +37,19 @@ type SalleState =
   | { kind: 'rubrique'; r: Rubrique }
   | { kind: 'medias' }
   | { kind: 'ajout-media' }
-  | { kind: 'question'; i: number };
+  | { kind: 'question'; i: number }
+  | { kind: 'signaler' };
 
 export function TracePage() {
   useMuseumMode('trace');
   const { id = '' } = useParams();
   useMesTraces(); // se met à jour quand on ajoute un fragment
-  const trace = getTrace(id);
+  // prototype : tout est déjà là ; en ligne : le profil complet se charge à la demande
+  const { trace, chargement } = useTrace(id);
+  const erreurServeur = useDerniereErreur();
   const location = useLocation();
   const editable = isMine(id);
-  const mine = id === 'sakinah' || editable;
+  const mine = (!EN_LIGNE && id === 'sakinah') || editable;
   const [auteur, setAuteur] = useState(mine);
   const [salle, setSalle] = useState<SalleState | null>(null);
   const scellee = !!trace && estScellee(trace);
@@ -64,6 +68,14 @@ export function TracePage() {
     const r = RUBRIQUES.find((x) => x.id === ouvrir);
     if (r) setSalle({ kind: 'rubrique', r });
   }, [id, mine, location.state]);
+
+  if (!trace && chargement) {
+    return (
+      <main className="page page-texte">
+        <p className="lead muted">Un instant, la mémoire s’ouvre…</p>
+      </main>
+    );
+  }
 
   if (!trace) {
     return (
@@ -97,10 +109,25 @@ export function TracePage() {
             </div>
           )}
           <BoutonPartager titre={trace.nom} url={lienTrace(trace.id)} />
+          {!editable && (
+            <button className="lien-discret" onClick={() => setSalle({ kind: 'signaler' })}>
+              Signaler
+            </button>
+          )}
         </div>
       </nav>
 
       {editable && auteur && <Bandeau trace={trace} />}
+      {editable && trace.statut === 'masquee' && (
+        <p className="trace-bandeau trace-bandeau-masquee emerge" role="status">
+          Ta trace est masquée pour l’instant par l’équipe du musée{trace.masqueeRaison ? ` : ${trace.masqueeRaison}` : '.'} Écris-nous pour en parler.
+        </p>
+      )}
+      {erreurServeur && (
+        <p className="trace-bandeau trace-bandeau-erreur" role="alert">
+          {erreurServeur}
+        </p>
+      )}
 
       {/* ——— En-tête : bulle + identité */}
       <header className="trace-head emerge">
@@ -304,6 +331,7 @@ export function TracePage() {
             </div>
           )}
           {salle.kind === 'medias' && <MediasTout trace={trace} auteur={canAjouter} />}
+          {salle.kind === 'signaler' && <Signaler trace={trace} onDone={() => setSalle(null)} />}
           {salle.kind === 'ajout-media' && <MediaAjout trace={trace} onDone={() => setSalle({ kind: 'medias' })} />}
         </Salle>
       )}
@@ -403,6 +431,8 @@ function salleTitre(s: SalleState, t: Trace): string {
       return 'Déposer un média ou un document';
     case 'question':
       return `${t.nom} — question ${s.i + 1}`;
+    case 'signaler':
+      return 'Signaler cette trace';
   }
 }
 
@@ -639,8 +669,7 @@ function MediaAjout({ trace, onDone }: { trace: Trace; onDone: () => void }) {
     if (!confirmer) return setConfirmer(true);
     setEnvoi(true);
     try {
-      const m = await creerMedia(choix, `m-${Date.now().toString(36)}`, titre.trim());
-      if (!addMedia(trace.id, { ...m, legende: legende.trim() || undefined })) throw new Error(`Tu as déjà déposé ${MAX_MEDIAS} médias.`);
+      await deposerMedia(trace.id, choix, titre.trim(), legende.trim());
       onDone();
     } catch (err) {
       setErreur(err instanceof Error && err.message ? err.message : 'Ce média n’a pas pu être déposé.');
@@ -717,6 +746,82 @@ function Salle({ titre, onClose, children }: { titre: string; onClose: () => voi
         </div>
         <div className="salle-corps">{children}</div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Signaler une trace : un danger, de la haine, une vie privée exposée, une
+ * usurpation… La modération du musée lit chaque signalement.
+ */
+function Signaler({ trace, onDone }: { trace: Trace; onDone: () => void }) {
+  const [motif, setMotif] = useState<'danger' | 'haine' | 'intime' | 'usurpation' | 'autre'>('autre');
+  const [message, setMessage] = useState('');
+  const [etat, setEtat] = useState<'' | 'envoi' | 'ok' | 'erreur'>('');
+  const [erreur, setErreur] = useState('');
+  const MOTIFS = [
+    ['danger', 'Quelqu’un est en danger'],
+    ['haine', 'Haine, harcèlement, violence'],
+    ['intime', 'Une vie privée exposée sans accord'],
+    ['usurpation', 'Quelqu’un se fait passer pour un autre'],
+    ['autre', 'Autre chose'],
+  ] as const;
+  if (etat === 'ok')
+    return (
+      <div className="salle-signaler">
+        <p>Merci. L’équipe du musée va lire ton signalement avec attention.</p>
+        <button className="lien-entrer" onClick={onDone}>
+          Revenir à la trace <Icon name="fleche" size={16} />
+        </button>
+      </div>
+    );
+  const envoyer = async () => {
+    if (!EN_LIGNE) {
+      setErreur('Dans ce prototype, les signalements ne partent nulle part : ils arriveront avec la version en ligne.');
+      setEtat('erreur');
+      return;
+    }
+    setEtat('envoi');
+    try {
+      await appel('POST', '/api/signalements', { traceId: trace.id, motif, message: message.trim() || undefined });
+      setEtat('ok');
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : 'Le signalement n’a pas pu partir.');
+      setEtat('erreur');
+    }
+  };
+  return (
+    <div className="salle-signaler editeur">
+      {motif === 'danger' && (
+        <p className="mot-fondateur">
+          Si quelqu’un est en danger immédiat, appelle les services d’urgence. Pour parler à quelqu’un, gratuitement et dans ta langue :{' '}
+          <a href="https://findahelpline.com" target="_blank" rel="noreferrer">
+            findahelpline.com
+          </a>
+          .
+        </p>
+      )}
+      <fieldset className="field">
+        <legend className="field-label">Ce qui ne va pas</legend>
+        {MOTIFS.map(([v, l]) => (
+          <label key={v} className="check">
+            <input type="radio" name="motif" checked={motif === v} onChange={() => setMotif(v)} />
+            <span>{l}</span>
+          </label>
+        ))}
+      </fieldset>
+      <label className="field">
+        <span className="field-label">Quelques mots (facultatif)</span>
+        <textarea value={message} maxLength={2000} rows={4} onChange={(e) => setMessage(e.target.value)} />
+      </label>
+      {etat === 'erreur' && (
+        <p className="editeur-erreur" role="alert">
+          {erreur}
+        </p>
+      )}
+      <button className="bouton" onClick={envoyer} disabled={etat === 'envoi'}>
+        {etat === 'envoi' ? 'Envoi…' : 'Envoyer le signalement'}
+      </button>
     </div>
   );
 }

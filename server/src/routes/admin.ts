@@ -107,14 +107,26 @@ export async function routesAdmin(app: FastifyInstance) {
     return { ok: true };
   });
 
-  // l'œuvre commune : masquer un trait
-  app.post('/api/admin/traits/:id/masquer', async (req) => {
-    const c = exigerRole(req, 'moderation', 'admin');
-    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
-    await requete('update traits set masque = true where id = $1', [id]);
-    await journaliser(c.id, 'trait.masque', id);
-    return { ok: true };
+  // l'œuvre commune : les derniers traits cousus, masquer ou réafficher un trait
+  app.get('/api/admin/traits', async (req) => {
+    exigerRole(req, 'moderation', 'admin');
+    const lignes = await requete(
+      `select t.id, t.x1, t.y1, t.x2, t.y2, t.masque, t.cousu_le, c.email
+         from traits t left join comptes c on c.id = t.compte_id order by t.cousu_le desc limit 300`,
+    );
+    return { traits: lignes };
   });
+
+  for (const [chemin, masque] of [['masquer', true], ['reafficher', false]] as const) {
+    app.post(`/api/admin/traits/:id/${chemin}`, async (req) => {
+      const c = exigerRole(req, 'moderation', 'admin');
+      const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+      const r = await une('update traits set masque = $2 where id = $1 returning id', [id, masque]);
+      if (!r) throw new Refus(404, 'Ce trait n’existe pas.', 'introuvable');
+      await journaliser(c.id, masque ? 'trait.masque' : 'trait.reaffiche', id);
+      return { ok: true };
+    });
+  }
 
   // ——— administration
   app.get('/api/admin/comptes', async (req) => {

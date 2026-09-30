@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { exigerCompte, Refus } from '../auth';
 import { config } from '../config';
 import { journaliser, requete, une } from '../db';
-import { LONGUEUR_MAX_TRAIT, MONDE } from '../regles';
+import { LONGUEUR_MAX_TRAIT, MONDE, RUBRIQUE_IDS } from '../regles';
 import { presence, trace, type LigneFragment, type LigneMedia, type LigneTrace } from '../serialiser';
 import { empreinte, jeton } from '../securite';
 import { stockage } from '../stockage';
@@ -31,18 +31,25 @@ export async function routesPubliques(app: FastifyInstance) {
     return { trace: trace(t, fragments, medias, auteur) };
   });
 
-  // rechercher un nom, un mot, un lieu (accents et majuscules ignorés)
+  // rechercher un nom, un mot, un lieu (accents et majuscules ignorés),
+  // et/ou les présences qui ont des fragments dans certaines rubriques
   app.get('/api/recherche', async (req) => {
-    const { q } = z.object({ q: z.string().trim().min(2).max(80) }).parse(req.query);
-    const motif = `%${q}%`;
+    const { q, rubriques } = z
+      .object({ q: z.string().trim().min(2).max(80).optional(), rubriques: z.string().max(400).optional() })
+      .parse(req.query);
+    const rubs = (rubriques ?? '').split(',').map((r) => r.trim()).filter((r) => RUBRIQUE_IDS.has(r));
+    if (!q && rubs.length === 0) throw new Refus(400, 'Écris au moins deux lettres, ou choisis une rubrique.', 'recherche');
     const lignes = await requete<{ id: string }>(
-      `select distinct t.id from traces t left join fragments f on f.trace_id = t.id
-        where t.statut = 'publiee' and (
-          unaccent(t.nom) ilike unaccent($1) or unaccent(coalesce(t.pays, '')) ilike unaccent($1)
-          or unaccent(concat_ws(' ', t.q1, t.q2, t.q3, t.q4, t.memoire_apercu)) ilike unaccent($1)
-          or unaccent(concat_ws(' ', f.titre, f.texte, f.lieu)) ilike unaccent($1))
-        limit 200`,
-      [motif],
+      `select t.id from traces t
+        where t.statut = 'publiee'
+          and ($1::text is null or unaccent(t.nom) ilike unaccent($1) or unaccent(coalesce(t.pays, '')) ilike unaccent($1)
+               or unaccent(concat_ws(' ', t.q1, t.q2, t.q3, t.q4, t.memoire_apercu)) ilike unaccent($1)
+               or exists (select 1 from fragments f where f.trace_id = t.id
+                           and unaccent(concat_ws(' ', f.titre, f.texte, f.lieu)) ilike unaccent($1)))
+          and not exists (select 1 from unnest($2::text[]) r
+                           where not exists (select 1 from fragments f where f.trace_id = t.id and f.rubrique = r))
+        limit 1000`,
+      [q ? `%${q.replace(/[\\%_]/g, (c) => '\\' + c)}%` : null, rubs],
     );
     return { ids: lignes.map((l) => l.id) };
   });

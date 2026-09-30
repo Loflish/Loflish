@@ -7,6 +7,7 @@ import { RUBRIQUES, type RubriqueId, type Trace } from '../data/types';
 import { Dock, Logo } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { useMuseum, useMuseumMode } from '../lib/museum';
+import { appel, DEMO, EN_LIGNE } from '../lib/api';
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
@@ -129,7 +130,13 @@ export function Explorer() {
         </p>
       )}
 
-      <p className="demo-note">Prototype — les présences affichées sont des données de démonstration.</p>
+      {DEMO && <p className="demo-note">{EN_LIGNE ? 'Des présences de démonstration sont mêlées aux vraies.' : 'Prototype — les présences affichées sont des données de démonstration.'}</p>}
+      {traces.length === 0 && (
+        <p className="explorer-vide">
+          {edition ? 'Cette édition ne garde encore aucune présence.' : 'Le musée attend sa première présence.'}{' '}
+          {!edition && <Link to="/creer">Déposer la tienne</Link>}
+        </p>
+      )}
 
       {searchOpen && <SearchPanel traces={traces} onClose={() => setSearchOpen(false)} />}
       <Dock />
@@ -149,18 +156,44 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
   const allPays = useMemo(() => [...new Set(traces.map((x) => x.t.pays).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b, 'fr')), [traces]);
 
   const active = q.trim() !== '' || type !== 'tous' || rubs.length > 0 || pays !== '';
+
+  // En ligne, les bulles ne portent qu'un aperçu : le texte des fragments et les
+  // rubriques remplies sont cherchés par le serveur.
+  const [serveur, setServeur] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    const mot = q.trim();
+    if (!EN_LIGNE || (mot.length < 2 && rubs.length === 0)) {
+      setServeur(null);
+      return;
+    }
+    let annule = false;
+    const minuterie = setTimeout(() => {
+      const p = new URLSearchParams();
+      if (mot.length >= 2) p.set('q', mot);
+      if (rubs.length) p.set('rubriques', rubs.join(','));
+      appel<{ ids: string[] }>('GET', `/api/recherche?${p}`)
+        .then((d) => !annule && setServeur(new Set(d.ids)))
+        .catch(() => !annule && setServeur(new Set()));
+    }, 250);
+    return () => {
+      annule = true;
+      clearTimeout(minuterie);
+    };
+  }, [q, rubs]);
+
   const results = useMemo(() => {
     if (!active) return [];
     const nq = norm(q.trim());
     return traces
       .filter(({ t, text }) =>
-        (!nq || text.includes(' ' + nq)) &&
+        (serveur
+          ? serveur.has(t.id) || (rubs.length === 0 && !!nq && text.includes(' ' + nq))
+          : (!nq || text.includes(' ' + nq)) && rubs.every((r) => (t.rubriques[r]?.length ?? 0) > 0)) &&
         (type === 'tous' || t.type === type) &&
-        (!pays || t.pays === pays) &&
-        rubs.every((r) => (t.rubriques[r]?.length ?? 0) > 0),
+        (!pays || t.pays === pays),
       )
       .map((x) => x.t);
-  }, [traces, q, type, rubs, pays, active]);
+  }, [traces, q, type, rubs, pays, active, serveur]);
 
   useEffect(() => {
     input.current?.focus();

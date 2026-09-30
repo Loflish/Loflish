@@ -1,7 +1,6 @@
 import { useId, useState } from 'react';
-import { addElement } from '../data/store';
-import { CATEGORIES_OEUVRES, MAX_EN_AVANT, limiteDe, placesRestantes, type Element, type Media, type RubriqueId } from '../data/types';
-import { creerMedia } from '../lib/fichiers';
+import { deposerFragment } from '../data/store';
+import { CATEGORIES_OEUVRES, MAX_EN_AVANT, limiteDe, placesRestantes, type Element, type RubriqueId } from '../data/types';
 import { Icon } from './Icon';
 import { ChoixMedia, type MediaChoisi } from './Media';
 
@@ -68,24 +67,23 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
     }
     setEnvoi(true);
     setErreur('');
-    const id = `${rubrique}-${Date.now().toString(36)}`;
     try {
-      const medias: Media[] = media ? [await creerMedia(media, `m-${id}`, f.titre.trim())] : [];
-      const el: Element = {
-        id,
-        texte: f.texte.trim(),
-        titre: f.titre.trim() || undefined,
-        quand: f.quand.trim() || undefined,
-        lieu: f.lieu.trim() || undefined,
-        lien: f.lien.trim() || undefined,
-        categorie: has('categorie') ? f.categorie : undefined,
-        medias: medias.map((m) => m.id),
-        enAvant: enAvant && !pleinAvant,
-      };
-      if (!addElement(traceId, rubrique, el, medias)) {
-        setErreur(`Cette rubrique a déjà ses ${limiteDe(rubrique)} fragments.`);
-        return;
-      }
+      // prototype : gardé dans ce navigateur ; en ligne : envoyé au musée, qui vérifie chaque règle
+      await deposerFragment(
+        traceId,
+        rubrique,
+        {
+          texte: f.texte.trim(),
+          titre: f.titre.trim() || undefined,
+          quand: f.quand.trim() || undefined,
+          lieu: f.lieu.trim() || undefined,
+          lien: f.lien.trim() || undefined,
+          categorie: has('categorie') ? f.categorie : undefined,
+          enAvant: enAvant && !pleinAvant,
+        },
+        media,
+        f.titre.trim(),
+      );
     } catch (err) {
       setErreur(err instanceof Error && err.message ? err.message : 'Le fragment n’a pas pu être déposé. Essaie avec un fichier plus léger.');
       return;

@@ -738,3 +738,181 @@
     display: none;
   }
 }
+.creer-lien { margin-top: 1rem; font-size: var(--t-s); line-height: 1.5; }
+.compte-lien {
+  max-width: 32rem;
+}
+.compte-effacer {
+  margin-top: 2.4rem;
+  display: grid;
+  gap: 0.7rem;
+  max-width: 34rem;
+  font-size: var(--t-s);
+}
+.compte-effacer summary {
+  cursor: pointer;
+  color: var(--encre-2);
+}
+
+/* ——— l'espace de l'équipe du musée : sobre, lisible, sans décor */
+
+.admin .page-corps {
+  max-width: 62rem;
+}
+.admin-onglets {
+  margin: 1.6rem 0 2rem;
+}
+.admin-partie > .chips {
+  margin-bottom: 1.2rem;
+}
+.admin-etat {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 1rem;
+}
+.admin-etat > div {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--filet);
+  border-radius: var(--rayon);
+  background: rgba(243, 241, 236, 0.6);
+}
+.admin-etat dt {
+  font-size: var(--t-xs);
+  color: var(--encre-2);
+}
+.admin-etat dd {
+  margin: 0.3rem 0 0;
+  font-family: var(--serif);
+  font-size: 1.7rem;
+}
+.admin-liste {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+.admin-liste > li {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--filet);
+}
+.admin-liste > li p {
+  margin: 0.2rem 0;
+}
+.admin-liste > li.est-masquee {
+  opacity: 0.6;
+}
+.admin-liste > li.est-urgent {
+  border-left: 3px solid #8a3b2e;
+  padding-left: 0.9rem;
+}
+.admin-liste blockquote {
+  margin: 0.5rem 0;
+  padding-left: 0.9rem;
+  border-left: 1px solid var(--filet-fort);
+  font-family: var(--serif);
+}
+.admin-actions,
+.admin-recherche,
+.admin-raison {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  margin-top: 0.5rem;
+}
+.admin-actions input,
+.admin-actions select,
+.admin-recherche input,
+.admin-recherche select,
+.admin-raison input {
+  min-width: 0;
+  flex: 1 1 12rem;
+  max-width: 24rem;
+  background: rgba(243, 241, 236, 0.7);
+  border: 0;
+  border-bottom: 1px solid var(--filet-fort);
+  padding: 0.5rem 0.2rem;
+}
+.admin-actions select {
+  flex: 0 1 auto;
+}
+.admin-actions .bouton,
+.admin-recherche .bouton,
+.admin-raison .bouton {
+  padding: 0.5em 1em;
+}
+.admin-detail ul {
+  list-style: none;
+  padding: 0.6rem 0 0 1rem;
+  margin: 0;
+}
+.admin-detail li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.8rem;
+  align-items: baseline;
+  padding: 0.4rem 0;
+  font-size: var(--t-s);
+}
+.admin-traits li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.admin-traits svg {
+  width: 4.8rem;
+  height: 3rem;
+  flex: none;
+  border: 1px solid var(--filet);
+  background: rgba(243, 241, 236, 0.7);
+}
+.admin-traits line {
+  stroke: rgb(113, 42, 57);
+  stroke-width: 0.03;
+  stroke-linecap: round;
+}
+.admin-traits li > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.admin-formulaire {
+  max-width: 30rem;
+  margin-top: 2.4rem;
+}
+.admin-journal {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.4rem;
+  font-size: var(--t-s);
+}
+.admin-journal th,
+.admin-journal td {
+  text-align: left;
+  padding: 0.45rem 0.6rem 0.45rem 0;
+  border-bottom: 1px solid var(--filet);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .admin-journal thead {
+    display: none;
+  }
+  .admin-journal tr {
+    display: block;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--filet);
+  }
+  .admin-journal td {
+    display: block;
+    border: 0;
+    padding: 0.1rem 0;
+  }
+}
+
+.lien-dev {
+  display: block;
+  margin-top: 0.8rem;
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  color: var(--encre-2);
+}

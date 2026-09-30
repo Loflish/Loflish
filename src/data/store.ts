@@ -1,14 +1,21 @@
 import { GRIS_PALETTE } from '../lib/palette';
 import { hashString, pick, rng, shuffle } from '../lib/random';
 import { MEMOIRES, NOMS, PAYS, POOL, PRENOMS, PSEUDOS, Q1, Q2, Q3, Q4, SENS_POOL } from './pools';
+import { chargerEditions } from './archives';
 import { JEANNOT } from './jeannot';
 import { SAKINAH } from './sakinah';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
+import { appel, DEMO, depuisPresence, EN_LIGNE, ErreurApi, normaliserTrace, type Presence } from '../lib/api';
+import { creerMedia, preparerEnvoi } from '../lib/fichiers';
+import type { MediaChoisi } from '../components/Media';
 import { MAX_EN_AVANT, MAX_MEDIAS, placesRestantes, type Element, type Media, type RubriqueId, type Trace } from './types';
 
 /**
- * Registre des traces du prototype.
- * Remplacé en production par l'API (Next.js + PostgreSQL, cf. cahier Bloc 10).
+ * Registre des traces.
+ * - Prototype (sans VITE_API) : traces de démonstration et traces de l'auteur
+ *   gardées dans ce navigateur.
+ * - En ligne (VITE_API) : le vrai musée, servi par le serveur (dossier server/) ;
+ *   voir la section « en ligne » en bas de ce fichier.
  */
 
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
@@ -139,15 +146,20 @@ function loadLocal(): Trace[] {
   }
 }
 
-const generated = generate(420);
-let local = loadLocal();
+const generated = DEMO ? generate(420) : [];
+let local = EN_LIGNE ? [] : loadLocal();
+/** en ligne : les présences publiées (légères) et les profils déjà chargés en entier */
+let distant: Trace[] = [];
+const complets = new Map<string, Trace>();
 
 export function allTraces(): Trace[] {
-  return [SAKINAH, JEANNOT, ...local, ...generated];
+  if (!EN_LIGNE) return [SAKINAH, JEANNOT, ...local, ...generated];
+  const exemples = DEMO ? [SAKINAH, JEANNOT] : [];
+  return [...exemples, ...distant.map((t) => complets.get(t.id) ?? t), ...generated];
 }
 
 export function getTrace(id: string): Trace | undefined {
-  return allTraces().find((t) => t.id === id);
+  return complets.get(id) ?? local.find((t) => t.id === id) ?? allTraces().find((t) => t.id === id);
 }
 
 // ——— traces de l'utilisateur (prototype : conservées dans ce navigateur)
@@ -155,15 +167,27 @@ export function getTrace(id: string): Trace | undefined {
 const listeners = new Set<() => void>();
 let snapshot = local.slice();
 
-function save(): void {
+let version = 0;
+function notifier(): void {
   snapshot = local.slice();
-  try {
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(local));
-  } catch {
-    /* stockage plein ou indisponible : la trace reste en mémoire pour la session */
-  }
+  version++;
   listeners.forEach((fn) => fn());
 }
+
+function save(): void {
+  if (!EN_LIGNE)
+    try {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(local));
+    } catch {
+      /* stockage plein ou indisponible : la trace reste en mémoire pour la session */
+    }
+  notifier();
+}
+
+const abonner = (fn: () => void) => {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+};
 
 /** Publier = sceller ses réponses : la trace devient publique. */
 export function publishLocal(t: Trace): void {
@@ -181,13 +205,7 @@ export function publishLocal(t: Trace): void {
 
 /** Mes traces (visibles comme « miennes » uniquement sur cet appareil). */
 export function useMesTraces(): Trace[] {
-  return useSyncExternalStore(
-    (fn) => {
-      listeners.add(fn);
-      return () => listeners.delete(fn);
-    },
-    () => snapshot,
-  );
+  return useSyncExternalStore(abonner, () => snapshot);
 }
 
 export function isMine(id: string): boolean {
@@ -248,6 +266,7 @@ export function peutCreer(type: Trace['type']): boolean {
 
 /** Modifier les réponses aux quatre questions (ou l'aperçu d'une mémoire), une fois les cinq ans passés. */
 export function modifierReponses(id: string, questions: Trace['questions'], apercuMemoire?: string): void {
+  if (EN_LIGNE) return void action(id, () => appel('PUT', `/api/traces/${id}/reponses`, { questions, apercu: apercuMemoire }));
   const t = local.find((x) => x.id === id);
   if (!t || estScellee(t)) return;
   updateLocal(id, (t) => ({
@@ -279,6 +298,7 @@ export function addElement(id: string, rubrique: RubriqueId, e: Element, medias:
 
 /** Retirer un fragment : seulement une fois ses cinq ans de scellement passés. */
 export function removeElement(id: string, rubrique: RubriqueId, elementId: string): void {
+  if (EN_LIGNE) return void action(id, () => appel('DELETE', `/api/fragments/${elementId}`));
   updateLocal(id, (t) => ({
     ...t,
     rubriques: { ...t.rubriques, [rubrique]: (t.rubriques[rubrique] ?? []).filter((e) => e.id !== elementId || estScelle(e)) },
@@ -305,6 +325,10 @@ function deplacer<T extends { id: string; enAvant?: boolean }>(list: T[], idEl: 
  * possible, même scellé ; 5 au plus par rubrique.
  */
 export function basculerEnAvant(id: string, rubrique: RubriqueId, elementId: string): void {
+  if (EN_LIGNE) {
+    const e = getTrace(id)?.rubriques[rubrique]?.find((x) => x.id === elementId);
+    return void action(id, () => appel('POST', `/api/fragments/${elementId}/en-avant`, { enAvant: !e?.enAvant }));
+  }
   updateLocal(id, (t) => {
     const list = t.rubriques[rubrique] ?? [];
     const cible = list.find((e) => e.id === elementId);
@@ -322,6 +346,7 @@ export function basculerEnAvant(id: string, rubrique: RubriqueId, elementId: str
 
 /** Trier les fragments mis en avant : monter (-1) ou descendre (+1) d'un cran. */
 export function deplacerEnAvant(id: string, rubrique: RubriqueId, elementId: string, sens: -1 | 1): void {
+  if (EN_LIGNE) return void action(id, () => appel('POST', `/api/fragments/${elementId}/deplacer`, { sens }));
   updateLocal(id, (t) => {
     const list = t.rubriques[rubrique] ?? [];
     const cible = list.find((e) => e.id === elementId);
@@ -347,6 +372,10 @@ export function addMedia(id: string, m: Media): boolean {
 }
 
 export function basculerMediaEnAvant(id: string, mediaId: string): void {
+  if (EN_LIGNE) {
+    const m = getTrace(id)?.medias.find((x) => x.id === mediaId);
+    return void action(id, () => appel('POST', `/api/medias/${mediaId}/en-avant`, { enAvant: !m?.enAvant }));
+  }
   updateLocal(id, (t) => {
     const n = mediasLibres(t).filter((m) => m.enAvant).length;
     return { ...t, medias: t.medias.map((m) => (m.id === mediaId && !m.origine ? { ...m, enAvant: m.enAvant ? false : n < MAX_EN_AVANT } : m)) };
@@ -354,6 +383,7 @@ export function basculerMediaEnAvant(id: string, mediaId: string): void {
 }
 
 export function deplacerMediaEnAvant(id: string, mediaId: string, sens: -1 | 1): void {
+  if (EN_LIGNE) return void action(id, () => appel('POST', `/api/medias/${mediaId}/deplacer`, { sens }));
   updateLocal(id, (t) => ({ ...t, medias: deplacer(t.medias, mediaId, sens, (m) => !m.origine) }));
 }
 
@@ -374,3 +404,182 @@ export const TYPE_LABEL: Record<Trace['type'], string> = {
   personnelle: 'Trace personnelle',
   memoire: 'Mémoire pour une personne décédée',
 };
+
+// ————————————————————————————————————————————————————————————— en ligne
+// Le vrai musée : les mêmes fonctions, qui passent par le serveur. Le serveur
+// applique les règles (scellement, limites…) ; le site se met à jour avec sa réponse.
+
+export interface CompteSession {
+  id: string;
+  email: string;
+  role: 'membre' | 'moderation' | 'admin';
+  majeur: boolean;
+}
+let compte: CompteSession | null = null;
+let pret = !EN_LIGNE;
+/** le dernier refus du serveur, montré discrètement à l'auteur */
+let derniereErreur = '';
+
+export function useCompte(): { compte: CompteSession | null; pret: boolean } {
+  useSyncExternalStore(abonner, () => version);
+  return { compte, pret };
+}
+export function useDerniereErreur(): string {
+  useSyncExternalStore(abonner, () => version);
+  return derniereErreur;
+}
+
+/** Au démarrage : les présences du musée, la personne connectée et ses traces. */
+export async function chargerMusee(): Promise<void> {
+  if (!EN_LIGNE) return;
+  const [p, moi] = await Promise.all([
+    appel<{ presences: Presence[] }>('GET', '/api/presences').catch(() => ({ presences: [] as Presence[] })),
+    appel<{ compte: CompteSession | null }>('GET', '/api/moi').catch(() => ({ compte: null })),
+  ]);
+  distant = p.presences.map(depuisPresence);
+  compte = moi.compte;
+  await chargerEditions().catch(() => undefined);
+  if (compte) await rafraichirMesTraces().catch(() => undefined);
+  pret = true;
+  notifier();
+}
+
+async function rafraichirMesTraces(): Promise<void> {
+  const r = await appel<{ traces: Trace[] }>('GET', '/api/moi/traces');
+  local = r.traces.map(normaliserTrace);
+  for (const t of local) complets.set(t.id, t);
+}
+
+function retenir(t: Trace): Trace {
+  const n = normaliserTrace(t);
+  complets.set(n.id, n);
+  local = local.map((x) => (x.id === n.id ? n : x));
+  notifier();
+  return n;
+}
+
+async function recharger(id: string): Promise<Trace | undefined> {
+  const r = await appel<{ trace: Trace }>('GET', `/api/traces/${id}`);
+  return retenir(r.trace);
+}
+
+/** Une action de l'auteur : envoyée au serveur, puis le profil est relu. */
+async function action(id: string, fn: () => Promise<unknown>): Promise<void> {
+  try {
+    derniereErreur = '';
+    await fn();
+    await recharger(id);
+  } catch (e) {
+    derniereErreur = e instanceof Error ? e.message : 'Une erreur est survenue.';
+    notifier();
+  }
+}
+
+const introuvables = new Set<string>();
+const enCours = new Set<string>();
+
+/** Un profil complet : chargé à la demande en ligne, tout de suite dans le prototype. */
+export function useTrace(id: string): { trace?: Trace; chargement: boolean; introuvable: boolean } {
+  useSyncExternalStore(abonner, () => version);
+  const t = getTrace(id);
+  const aCharger = EN_LIGNE && (!t || !!t.leger) && !introuvables.has(id);
+  useEffect(() => {
+    if (!aCharger || enCours.has(id)) return;
+    enCours.add(id);
+    recharger(id)
+      .catch((e) => {
+        if (e instanceof ErreurApi && e.statut === 404) introuvables.add(id);
+        notifier();
+      })
+      .finally(() => enCours.delete(id));
+  }, [id, aCharger]);
+  return { trace: t && !t.leger ? t : undefined, chargement: aCharger, introuvable: !t && !aCharger };
+}
+
+export async function demanderLien(email: string): Promise<{ lien?: string }> {
+  return appel('POST', '/api/auth/lien', { email });
+}
+
+export async function verifierLien(jeton: string): Promise<CompteSession> {
+  const r = await appel<{ compte: CompteSession }>('POST', '/api/auth/verifier', { jeton });
+  compte = r.compte;
+  await rafraichirMesTraces().catch(() => undefined);
+  notifier();
+  return r.compte;
+}
+
+export async function seDeconnecter(): Promise<void> {
+  await appel('POST', '/api/auth/deconnexion').catch(() => undefined);
+  compte = null;
+  local = [];
+  notifier();
+}
+
+export async function effacerMonCompte(): Promise<void> {
+  await appel('DELETE', '/api/moi', { confirmation: 'EFFACER' });
+  const moi = new Set(local.map((t) => t.id));
+  distant = distant.filter((t) => !moi.has(t.id));
+  compte = null;
+  local = [];
+  notifier();
+}
+
+/** Publier (et sceller) sa trace. En ligne, il faut être connecté : sinon, `connexion` est vrai. */
+export async function publier(t: Trace, majeur: boolean): Promise<{ trace?: Trace; connexion?: boolean }> {
+  if (!EN_LIGNE) {
+    publishLocal(t);
+    return { trace: t };
+  }
+  if (!compte) return { connexion: true };
+  if (majeur && !compte.majeur) {
+    await appel('POST', '/api/moi/majeur', { majeur: true });
+    compte = { ...compte, majeur: true };
+  }
+  const corps =
+    t.type === 'personnelle'
+      ? { type: t.type, nom: t.nom, pseudo: t.pseudo, couleur: t.couleur, matiere: t.matiere, pays: t.pays, questions: t.questions, q2Destinataire: t.q2Destinataire, parametres: t.parametres }
+      : { type: t.type, nom: t.nom, couleur: t.couleur, matiere: t.matiere, pays: t.pays, memoire: t.memoire, parametres: t.parametres };
+  const r = await appel<{ trace: Trace }>('POST', '/api/traces', corps);
+  const n = normaliserTrace(r.trace);
+  local = [n, ...local];
+  complets.set(n.id, n);
+  distant = [...distant, n];
+  notifier();
+  return { trace: n };
+}
+
+/** Déposer un fragment (avec au plus un média : fichier ou lien). Lève une erreur lisible si c'est refusé. */
+export async function deposerFragment(traceId: string, rubrique: RubriqueId, e: Omit<Element, 'id'>, choix: MediaChoisi, mediaTitre = ''): Promise<void> {
+  if (!EN_LIGNE) {
+    const id = `${rubrique}-${Date.now().toString(36)}`;
+    const medias: Media[] = choix ? [await creerMedia(choix, `m-${id}`, mediaTitre)] : [];
+    if (!addElement(traceId, rubrique, { ...e, id, medias: medias.map((m) => m.id) }, medias)) throw new Error('Cette rubrique est complète.');
+    return;
+  }
+  const donnees = { rubrique, ...e, mediaTitre: mediaTitre || undefined, mediaLien: choix && 'url' in choix ? { url: choix.url } : undefined };
+  const r =
+    choix && 'file' in choix
+      ? await appel<{ trace: Trace }>('POST', `/api/traces/${traceId}/fragments`, formulaire(donnees, (await preparerEnvoi(choix.file)).fichier))
+      : await appel<{ trace: Trace }>('POST', `/api/traces/${traceId}/fragments`, donnees);
+  retenir(r.trace);
+}
+
+/** Déposer un média ou un document dans « Médias & documents ». */
+export async function deposerMedia(traceId: string, choix: NonNullable<MediaChoisi>, titre: string, legende: string): Promise<void> {
+  if (!EN_LIGNE) {
+    const m = await creerMedia(choix, `m-${Date.now().toString(36)}`, titre);
+    if (!addMedia(traceId, { ...m, legende: legende || undefined })) throw new Error(`Tu as déjà déposé ${MAX_MEDIAS} médias.`);
+    return;
+  }
+  const prepare = 'file' in choix ? await preparerEnvoi(choix.file) : null;
+  const donnees = { titre: titre || undefined, legende: legende || undefined, duree: prepare?.duree, lien: 'url' in choix ? choix.url : undefined };
+  const r = await appel<{ trace: Trace }>('POST', `/api/traces/${traceId}/medias`, prepare ? formulaire(donnees, prepare.fichier) : donnees);
+  retenir(r.trace);
+}
+
+function formulaire(donnees: unknown, fichier: File): FormData {
+  const f = new FormData();
+  f.append('donnees', JSON.stringify(donnees));
+  f.append('fichier', fichier, fichier.name);
+  return f;
+}

@@ -144,6 +144,23 @@ export async function deposerFichier(file: File, id: string, titre: string): Pro
   };
 }
 
+/**
+ * Prépare un fichier pour l'envoi au serveur : photo allégée, durée lue pour
+ * les vidéos et les enregistrements, taille vérifiée d'avance.
+ */
+export async function preparerEnvoi(file: File): Promise<{ fichier: File; duree?: string }> {
+  const kind = natureDe(file);
+  if (file.size > TAILLES_MAX[kind]) {
+    const mo = Math.round(TAILLES_MAX[kind] / 1024 / 1024);
+    throw new Error(`Ce fichier est trop lourd (${mo} Mo au plus pour ce type).`);
+  }
+  if (kind === 'image') {
+    const b = await alleger(file);
+    return { fichier: b === file ? file : new File([b], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }) };
+  }
+  return { fichier: file, duree: kind === 'video' || kind === 'audio' ? await duree(file, kind) : undefined };
+}
+
 /** Un lien n'est accepté que s'il mène à une vraie page web (http ou https). */
 export function lienValide(texte: string): URL | null {
   try {

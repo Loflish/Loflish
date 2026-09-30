@@ -116,6 +116,11 @@ export interface Trace {
    */
   scelleeLe?: string;
   parametres?: Parametres;
+  /** Présence légère (constellation) : le profil complet se charge à la demande. */
+  leger?: boolean;
+  /** Vu par l'auteur ou l'équipe : une trace peut être masquée par la modération. */
+  statut?: 'publiee' | 'masquee';
+  masqueeRaison?: string;
   /** Données de démonstration. */
   demo?: boolean;
 }

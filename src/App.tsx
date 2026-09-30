@@ -1,6 +1,7 @@
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { Backdrop } from './components/Backdrop';
-import { Archives, Compte, Juridique, Projet, Ressources, Soutenir } from './pages/Pages';
+import { Admin } from './pages/Admin';
+import { Archives, Compte, Connexion, Juridique, Projet, Ressources, Soutenir } from './pages/Pages';
 import { Creer } from './pages/Creer';
 import { Explorer } from './pages/Explorer';
 import { MaTrace } from './pages/MaTrace';
@@ -32,6 +33,8 @@ export function App() {
           <Route path="/oeuvre-commune" element={<OeuvreCommune />} />
           <Route path="/archives/:edition" element={<Explorer />} />
           <Route path="/compte" element={<Compte />} />
+          <Route path="/connexion" element={<Connexion />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<Explorer />} />
         </Routes>
       </div>

@@ -1,12 +1,14 @@
-import { type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Footer, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { EDITIONS, tracesDeLEdition } from '../data/archives';
-import { allTraces } from '../data/store';
+import { allTraces, demanderLien, effacerMonCompte, seDeconnecter, useCompte, verifierLien, type CompteSession } from '../data/store';
+import { adresseApi, DEMO, EN_LIGNE } from '../lib/api';
+import { APRES_CONNEXION } from './Creer';
 import { useMuseumMode } from '../lib/museum';
 
-function Page({ children, mode = 'texte', className = '' }: { children: ReactNode; mode?: 'texte' | 'minimal'; className?: string }) {
+export function Page({ children, mode = 'texte', className = '' }: { children: ReactNode; mode?: 'texte' | 'minimal'; className?: string }) {
   useMuseumMode(mode);
   return (
     <main className={`page page-texte ${className}`}>
@@ -183,7 +185,7 @@ export function Archives() {
               <Link to={`/archives/${e.id}`} className="frise-lien">
                 <span className="frise-date">{e.titre}</span>
                 <span className="frise-texte">
-                  {e.note} — {tracesDeLEdition(traces, e).length.toLocaleString('fr-FR')} présences (démonstration)
+                  {e.note} — {tracesDeLEdition(traces, e).length.toLocaleString('fr-FR')} présences{DEMO ? ' (démonstration)' : ''}
                   <span className="frise-ouvrir">
                     Ouvrir la constellation <Icon name="fleche" size={14} />
                   </span>
@@ -191,6 +193,12 @@ export function Archives() {
               </Link>
             </li>
           ))}
+          {EDITIONS.length === 0 && (
+            <li>
+              <span className="frise-date">{new Date().getFullYear()}</span>
+              <span className="frise-texte">Le musée ouvre. La première édition sera datée ici.</span>
+            </li>
+          )}
           <li>
             <span className="frise-date">À venir</span>
             <span className="frise-texte">Premier instantané daté du musée, confié à une archive de très longue durée.</span>
@@ -202,18 +210,176 @@ export function Archives() {
 }
 
 export function Compte() {
+  const { compte, pret } = useCompte();
+  if (!EN_LIGNE) {
+    return (
+      <Page className="compte-page">
+        <h1 className="page-titre">Compte</h1>
+        <p className="lead">Ce prototype garde tout dans ton navigateur. Dans le vrai musée, on entre avec un simple lien envoyé par e-mail.</p>
+        <div className="liens-colonne">
+          <Link to="/ma-trace" className="lien-entrer">
+            Ma trace et mes fragments <Icon name="fleche" size={16} />
+          </Link>
+          <Link to="/trace/sakinah" className="lien-entrer">
+            Voir un exemple de trace complète <Icon name="fleche" size={16} />
+          </Link>
+        </div>
+      </Page>
+    );
+  }
   return (
     <Page className="compte-page">
       <h1 className="page-titre">Compte</h1>
-      <p className="lead">La connexion (e-mail vérifié, clé d’accès) arrivera avec la version connectée.</p>
+      {!pret ? <p className="lead muted">Un instant…</p> : compte ? <CompteConnecte compte={compte} /> : <DemandeLien />}
+    </Page>
+  );
+}
+
+/** Hors production, le serveur renvoie aussi le lien : pratique pour essayer sans boîte mail. */
+export function LienDeveloppement({ lien }: { lien: string }) {
+  const hash = lien.slice(lien.indexOf('#') + 1);
+  return (
+    <span className="lien-dev">
+      Serveur de développement : <a href={`#${hash.replace(/^#/, '')}`}>ouvrir le lien directement</a>
+    </span>
+  );
+}
+
+/** Entrer : sans mot de passe, un lien arrive par e-mail. */
+function DemandeLien() {
+  const [email, setEmail] = useState('');
+  const [etat, setEtat] = useState<'' | 'envoi' | 'envoye' | 'erreur'>('');
+  const [message, setMessage] = useState('');
+  const [lien, setLien] = useState<string | undefined>();
+  const envoyer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEtat('envoi');
+    try {
+      setLien((await demanderLien(email.trim())).lien);
+      setEtat('envoye');
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Le lien n’a pas pu partir.');
+      setEtat('erreur');
+    }
+  };
+  if (etat === 'envoye')
+    return (
+      <p className="lead">
+        Un lien t’attend dans ta boîte mail (<strong>{email}</strong>). Il est valable 20 minutes et ne sert qu’une fois.
+        {lien && <LienDeveloppement lien={lien} />}
+      </p>
+    );
+  return (
+    <form className="editeur compte-lien" onSubmit={envoyer}>
+      <p className="lead">Pas de mot de passe : donne ton adresse, tu recevras un lien pour entrer.</p>
+      <label className="field">
+        <span className="field-label">Adresse e-mail</span>
+        <input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+      </label>
+      {etat === 'erreur' && (
+        <p className="editeur-erreur" role="alert">
+          {message}
+        </p>
+      )}
+      <button className="bouton" disabled={etat === 'envoi'}>
+        {etat === 'envoi' ? 'Envoi…' : 'Recevoir mon lien'}
+      </button>
+    </form>
+  );
+}
+
+function CompteConnecte({ compte }: { compte: CompteSession }) {
+  const navigate = useNavigate();
+  const [effacer, setEffacer] = useState('');
+  const [erreur, setErreur] = useState('');
+  return (
+    <div className="compte-connecte">
+      <p className="lead">
+        Tu es entré·e avec <strong>{compte.email}</strong>.
+      </p>
       <div className="liens-colonne">
         <Link to="/ma-trace" className="lien-entrer">
           Ma trace et mes fragments <Icon name="fleche" size={16} />
         </Link>
-        <Link to="/trace/sakinah" className="lien-entrer">
-          Voir un exemple de trace complète <Icon name="fleche" size={16} />
-        </Link>
+        {compte.role !== 'membre' && (
+          <Link to="/admin" className="lien-entrer">
+            L’espace de l’équipe du musée <Icon name="fleche" size={16} />
+          </Link>
+        )}
+        <a href={adresseApi('/api/moi/export')} className="lien-entrer" download>
+          Emporter toutes mes données (fichier) <Icon name="fleche" size={16} />
+        </a>
+        <button className="lien-entrer" onClick={() => void seDeconnecter().then(() => navigate('/'))}>
+          Me déconnecter <Icon name="fleche" size={16} />
+        </button>
       </div>
-    </Page>
+      <details className="compte-effacer">
+        <summary>Effacer mon compte et tout ce que j’ai déposé</summary>
+        <p>
+          Tout sera effacé : tes traces, tes fragments, tes médias, ton trait dans l’œuvre commune. Le scellement ne l’empêche pas : c’est
+          ton droit. Cela ne peut pas être annulé. Écris <strong>EFFACER</strong> pour confirmer.
+        </p>
+        <input value={effacer} onChange={(e) => setEffacer(e.target.value)} aria-label="Écris EFFACER pour confirmer" />
+        {erreur && (
+          <p className="editeur-erreur" role="alert">
+            {erreur}
+          </p>
+        )}
+        <button
+          className="bouton"
+          disabled={effacer !== 'EFFACER'}
+          onClick={() =>
+            void effacerMonCompte()
+              .then(() => navigate('/'))
+              .catch((e) => setErreur(e instanceof Error ? e.message : 'L’effacement a échoué.'))
+          }
+        >
+          Tout effacer
+        </button>
+      </details>
+    </div>
+  );
+}
+
+/** Le lien reçu par e-mail : il ouvre la session, puis publie le brouillon s'il attendait. */
+export function Connexion() {
+  useMuseumMode('texte');
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const [erreur, setErreur] = useState('');
+  const fait = useRef(false);
+  useEffect(() => {
+    if (fait.current) return;
+    fait.current = true;
+    const jeton = params.get('jeton');
+    if (!jeton) return setErreur('Ce lien est incomplet.');
+    verifierLien(jeton)
+      .then(() => {
+        let publier = false;
+        try {
+          publier = localStorage.getItem(APRES_CONNEXION) === '1';
+        } catch {
+          /* ignore */
+        }
+        navigate(publier ? '/creer?publier=1' : '/ma-trace', { replace: true });
+      })
+      .catch((e) => setErreur(e instanceof Error ? e.message : 'Ce lien ne fonctionne pas.'));
+  }, [params, navigate]);
+  return (
+    <main className="page page-texte">
+      <PageTop />
+      <div className="page-corps emerge">
+        {erreur ? (
+          <>
+            <p className="lead">{erreur}</p>
+            <Link to="/compte" className="lien-entrer">
+              Recevoir un nouveau lien <Icon name="fleche" size={16} />
+            </Link>
+          </>
+        ) : (
+          <p className="lead muted">Un instant, la porte s’ouvre…</p>
+        )}
+      </div>
+    </main>
   );
 }

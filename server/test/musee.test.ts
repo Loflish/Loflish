@@ -200,6 +200,10 @@ describe('traces', () => {
   it('la recherche ignore les accents', async () => {
     const r = await visiteur().get('/api/recherche?q=' + encodeURIComponent('ocean'));
     expect(r.json().ids).toContain(id);
+    expect((await visiteur().get('/api/recherche?rubriques=souvenirs')).json().ids).toContain(id);
+    expect((await visiteur().get('/api/recherche?rubriques=souvenirs,lieux')).json().ids).not.toContain(id);
+    expect((await visiteur().get('/api/recherche?q=' + encodeURIComponent('100%'))).json().ids).toEqual([]);
+    expect((await visiteur().get('/api/recherche')).statusCode).toBe(400);
   });
 
   it('la modération masque une trace signalée ; son auteur la voit encore', async () => {
@@ -249,6 +253,16 @@ describe('l’œuvre commune', () => {
     expect((await v.post('/api/traits', { x1: 0.2, y1: 0.2, x2: 0.3, y2: 0.25 })).statusCode).toBe(409);
     const traits = (await v.get('/api/traits')).json().traits;
     expect(traits.filter((t: any) => t.moi)).toHaveLength(1);
+
+    // la modération masque un trait, puis le réaffiche
+    const admin = visiteur();
+    await admin.connecter('admin@musee.test');
+    const mien = traits.find((t: any) => t.moi).id;
+    expect((await admin.get('/api/admin/traits')).json().traits.some((t: any) => t.id === mien && t.email === 'brodeuse@exemple.fr')).toBe(true);
+    expect((await admin.post(`/api/admin/traits/${mien}/masquer`, {})).statusCode).toBe(200);
+    expect((await visiteur().get('/api/traits')).json().traits.some((t: any) => t.id === mien)).toBe(false);
+    expect((await admin.post(`/api/admin/traits/${mien}/reafficher`, {})).statusCode).toBe(200);
+    expect((await visiteur().get('/api/traits')).json().traits.some((t: any) => t.id === mien)).toBe(true);
   });
 });
 

@@ -26,11 +26,17 @@ import { HashRouter } from 'react-router-dom';
 import { App } from './App';
 import { MuseumProvider } from './lib/museum';
 import { installSurfaces, loadTaches } from './lib/hd';
+import { chargerMusee } from './data/store';
 
 installSurfaces();
 // les taches d'aquarelle des bulles se chargent avant tout le reste
 void loadTaches();
 
+// en ligne, les présences du musée arrivent avant la constellation (au plus 4 s d'attente)
+const attente = new Promise((r) => setTimeout(r, 4000));
+void Promise.race([chargerMusee().catch(() => undefined), attente]).then(() => afficher());
+
+function afficher() {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HashRouter>
@@ -40,3 +46,4 @@ createRoot(document.getElementById('root')!).render(
     </HashRouter>
   </StrictMode>,
 );
+}

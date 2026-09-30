@@ -990,3 +990,12 @@ div.trace-bandeau > p {
   opacity: 0.62;
   min-width: 2px;
 }
+.trace-bandeau-masquee,
+.trace-bandeau-erreur {
+  border-left: 2px solid var(--encre-2);
+  padding-left: 0.8rem;
+}
+.salle-signaler {
+  display: grid;
+  gap: 0.9rem;
+}

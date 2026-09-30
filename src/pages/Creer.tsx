@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { BubbleImage, PageTop } from '../components/Chrome';
 import { TexteBrode } from '../components/TexteBrode';
 import { Icon } from '../components/Icon';
-import { peutCreer, publishLocal, useMesTraces } from '../data/store';
+import { demanderLien, deposerFragment, peutCreer, publier, publishLocal, useCompte, useMesTraces } from '../data/store';
+import { EN_LIGNE } from '../lib/api';
+import { LienDeveloppement } from './Pages';
 import { LIMITES, QUESTIONS, type Trace } from '../data/types';
 import { MATIERE_COUSUE, NB_MATIERES, loadCatalogue } from '../lib/hd';
 import { GRIS_PALETTE, colorById } from '../lib/palette';
@@ -54,6 +56,8 @@ const EMPTY: Draft = {
 };
 
 const KEY = 'nmm:brouillon';
+/** en ligne : publier le brouillon dès le retour du lien de connexion */
+export const APRES_CONNEXION = 'nmm:publier-apres-connexion';
 
 /** Une matière au hasard dans tout le catalogue : l'aquarelle cousue (0) ou l'une des 92 taches. */
 function matiereAuHasard(): number {
@@ -123,8 +127,63 @@ export function Creer() {
     return true;
   })();
 
-  const publish = () => {
+  const [attente, setAttente] = useState<'' | 'lien' | 'erreur'>('');
+  const [lienDev, setLienDev] = useState<string | undefined>();
+  const [messageServeur, setMessageServeur] = useState('');
+
+  /** La bulle rejoint les autres : la constellation l'accueille, puis son profil s'ouvre. */
+  const terminer = (t: Trace) => {
     setPublishing(true);
+    try {
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(APRES_CONNEXION);
+    } catch {
+      /* ignore */
+    }
+    window.setTimeout(() => {
+      engine.current?.addPresence({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex, matiere: t.matiere });
+      navigate(`/trace/${t.id}`);
+    }, 4200);
+  };
+
+  const publish = async () => {
+    const t = construire();
+    if (!EN_LIGNE) {
+      publishLocal(t);
+      return terminer(t);
+    }
+    // en ligne : il faut être connecté ; sinon le lien part vers l'adresse donnée, et la trace
+    // sera scellée et publiée dès que la personne l'aura ouvert
+    try {
+      setAttente('');
+      const r = await publier(t, d.majeur);
+      if (r.connexion) {
+        localStorage.setItem(APRES_CONNEXION, '1');
+        setLienDev((await demanderLien(d.email.trim())).lien);
+        setAttente('lien');
+        return;
+      }
+      if (d.kind === 'memoire' && d.souvenir.trim())
+        await deposerFragment(r.trace!.id, 'souvenirs', { texte: d.souvenir.trim().slice(0, 1200) }, null).catch(() => undefined);
+      terminer(r.trace!);
+    } catch (e) {
+      setMessageServeur(e instanceof Error ? e.message : 'La trace n’a pas pu être publiée.');
+      setAttente('erreur');
+    }
+  };
+
+  // retour depuis le lien reçu par e-mail : on publie aussitôt
+  const [params] = useSearchParams();
+  const { compte } = useCompte();
+  const dejaLance = useRef(false);
+  useEffect(() => {
+    if (!EN_LIGNE || dejaLance.current || params.get('publier') !== '1' || !compte || !d.kind) return;
+    dejaLance.current = true;
+    void publish();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compte, params]);
+
+  function construire(): Trace {
     const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
     const t: Trace = {
       id: draftId,
@@ -150,17 +209,8 @@ export function Creer() {
         feedbackPrive: true,
       },
     };
-    window.setTimeout(() => {
-      publishLocal(t);
-      engine.current?.addPresence({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex, matiere: t.matiere });
-      try {
-        localStorage.removeItem(KEY);
-      } catch {
-        /* ignore */
-      }
-      navigate(`/trace/${t.id}`);
-    }, 4200);
-  };
+    return t;
+  }
 
   useMesTraces(); // se met à jour si une bulle est publiée ailleurs
   const libre = { personnelle: peutCreer('personnelle'), memoire: peutCreer('memoire') };
@@ -431,9 +481,21 @@ export function Creer() {
               {step === 5 ? 'Vérifier et publier' : 'Continuer'}
             </button>
           ) : (
-            <button className="bouton" disabled={!canNext} onClick={publish}>
+            <button className="bouton" disabled={!canNext} onClick={() => void publish()}>
               Sceller et publier ma trace
             </button>
+          )}
+          {attente === 'lien' && (
+            <p className="creer-lien" role="status">
+              Nous t’avons envoyé un lien à <strong>{d.email}</strong>. Ouvre-le : ta trace sera scellée et publiée aussitôt. Ton brouillon
+              t’attend ici.
+              {lienDev && <LienDeveloppement lien={lienDev} />}
+            </p>
+          )}
+          {attente === 'erreur' && (
+            <p className="editeur-erreur" role="alert">
+              {messageServeur}
+            </p>
           )}
         </div>
       </div>

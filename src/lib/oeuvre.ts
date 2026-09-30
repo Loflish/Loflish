@@ -1,3 +1,4 @@
+import { appel, EN_LIGNE, ErreurApi } from './api';
 import { rng } from './random';
 
 /**
@@ -99,6 +100,8 @@ export interface Oeuvre {
   mien: Trait | null;
   /** faux quand l'accès à la page ne permet que de regarder */
   peutCoudre: boolean;
+  /** en ligne : il faut être connecté pour coudre son trait */
+  connexion?: boolean;
 }
 
 /**
@@ -116,6 +119,33 @@ export function ecouterOeuvre(cb: (o: Oeuvre) => void): { coudre: (t: Omit<Trait
     if (!fini) cb(etat);
   };
   emettre({ traits: etat.mien ? [etat.mien] : [] });
+
+  // le vrai musée : les traits de tout le monde, relus toutes les 20 secondes
+  if (EN_LIGNE) {
+    const lire = () =>
+      appel<{ traits: Trait[] }>('GET', '/api/traits')
+        .then((r) => emettre({ mode: 'partage', traits: r.traits, mien: r.traits.find((t) => t.moi) ?? null }))
+        .catch(() => undefined);
+    void lire();
+    const minuteur = window.setInterval(lire, 20000);
+    return {
+      coudre: async (t) => {
+        try {
+          const r = await appel<{ trait: Trait }>('POST', '/api/traits', { x1: t.x1, y1: t.y1, x2: t.x2, y2: t.y2 });
+          emettre({ mien: r.trait, traits: [...etat.traits, r.trait] });
+          return true;
+        } catch (e) {
+          if (e instanceof ErreurApi && e.statut === 401) emettre({ connexion: true });
+          else if (e instanceof ErreurApi && e.statut === 409) void lire();
+          return false;
+        }
+      },
+      fin: () => {
+        fini = true;
+        window.clearInterval(minuteur);
+      },
+    };
+  }
 
   const claude = (window as unknown as { claude?: ClaudeUse }).claude;
   if (claude?.use) {
