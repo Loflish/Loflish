@@ -36,12 +36,16 @@ void main(){
 }
 `;
 
+/** Côté du canvas de l'encre, fixe : la tache est agrandie par transformation, sans réallocation. */
+const TAILLE = 1024;
+
 export class Encre {
   private gl: WebGLRenderingContext | null;
   private tex: WebGLTexture | null = null;
   private u: Record<string, WebGLUniformLocation | null> = {};
   private video: HTMLVideoElement;
   private raf = 0;
+  private jouant = false;
   ready = false;
 
   constructor(private canvas: HTMLCanvasElement, sources: string[]) {
@@ -86,6 +90,10 @@ export class Encre {
   /**
    * Joue l'encre centrée sur (x, y) : elle part de la taille de la bulle et
    * s'étend jusqu'à couvrir l'écran. Résout quand l'encre a recouvert la vue.
+   *
+   * Tout reste léger pendant l'animation : le canvas garde une taille fixe
+   * (jamais réalloué), il grandit par une simple transformation CSS, et la
+   * vidéo n'est envoyée à la carte graphique que lorsqu'elle a une image neuve.
    */
   play(x: number, y: number, r: number, hex: string, couverture = 1500): Promise<void> {
     const gl = this.gl;
@@ -93,13 +101,40 @@ export class Encre {
     const [cr, cg, cb] = hexToRgb(hex).map((v) => v / 255);
     const diag = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) * 3;
     const c = this.canvas;
-    c.style.left = '0px';
-    c.style.top = '0px';
+    const cote = TAILLE;
+    if (c.width !== cote) {
+      c.width = c.height = cote;
+      gl.viewport(0, 0, cote, cote);
+    }
+    c.style.width = c.style.height = `${cote}px`;
+    c.style.transformOrigin = '0 0';
     c.style.opacity = '1';
     c.hidden = false;
-    this.video.currentTime = 0;
-    void this.video.play().catch(() => undefined);
+    gl.uniform3f(this.u.couleur, cr, cg, cb);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    const v = this.video as HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number };
+    v.currentTime = 0;
+    void v.play().catch(() => undefined);
     const t0 = performance.now();
+    this.jouant = true;
+
+    const dessiner = () => {
+      if (v.readyState < 2) return;
+      gl.bindTexture(gl.TEXTURE_2D, this.tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, v);
+      gl.uniform1f(this.u.fondu, Math.min(1, ((performance.now() - t0) / 1000) * 3));
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    };
+    // une image neuve de la vidéo (24 par seconde) → un envoi, pas davantage
+    const surImage = () => {
+      if (!this.jouant) return;
+      dessiner();
+      v.requestVideoFrameCallback?.(surImage);
+    };
+    if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(surImage);
+
     return new Promise((resolve) => {
       let done = false;
       const frame = (now: number) => {
@@ -108,28 +143,13 @@ export class Encre {
         const k = Math.min(1, t / 2.2);
         const ease = 1 - Math.pow(1 - k, 3);
         const size = Math.max(r * 6, r * 6 + (diag - r * 6) * ease);
-        // l'encre filmée en 4K reste nette jusqu'aux grands écrans
-        const px = Math.round(Math.min(size, 2048));
-        if (c.width !== px) {
-          c.width = c.height = px;
-          gl.viewport(0, 0, px, px);
-        }
-        c.style.width = c.style.height = `${size}px`;
-        c.style.transform = `translate(${x - size / 2}px, ${y - size / 2}px)`;
-        if (this.video.readyState >= 2) {
-          gl.bindTexture(gl.TEXTURE_2D, this.tex);
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, this.video);
-          gl.uniform3f(this.u.couleur, cr, cg, cb);
-          gl.uniform1f(this.u.fondu, Math.min(1, t * 3));
-          gl.clearColor(0, 0, 0, 0);
-          gl.clear(gl.COLOR_BUFFER_BIT);
-          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        }
+        c.style.transform = `translate(${x - size / 2}px, ${y - size / 2}px) scale(${size / cote})`;
+        if (!v.requestVideoFrameCallback) dessiner();
         if (!done && now - t0 > couverture) {
           done = true;
           resolve();
         }
-        if (t < 4.5) this.raf = requestAnimationFrame(frame);
+        if (t < 4.5 && this.jouant) this.raf = requestAnimationFrame(frame);
       };
       this.raf = requestAnimationFrame(frame);
     });
@@ -140,6 +160,7 @@ export class Encre {
     const c = this.canvas;
     c.style.opacity = '0';
     window.setTimeout(() => {
+      this.jouant = false;
       cancelAnimationFrame(this.raf);
       this.video.pause();
       c.hidden = true;

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { BubbleImage, Footer, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
-import { TYPE_LABEL, useMesTraces } from '../data/store';
+import { dateLongue, estScellee, reouverture, TYPE_LABEL, useMesTraces } from '../data/store';
 import { RUBRIQUES } from '../data/types';
 import { useMuseumMode } from '../lib/museum';
 
@@ -39,6 +39,11 @@ export function MaTrace() {
                   <p className="apercu-type">
                     {TYPE_LABEL[t.type]} · publiée le {t.creeLe}
                   </p>
+                  {estScellee(t) && (
+                    <p className="ma-trace-scellee">
+                      <Icon name="cadenas" size={16} /> Terminée et scellée jusqu’au {dateLongue(reouverture(t)!)}
+                    </p>
+                  )}
                   <div className="ma-trace-actions">
                     <Link to={`/trace/${t.id}`} className="lien-entrer">
                       Voir mon profil de dernières volontés <Icon name="fleche" size={16} />
@@ -50,6 +55,8 @@ export function MaTrace() {
                 </div>
               </div>
 
+              {!estScellee(t) && (
+                <>
               <h3 className="intertitre">Compléter mes fragments d’existence</h3>
               <ul className="ma-trace-rubriques">
                 {RUBRIQUES.map((r) => {
@@ -59,19 +66,29 @@ export function MaTrace() {
                       <button className="ma-trace-rubrique" onClick={() => navigate(`/trace/${t.id}`, { state: { ouvrir: r.id } })}>
                         <Icon name={r.icone} size={22} />
                         <span className="ma-trace-rubrique-titre">{r.titre}</span>
-                        <span className="ma-trace-rubrique-n">{n === 0 ? 'Ajouter' : `${n} · ajouter`}</span>
+                        <span className="ma-trace-rubrique-n">
+                          {r.id === 'sens' ? (n === 0 ? 'Ajouter' : `${n} · ajouter`) : n >= 5 ? '5 sur 5' : n === 0 ? 'Ajouter' : `${n} sur 5 · ajouter`}
+                        </span>
                       </button>
                     </li>
                   );
                 })}
               </ul>
+                </>
+              )}
             </section>
           ))
         )}
-        <p className="ma-trace-autre">
-          <Link to="/creer" className="lien-discret">
-            <Icon name="plus" size={16} /> Créer une mémoire pour une personne décédée
-          </Link>
+        {mes.length > 0 && mes.length < 2 && (
+          <p className="ma-trace-autre">
+            <Link to="/creer" className="lien-discret">
+              <Icon name="plus" size={16} />{' '}
+              {mes.some((t) => t.type === 'memoire') ? 'Créer ma propre trace' : 'Créer une mémoire pour une personne décédée'}
+            </Link>
+          </p>
+        )}
+        <p className="muted petit">
+          Chaque personne peut émettre deux bulles au plus : sa propre trace, et une mémoire pour une personne décédée.
         </p>
         <p className="muted petit">Prototype : ta trace est conservée dans ce navigateur uniquement.</p>
       </div>

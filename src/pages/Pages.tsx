@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Footer, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { CarteMonde } from '../components/CarteMonde';
-import { Aplat } from '../components/Media';
 import { allTraces } from '../data/store';
 import { useMuseumMode } from '../lib/museum';
 
@@ -49,15 +48,9 @@ export function Projet() {
             physique, le profil complet présenté au dos de chaque œuvre. La mémoire collective du musée pourra aussi être confiée à des
             archives de très longue durée, comme l’Arctic World Archive.
           </p>
-          <p>
-            <Link to="/musee" className="lien-entrer">
-              Imaginer le lieu <Icon name="fleche" size={16} />
-            </Link>
-          </p>
           <p className="vision">Lutter contre l’oubli.</p>
         </div>
         <figure className="objet-reel">
-          <Aplat color="#A9B79B" seed="projet" forme="arche" motif="fleurs" className="projet-aplat" />
           <img src={tableauUrl} alt="Tableau brodé à la main en fil bordeaux sur satin clair, encadré de bois doré : « Nos mots mémoriaux »." loading="lazy" />
           <figcaption>
             Le premier tableau. Fil bordeaux sur satin, cadre doré — brodé à la main. C’est de lui que vient le logo.
@@ -82,7 +75,6 @@ export function Ressources() {
     <Page className="ressources">
       <h1 className="page-titre">Ressources & aide</h1>
       <section className="aide-urgente" aria-labelledby="h-aide">
-        <Aplat color="#8DBEB2" seed="aide" forme="rectangle" motif="fleurs" className="aide-aplat" />
         <h2 id="h-aide" className="intertitre">Si tu penses au suicide, tu n’es pas seul·e.</h2>
         <p>
           Nos mots mémoriaux parle de la mémoire et de la vie, pas d’y mettre fin. Si tu traverses un moment très difficile, des personnes
@@ -131,15 +123,12 @@ export function Soutenir() {
       <h1 className="page-titre">Soutenir</h1>
       <p className="lead">Le musée est et restera gratuit. Les dons permettent de le faire vivre et de préserver les traces dans le temps.</p>
       <div className="trois-colonnes">
-        {(
-          [
-            ['Faire vivre le musée', 'Hébergement, sécurité, modération.', '#D8BC8E', undefined],
-            ['Préserver les traces', 'Sauvegardes et archives de très longue durée.', '#A8BBCB', 'carreaux'],
-            ['Broder les mots', 'Fil, toile, cadres, et un jour un lieu d’exposition.', '#D6B4A9', undefined],
-          ] as const
-        ).map(([t, d, teinte, motif]) => (
+        {[
+          ['Faire vivre le musée', 'Hébergement, sécurité, modération.'],
+          ['Préserver les traces', 'Sauvegardes et archives de très longue durée.'],
+          ['Broder les mots', 'Fil, toile, cadres, et un jour un lieu d’exposition.'],
+        ].map(([t, d]) => (
           <div key={t} className="colonne-texte">
-            <Aplat color={teinte} seed={`soutenir-${t}`} forme="bande" motif={motif} className="colonne-aplat" />
             <h2 className="intertitre">{t}</h2>
             <p>{d}</p>
           </div>
@@ -181,7 +170,6 @@ export function Archives() {
       <h1 className="page-titre">Archives</h1>
       <p className="lead">La croissance du musée fait partie de son histoire. Ce n’est pas une popularité : c’est la taille de la mémoire collective.</p>
       <div className="frise-cadre">
-        <Aplat color="#D8BC8E" seed="archives" forme="bande" motif="feuillages" className="frise-aplat" />
         <ol className="frise">
           <li>
             <span className="frise-date">2026</span>

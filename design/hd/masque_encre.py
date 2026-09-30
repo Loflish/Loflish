@@ -6,7 +6,7 @@ Sortie : public/hd/encre.mp4 et encre.webm (blanc = encre).
 
 Usage : python3 masque_encre.py video_source.mp4 [début_en_s] [taille_px] [cadre]
   début : on coupe le papier vide avant la chute de la goutte (défaut 0.6)
-  taille : côté du masque (défaut 1440)
+  taille : côté du masque (défaut 1024, comme le canvas de l'encre)
   cadre : part centrale de l'image gardée (défaut 0.62)
 (dépendances : numpy, scipy, imageio-ffmpeg)
 """
@@ -20,7 +20,7 @@ from scipy import ndimage as ndi
 FF = imageio_ffmpeg.get_ffmpeg_exe()
 SRC = sys.argv[1]
 DEBUT = float(sys.argv[2]) if len(sys.argv) > 2 else 0.6
-W = int(sys.argv[3]) if len(sys.argv) > 3 else 1440
+W = int(sys.argv[3]) if len(sys.argv) > 3 else 1024
 K = W / 720  # les réglages d'origine étaient pensés pour 720 px
 OUT = Path(__file__).resolve().parents[2] / 'public' / 'hd'
 

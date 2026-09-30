@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { addElement } from '../data/store';
-import { CATEGORIES_OEUVRES, SENS_QUESTIONS, type Element, type Media, type RubriqueId, type Sens } from '../data/types';
+import { CATEGORIES_OEUVRES, MAX_FRAGMENTS, SENS_QUESTIONS, placesRestantes, type Element, type Media, type RubriqueId, type Sens } from '../data/types';
 import { Icon } from './Icon';
 
 /**
@@ -9,7 +9,7 @@ import { Icon } from './Icon';
  * rejoignent automatiquement « Médias & documents ».
  */
 
-type Champ = 'titre' | 'quand' | 'lieu' | 'lien' | 'categorie' | 'sens' | 'nature' | 'photo';
+type Champ = 'titre' | 'quand' | 'lieu' | 'lien' | 'categorie' | 'sens' | 'photo';
 
 const CONFIG: Record<RubriqueId, { champs: Champ[]; titre?: string; texte: string; max: number }> = {
   sens: { champs: ['sens', 'photo'], texte: 'Ta réponse', max: 800 },
@@ -21,7 +21,9 @@ const CONFIG: Record<RubriqueId, { champs: Champ[]; titre?: string; texte: strin
   personnes: { champs: ['titre', 'lien', 'photo'], titre: 'Son nom ou surnom', texte: 'Ce qu’elle a représenté pour toi', max: 1200 },
   lieux: { champs: ['titre', 'lieu', 'photo'], titre: 'Le lieu', texte: 'Pourquoi il a compté', max: 1200 },
   convictions: { champs: ['titre'], titre: 'Ta conviction', texte: 'Ce en quoi tu crois', max: 1200 },
-  objets: { champs: ['nature', 'titre', 'photo'], titre: 'Son nom', texte: 'Son histoire', max: 1200 },
+  objets: { champs: ['titre', 'photo'], titre: 'L’objet', texte: 'Son histoire', max: 1200 },
+  creations: { champs: ['titre', 'quand', 'photo'], titre: 'Ta création', texte: 'Ce qu’elle raconte de toi', max: 1200 },
+  accomplissements: { champs: ['titre', 'quand'], titre: 'Ton accomplissement', texte: 'Pourquoi tu en es fier·ère', max: 1200 },
   aimeVivre: { champs: [], texte: 'Ce que tu aurais encore aimé vivre', max: 800 },
   petitesChoses: { champs: [], texte: 'Une petite chose qui te rendait heureux·se', max: 800 },
 };
@@ -48,9 +50,11 @@ async function resizeImage(file: File, max = 1100): Promise<string> {
   }
 }
 
-export function FragmentEditor({ traceId, rubrique, onDone }: { traceId: string; rubrique: RubriqueId; onDone?: () => void }) {
+export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: string; rubrique: RubriqueId; items: Element[]; onDone?: () => void }) {
   const cfg = CONFIG[rubrique];
   const uid = useId();
+  // les sens qui ont encore de la place (5 fragments par sens)
+  const sensLibres = (Object.keys(SENS_QUESTIONS) as Sens[]).filter((s) => placesRestantes(items, 'sens', s) > 0);
   const [f, setF] = useState({
     titre: '',
     texte: '',
@@ -58,9 +62,7 @@ export function FragmentEditor({ traceId, rubrique, onDone }: { traceId: string;
     lieu: '',
     lien: '',
     categorie: rubrique === 'oeuvres' ? 'Livre' : '',
-    sens: 'voir' as Sens,
-    nature: 'objet' as NonNullable<Element['nature']>,
-    enAvant: true,
+    sens: (sensLibres[0] ?? 'voir') as Sens,
   });
   const [photo, setPhoto] = useState<{ src: string; name: string } | null>(null);
   const [erreur, setErreur] = useState('');
@@ -85,12 +87,13 @@ export function FragmentEditor({ traceId, rubrique, onDone }: { traceId: string;
       lien: f.lien.trim() || undefined,
       categorie: has('categorie') ? f.categorie : undefined,
       sens: has('sens') ? f.sens : undefined,
-      nature: has('nature') ? f.nature : undefined,
       medias: medias.map((m) => m.id),
-      enAvant: f.enAvant,
     };
     try {
-      addElement(traceId, rubrique, el, medias);
+      if (!addElement(traceId, rubrique, el, medias)) {
+        setErreur(`Cette rubrique a déjà ses ${MAX_FRAGMENTS} fragments.`);
+        return;
+      }
     } catch {
       setErreur('Le fragment n’a pas pu être enregistré. Essaie avec une photo plus légère.');
       return;
@@ -102,30 +105,36 @@ export function FragmentEditor({ traceId, rubrique, onDone }: { traceId: string;
     onDone?.();
   };
 
+  const complet = rubrique === 'sens' ? sensLibres.length === 0 : placesRestantes(items, rubrique) === 0;
+  if (complet) {
+    return (
+      <p className="editeur-complet">
+        {rubrique === 'sens'
+          ? `Chaque sens a ses ${MAX_FRAGMENTS} fragments. Pour en déposer un autre, retire d’abord un fragment.`
+          : `Cette rubrique a ses ${MAX_FRAGMENTS} fragments. Pour en déposer un autre, retire d’abord un fragment.`}
+      </p>
+    );
+  }
+  const restant = rubrique === 'sens' ? placesRestantes(items, 'sens', f.sens) : placesRestantes(items, rubrique);
+
   return (
     <form className="editeur" onSubmit={submit}>
       <p className="editeur-titre">
         <Icon name="plus" size={16} /> Ajouter un fragment
+        <span className="editeur-places">
+          {restant} place{restant > 1 ? 's' : ''} sur {MAX_FRAGMENTS}
+          {rubrique === 'sens' ? ' pour ce sens' : ''}
+        </span>
       </p>
       {has('sens') && (
         <label className="field">
           <span className="field-label">Le sens</span>
           <select id={`${uid}-sens`} value={f.sens} onChange={(e) => setF({ ...f, sens: e.target.value as Sens })}>
-            {(Object.keys(SENS_QUESTIONS) as Sens[]).map((s) => (
+            {sensLibres.map((s) => (
               <option key={s} value={s}>
                 {SENS_QUESTIONS[s].question}
               </option>
             ))}
-          </select>
-        </label>
-      )}
-      {has('nature') && (
-        <label className="field">
-          <span className="field-label">C’est…</span>
-          <select id={`${uid}-nature`} value={f.nature} onChange={(e) => setF({ ...f, nature: e.target.value as typeof f.nature })}>
-            <option value="objet">un objet important</option>
-            <option value="création">une création</option>
-            <option value="accomplissement">un accomplissement</option>
           </select>
         </label>
       )}
@@ -208,10 +217,6 @@ export function FragmentEditor({ traceId, rubrique, onDone }: { traceId: string;
           )}
         </div>
       )}
-      <label className="check">
-        <input type="checkbox" checked={f.enAvant} onChange={(e) => setF({ ...f, enAvant: e.target.checked })} />
-        <span>Mettre en avant sur mon profil (5 par rubrique au plus)</span>
-      </label>
       {erreur && <p className="editeur-erreur" role="alert">{erreur}</p>}
       <div className="editeur-actions">
         <button className="bouton" type="submit" disabled={!valide}>

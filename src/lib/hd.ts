@@ -1,7 +1,7 @@
 /**
  * Matières HD — générées avec Higgsfield (Nano Banana, 4K) puis préparées
  * par design/hd/preparer.py : fonds peints, lin, taches d'aquarelle,
- * aplats de gouache, motifs textiles et papiers faits main.
+ * et papiers faits main.
  *
  * Interrupteur unique : HD = false rend exactement le rendu précédent
  * (fond et bulles entièrement procéduraux). Si un fichier manque, le site
@@ -59,23 +59,6 @@ export const HD_FILES = {
 };
 
 const tacheUrl = (n: number) => `${base}taches/tache-${String(n).padStart(2, '0')}.webp`;
-
-/** Aplats de gouache (masques : on les remplit de n'importe quelle couleur). */
-export type FormeAplat = 'rectangle' | 'arche' | 'bande' | 'ovale';
-export const APLATS: Record<FormeAplat, string> = {
-  rectangle: `${base}aplats/rectangle.webp`,
-  arche: `${base}aplats/arche.webp`,
-  bande: `${base}aplats/bande.webp`,
-  ovale: `${base}aplats/ovale.webp`,
-};
-
-/** Motifs textiles nabis, raccordables (masques, comme les aplats). */
-export type Motif = 'fleurs' | 'carreaux' | 'feuillages';
-export const MOTIFS: Record<Motif, string> = {
-  fleurs: `${base}motifs/fleurs.webp`,
-  carreaux: `${base}motifs/carreaux.webp`,
-  feuillages: `${base}motifs/feuillages.webp`,
-};
 
 /**
  * Surfaces HD des pages : les papiers faits main (calques translucides de

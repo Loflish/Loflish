@@ -101,7 +101,10 @@ export class Constellation {
   private savedCam: Cam | null = null;
   private defaultZoom = 1;
   private minZoom = 0.6;
-  private maxZoom = 2.6;
+  // on s'approche assez pour lire une bulle, jamais au point de la voir pixelisée
+  private maxZoom = 2.2;
+  /** Résolution des bulles : plus fine sur les écrans denses d'ordinateur, pour rester nettes de près. */
+  private spriteSize = 160;
   private time = 0;
   private last = 0;
   private raf = 0;
@@ -148,7 +151,9 @@ export class Constellation {
     // Sur mobile, moins de bulles simultanées : espace, lisibilité, performances.
     const count = Math.min(list.length, small ? 150 : medium ? 260 : 380);
     this.D = small ? 34 : 38;
-    const spacing = small ? 82 : 96;
+    // un espace d'environ deux écrans sur deux : on s'y promène tranquillement, sans s'y perdre
+    const spacing = small ? 108 : 128;
+    this.spriteSize = !small && (window.devicePixelRatio || 1) >= 1.5 ? 208 : 160;
     const area = count * spacing * spacing;
     const aspect = this.w / Math.max(1, this.h);
     this.worldW = Math.max(Math.sqrt(area * aspect), this.w * 1.35);
@@ -248,7 +253,12 @@ export class Constellation {
       this.setHover(null);
       this.nearIds = [];
     }
-    if (mode !== 'explore') this.enteringId = null;
+    if (mode !== 'explore' && this.enteringId) {
+      // la bulle d'où l'on est entré reprend sa taille : toutes les bulles restent égales
+      const b = this.byId.get(this.enteringId);
+      if (b) b.targetScale = 1;
+      this.enteringId = null;
+    }
   }
 
   setReducedMotion(v: boolean): void {
@@ -722,7 +732,7 @@ export class Constellation {
     const t0 = performance.now();
     while (this.spritesAllowed && this.spriteQueue.length && performance.now() - t0 < 7) {
       const b = this.spriteQueue.shift()!;
-      b.sprite = bubbleSprite(b.p.id, b.p.hex, { matiere: b.p.matiere });
+      b.sprite = bubbleSprite(b.p.id, b.p.hex, { matiere: b.p.matiere, size: this.spriteSize });
     }
 
     let focusDraw: { x: number; y: number; r: number } | null = null;

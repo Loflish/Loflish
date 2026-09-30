@@ -55,7 +55,6 @@ export function BubbleImage({
 
 const MENU = [
   { to: '/projet', label: 'Le projet', icon: 'projet' },
-  { to: '/musee', label: 'Le musée, demain', icon: 'batiment' },
   { to: '/archives', label: 'Archives', icon: 'archive' },
   { to: '/carte', label: 'Carte du monde', icon: 'carte' },
   { to: '/ressources', label: 'Ressources & aide', icon: 'aide' },
@@ -73,7 +72,7 @@ export function Dock() {
   const location = useLocation();
   const panelRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
-  const aTrace = useMesTraces().some((t) => t.type === 'personnelle');
+  const aTrace = useMesTraces().length > 0;
 
   useEffect(() => setOpen(false), [location.pathname]);
   useEffect(() => {

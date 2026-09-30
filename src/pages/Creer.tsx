@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BubbleImage, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
-import { publishLocal } from '../data/store';
+import { peutCreer, publishLocal, useMesTraces } from '../data/store';
 import { LIMITES, QUESTIONS, type Trace } from '../data/types';
 import { NB_MATIERES, loadCatalogue } from '../lib/hd';
 import { GRIS_PALETTE, colorById } from '../lib/palette';
@@ -23,7 +23,6 @@ interface Draft {
   majeur: boolean;
   identite: 'complet' | 'prenom' | 'pseudo' | 'anonyme';
   nom: string;
-  pronoms: string;
   pays: string;
   couleur: string;
   /** matière d'aquarelle de la bulle (1 à 77), choisie dans le catalogue complet */
@@ -42,7 +41,6 @@ const EMPTY: Draft = {
   majeur: false,
   identite: 'prenom',
   nom: '',
-  pronoms: '',
   pays: '',
   couleur: '',
   matiere: 0,
@@ -64,6 +62,8 @@ export function Creer() {
     try {
       const raw = localStorage.getItem(KEY);
       const x: Draft = raw ? { ...EMPTY, ...JSON.parse(raw) } : { ...EMPTY };
+      // un brouillon pour une bulle déjà émise ne peut pas aboutir (deux bulles au plus, différentes)
+      if (x.kind && !peutCreer(x.kind)) x.kind = null;
       // une matière est déjà posée au hasard : on peut la garder ou en choisir une autre
       return x.matiere ? x : { ...x, matiere: 1 + Math.floor(Math.random() * NB_MATIERES) };
     } catch {
@@ -123,7 +123,6 @@ export function Creer() {
     const t: Trace = {
       id: draftId,
       nom: displayName,
-      pronoms: d.pronoms || undefined,
       type: d.kind === 'memoire' ? 'memoire' : 'personnelle',
       couleur: d.couleur,
       matiere: d.matiere,
@@ -135,7 +134,7 @@ export function Creer() {
         d.kind === 'memoire'
           ? { deposeePar: 'Toi', relation: d.relation || undefined, origine: d.origine || undefined, aperçu: d.souvenir.slice(0, 200) }
           : undefined,
-      rubriques: d.kind === 'memoire' ? { souvenirs: [{ id: 'm0', texte: d.souvenir, enAvant: true }] } : {},
+      rubriques: d.kind === 'memoire' ? { souvenirs: [{ id: 'm0', texte: d.souvenir }] } : {},
       medias: [],
       versions: [{ v: 1, date: today, note: 'Création du profil' }],
       parametres: {
@@ -157,6 +156,27 @@ export function Creer() {
       navigate(`/trace/${t.id}`);
     }, 4200);
   };
+
+  useMesTraces(); // se met à jour si une bulle est publiée ailleurs
+  const libre = { personnelle: peutCreer('personnelle'), memoire: peutCreer('memoire') };
+
+  if (!publishing && !libre.personnelle && !libre.memoire) {
+    return (
+      <main className="page page-texte creer">
+        <PageTop />
+        <div className="page-corps emerge">
+          <h1 className="page-titre">Tu as tes deux bulles</h1>
+          <p className="lead">
+            Chaque personne peut émettre deux bulles au plus : sa propre trace, et une mémoire pour une personne décédée. Les tiennes
+            sont déjà dans le musée.
+          </p>
+          <Link to="/ma-trace" className="lien-entrer">
+            Retrouver ma trace <Icon name="fleche" size={16} />
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   if (publishing) {
     return (
@@ -182,15 +202,29 @@ export function Creer() {
           <section className="etape">
             <h1 className="etape-titre">Que souhaites-tu créer ?</h1>
             <div className="choix">
-              <button className="choix-item" aria-pressed={d.kind === 'personnelle'} onClick={() => up({ kind: 'personnelle' })}>
+              <button
+                className="choix-item"
+                aria-pressed={d.kind === 'personnelle'}
+                disabled={!libre.personnelle}
+                onClick={() => up({ kind: 'personnelle' })}
+              >
                 <span className="choix-titre">Ma propre trace</span>
-                <span className="choix-texte">Tu réponds toi-même aux quatre questions.</span>
+                <span className="choix-texte">
+                  {libre.personnelle ? 'Tu réponds toi-même aux quatre questions.' : 'Ta trace est déjà dans le musée.'}
+                </span>
               </button>
-              <button className="choix-item" aria-pressed={d.kind === 'memoire'} onClick={() => up({ kind: 'memoire' })}>
+              <button className="choix-item" aria-pressed={d.kind === 'memoire'} disabled={!libre.memoire} onClick={() => up({ kind: 'memoire' })}>
                 <span className="choix-titre">Une mémoire pour une personne décédée</span>
-                <span className="choix-texte">Tu transmets ce que tu sais réellement d’elle, sans lui prêter de dernières paroles.</span>
+                <span className="choix-texte">
+                  {libre.memoire
+                    ? 'Tu transmets ce que tu sais réellement d’elle, sans lui prêter de dernières paroles.'
+                    : 'Tu as déjà déposé une mémoire.'}
+                </span>
               </button>
             </div>
+            <p className="muted petit">
+              Chaque personne peut émettre deux bulles au plus : sa propre trace, et une mémoire pour une personne décédée.
+            </p>
           </section>
         )}
 
@@ -235,12 +269,6 @@ export function Creer() {
                 <input value={d.nom} onChange={(e) => up({ nom: e.target.value })} maxLength={60} />
               </label>
             ) : null}
-            {d.kind === 'personnelle' && (
-              <label className="field">
-                <span className="field-label">Pronoms (facultatif)</span>
-                <input value={d.pronoms} onChange={(e) => up({ pronoms: e.target.value })} maxLength={24} placeholder="elle, il, iel…" />
-              </label>
-            )}
             {d.kind === 'memoire' && (
               <>
                 <label className="field">

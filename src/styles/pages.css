@@ -112,13 +112,6 @@
 .aide-urgente > * {
   position: relative;
 }
-.aide-aplat {
-  position: absolute !important;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.22;
-}
 .aide-urgente .intertitre {
   margin-top: 0;
   font-size: var(--t-xl);
@@ -276,6 +269,22 @@
 .choix-item[aria-pressed='true'] {
   border-color: var(--encre);
   background: rgba(243, 241, 236, 0.8);
+}
+.choix-item:disabled {
+  opacity: 0.5;
+  cursor: default;
+  border-style: dashed;
+}
+.choix-item:disabled:hover {
+  border-color: var(--filet);
+}
+.ma-trace-scellee {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+  font-size: var(--t-xs);
+  color: var(--encre-2);
 }
 .choix-titre {
   font-family: var(--serif);
@@ -563,10 +572,49 @@
   gap: clamp(1.4rem, 3vw, 2.6rem);
   align-items: start;
 }
+.carte-cadre {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--rayon);
+}
 .carte-svg {
   width: 100%;
   height: auto;
   display: block;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+.carte-svg.is-zoom {
+  touch-action: none;
+}
+.carte-svg:active {
+  cursor: grabbing;
+}
+.carte-zoom {
+  position: absolute;
+  right: 0.6rem;
+  bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem;
+  background: var(--papier-dense);
+  border: 1px solid var(--filet);
+  border-radius: 999px;
+}
+.carte-zoom .lien-discret {
+  padding: 0 0.7rem 0 0.4rem;
+}
+.carte-zoom .icon-btn:disabled {
+  opacity: 0.35;
+}
+.carte-moins {
+  display: block;
+  width: 12px;
+  height: 1.4px;
+  background: currentColor;
+  border-radius: 1px;
 }
 .pays-actif {
   cursor: pointer;
@@ -613,86 +661,6 @@
   }
 }
 
-/* ——— aplats nabis et motifs textiles (gouache réelle en HD, SVG sinon) */
-
-.aplat-peint {
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  pointer-events: none;
-}
-/* le motif est peint dans un ton plus clair, comme les tissus de Vuillard */
-.aplat-motif {
-  position: absolute;
-  inset: 0;
-  background: var(--lin-clair);
-  opacity: 0.42;
-  -webkit-mask-size: 340px 340px;
-  mask-size: 340px 340px;
-  -webkit-mask-repeat: repeat;
-  mask-repeat: repeat;
-}
-
-.objet-reel {
-  position: relative;
-  isolation: isolate;
-}
-/* l'objet est posé devant une arche peinte qui déborde en haut et à droite */
-.hd .objet-reel {
-  padding-top: 3.2rem;
-}
-.hd .objet-reel img {
-  width: 86%;
-}
-.projet-aplat {
-  position: absolute !important;
-  z-index: -1;
-  right: 0;
-  top: 0;
-  width: 66%;
-  height: 80%;
-  opacity: 0.6;
-}
-
-.colonne-texte {
-  position: relative;
-  isolation: isolate;
-}
-.colonne-aplat {
-  position: absolute !important;
-  z-index: -1;
-  left: -1.3rem;
-  top: -0.5rem;
-  width: min(96%, 17rem);
-  height: 5.6rem;
-  opacity: 0.4;
-}
-.hd .colonne-texte .intertitre {
-  border-top-color: transparent;
-}
-
-.frise-cadre {
-  position: relative;
-  isolation: isolate;
-  max-width: 900px;
-}
-.frise-aplat {
-  position: absolute !important;
-  z-index: -1;
-  left: -2rem;
-  right: 8%;
-  top: -1.6rem;
-  height: calc(100% + 3rem);
-  width: auto;
-  opacity: 0.28;
-}
-.frise-aplat .aplat-motif {
-  opacity: 0.5;
-  -webkit-mask-size: 260px 260px;
-  mask-size: 260px 260px;
-}
-
 /* ——— papier fait main : les panneaux qui s'ouvrent gardent leur transparence,
    seules les fibres du papier s'y posent */
 
@@ -708,104 +676,4 @@
   background-image: var(--papier-washi);
   background-size: 640px 640px;
   background-attachment: local;
-}
-
-/* ——— le musée, demain (projections) */
-
-.projection-note {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  font-size: var(--t-xs);
-  color: var(--encre-2);
-  margin: 0 0 clamp(2.5rem, 6vw, 4.5rem);
-}
-.salle-musee {
-  display: grid;
-  grid-template-columns: minmax(0, 17rem) minmax(0, 1fr);
-  gap: clamp(1.4rem, 4vw, 3.5rem);
-  align-items: start;
-  margin-bottom: clamp(3.5rem, 9vw, 7rem);
-}
-.salle-musee-cartel {
-  position: sticky;
-  top: 6rem;
-}
-.salle-musee-numero {
-  font-size: var(--t-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--encre-2);
-}
-.salle-musee-cartel .intertitre {
-  margin-top: 0.4rem;
-}
-.salle-musee-cartel p {
-  font-family: var(--serif);
-  font-size: 1.08rem;
-  color: var(--encre-2);
-}
-.salle-musee-vues {
-  display: grid;
-  gap: clamp(1rem, 3vw, 2rem);
-}
-.salle-musee-vues.vues-2 .vue-salle:nth-child(2) {
-  width: 82%;
-  justify-self: end;
-}
-.vue-salle {
-  margin: 0;
-}
-.vue-cadre {
-  position: relative;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  background: var(--lin-clair);
-}
-.vue-cadre video,
-.vue-cadre img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-/* l'image fixe se refond par-dessus la vidéo en fin de déambulation */
-.vue-cadre img {
-  opacity: 0;
-  transition: opacity 1300ms var(--doux);
-}
-.vue-cadre img.is-on {
-  opacity: 1;
-}
-.vue-projection {
-  position: absolute;
-  left: 0.7rem;
-  bottom: 0.6rem;
-  padding: 0.15rem 0.5rem;
-  font-size: 0.7rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--encre-2);
-  background: rgba(243, 241, 236, 0.82);
-  border-radius: 2px;
-}
-.musee-suite {
-  font-family: var(--serif);
-  font-size: 1.15rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem 1rem;
-  align-items: baseline;
-}
-@media (max-width: 760px) {
-  .salle-musee {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .salle-musee-cartel {
-    position: static;
-  }
-  .salle-musee-vues.vues-2 .vue-salle:nth-child(2) {
-    width: 100%;
-  }
 }

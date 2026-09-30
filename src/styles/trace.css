@@ -173,15 +173,7 @@
   font-size: 1.24rem;
   line-height: 1.55;
 }
-.question-aplat {
-  position: absolute;
-  inset: -1.1rem -1.2rem -1.3rem;
-  width: calc(100% + 2.4rem);
-  height: calc(100% + 2.4rem);
-  opacity: 0.2;
-  z-index: -1;
-}
-.question > :not(.question-aplat) {
+.question > * {
   position: relative;
 }
 .question .lien-discret {
@@ -666,6 +658,36 @@
   font-size: var(--t-s);
   color: var(--encre-2);
 }
+div.trace-bandeau {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem 1.4rem;
+}
+div.trace-bandeau > p {
+  flex: 1 1 28rem;
+  max-width: 48rem;
+}
+.trace-bandeau-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+.trace-bandeau-scellee {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+.trace-bandeau-scellee .icon {
+  flex: none;
+  margin-top: 0.1rem;
+}
+.reponses-editeur {
+  max-width: 46rem;
+}
+.reponses-editeur .field {
+  margin: 1.2rem 0;
+}
 .bloc-note-auteur {
   margin: -0.8rem 0 1.4rem;
 }
@@ -682,6 +704,19 @@
   gap: 0.4rem;
   font-weight: 600;
   font-size: var(--t-s);
+}
+.editeur-places {
+  margin-left: auto;
+  font-weight: 400;
+  font-size: var(--t-xs);
+  color: var(--encre-2);
+}
+.editeur-complet {
+  margin-top: 2rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--filet);
+  font-size: var(--t-s);
+  color: var(--encre-2);
 }
 .editeur .field {
   margin: 1rem 0;

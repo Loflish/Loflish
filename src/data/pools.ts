@@ -195,10 +195,19 @@ export const POOL = {
     { titre: 'La nature', texte: 'Nous en faisons partie, nous ne la possédons pas.' },
   ],
   objets: [
-    { nature: 'objet' as const, titre: 'La montre de mon grand-père', texte: 'Elle retarde de dix minutes depuis 1961.' },
-    { nature: 'création' as const, titre: 'Une chanson pour ma fille', texte: 'Trois accords et tout mon cœur.' },
-    { nature: 'accomplissement' as const, titre: 'Le marathon', texte: 'À 52 ans, en 4 h 51. Dernier de ma catégorie, et fier.' },
-    { nature: 'création' as const, titre: 'Le potager', texte: 'Quarante variétés de tomates.' },
+    { titre: 'La montre de mon grand-père', texte: 'Elle retarde de dix minutes depuis 1961.' },
+    { titre: 'Le carnet de recettes', texte: 'L’écriture de ma mère, des taches d’huile, et toute mon enfance dedans.' },
+    { titre: 'Une clé sans serrure', texte: 'Celle de notre première maison. Je n’ai jamais pu la jeter.' },
+  ],
+  creations: [
+    { titre: 'Une chanson pour ma fille', texte: 'Trois accords et tout mon cœur.' },
+    { titre: 'Le potager', texte: 'Quarante variétés de tomates.' },
+    { titre: 'Une courtepointe', texte: 'Faite avec les chemises de mon père, carré par carré.' },
+  ],
+  accomplissements: [
+    { titre: 'Le marathon', texte: 'À 52 ans, en 4 h 51. Dernier de ma catégorie, et fier.' },
+    { titre: 'Le permis, à la cinquième fois', texte: 'Personne n’y croyait. Moi non plus, au fond.' },
+    { titre: 'Avoir appris à lire à ma grand-mère', texte: 'Elle avait 81 ans. Elle m’a écrit une carte, la seule.' },
   ],
   aimeVivre: [
     { texte: 'Revoir la maison où je suis né.' },

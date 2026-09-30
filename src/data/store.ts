@@ -3,7 +3,7 @@ import { hashString, pick, rng, shuffle } from '../lib/random';
 import { MEMOIRES, NOMS, PAYS, POOL, PRENOMS, PSEUDOS, Q1, Q2, Q3, Q4, SENS_POOL } from './pools';
 import { SAKINAH } from './sakinah';
 import { useSyncExternalStore } from 'react';
-import type { Element, Media, RubriqueId, Trace } from './types';
+import { placesRestantes, type Element, type Media, type RubriqueId, type Trace } from './types';
 
 /**
  * Registre des traces du prototype.
@@ -37,7 +37,7 @@ function items(r: () => number, pool: readonly Omit<Element, 'id'>[], prefix: st
   const n = 1 + Math.floor(r() * max);
   return shuffle(r, pool)
     .slice(0, n)
-    .map((e, i) => ({ ...e, id: `${prefix}${i}`, enAvant: true }));
+    .map((e, i) => ({ ...e, id: `${prefix}${i}` }));
 }
 
 function generate(count: number): Trace[] {
@@ -80,10 +80,34 @@ function generate(count: number): Trace[] {
 
 const LOCAL_KEY = 'nmm:mes-traces';
 
+/**
+ * Traces enregistrées avec un ancien format : l'ancienne rubrique « Objets /
+ * créations / accomplissements » est répartie entre les trois rubriques
+ * séparées, et chaque rubrique est ramenée à 5 fragments (5 par sens).
+ */
+function migrer(t: Trace): Trace {
+  type Ancien = Element & { nature?: string; enAvant?: boolean };
+  const r = { ...t.rubriques } as Record<string, Ancien[]>;
+  const anciens = (r.objets ?? []) as Ancien[];
+  if (anciens.some((e) => e.nature)) {
+    r.objets = anciens.filter((e) => !e.nature || e.nature === 'objet');
+    r.creations = [...(r.creations ?? []), ...anciens.filter((e) => e.nature === 'création')];
+    r.accomplissements = [...(r.accomplissements ?? []), ...anciens.filter((e) => e.nature === 'accomplissement')];
+  }
+  for (const k of Object.keys(r)) {
+    const list = r[k].map(({ nature: _n, enAvant: _a, ...e }) => e);
+    r[k] =
+      k === 'sens'
+        ? list.filter((e, i) => list.slice(0, i).filter((x) => x.sens === e.sens).length < 5)
+        : list.slice(0, 5);
+  }
+  return { ...t, rubriques: r };
+}
+
 function loadLocal(): Trace[] {
   try {
     const raw = localStorage.getItem(LOCAL_KEY);
-    return raw ? (JSON.parse(raw) as Trace[]) : [];
+    return raw ? (JSON.parse(raw) as Trace[]).map(migrer) : [];
   } catch {
     return [];
   }
@@ -143,17 +167,68 @@ function touch(t: Trace, note: string): Trace {
 }
 
 export function updateLocal(id: string, fn: (t: Trace) => Trace, note = 'Mise à jour des fragments'): void {
-  local = local.map((t) => (t.id === id ? touch(fn(t), note) : t));
+  // une trace scellée ne bouge plus pendant cinq ans
+  local = local.map((t) => (t.id === id && !estScellee(t) ? touch(fn(t), note) : t));
   save();
 }
 
-export function addElement(id: string, rubrique: RubriqueId, e: Element, medias: Media[] = []): void {
+// ——— règles : deux bulles au plus, trace scellée cinq ans une fois terminée
+
+/** Durée pendant laquelle une trace terminée reste scellée. */
+export const ANNEES_SCELLEE = 5;
+
+/** Date à laquelle une trace scellée pourra de nouveau être modifiée. */
+export function reouverture(t: Trace): Date | null {
+  if (!t.scelleeLe) return null;
+  const d = new Date(t.scelleeLe);
+  d.setFullYear(d.getFullYear() + ANNEES_SCELLEE);
+  return d;
+}
+
+export function estScellee(t: Trace): boolean {
+  const r = reouverture(t);
+  return !!r && Date.now() < r.getTime();
+}
+
+export function dateLongue(d: Date | string): string {
+  return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+/** L'auteur a terminé : la trace est scellée pour cinq ans. */
+export function sceller(id: string): void {
+  updateLocal(id, (t) => ({ ...t, scelleeLe: new Date().toISOString() }), 'Trace terminée et scellée pour cinq ans');
+}
+
+/**
+ * Chaque personne émet au plus deux bulles, différentes : sa propre trace, et
+ * une mémoire pour une personne décédée.
+ */
+export function peutCreer(type: Trace['type']): boolean {
+  return !local.some((t) => t.type === type);
+}
+
+/** Modifier les réponses aux quatre questions (ou l'aperçu d'une mémoire), avant de sceller. */
+export function modifierReponses(id: string, questions: Trace['questions'], apercuMemoire?: string): void {
+  updateLocal(
+    id,
+    (t) => ({
+      ...t,
+      questions: questions ?? t.questions,
+      memoire: t.memoire && apercuMemoire !== undefined ? { ...t.memoire, aperçu: apercuMemoire } : t.memoire,
+    }),
+    'Réponses modifiées',
+  );
+}
+
+/** Ajoute un fragment ; refusé si la rubrique (ou le sens) a déjà ses 5 fragments. */
+export function addElement(id: string, rubrique: RubriqueId, e: Element, medias: Media[] = []): boolean {
+  const t = local.find((x) => x.id === id);
+  if (!t || placesRestantes(t.rubriques[rubrique] ?? [], rubrique, e.sens) === 0) return false;
   updateLocal(id, (t) => {
     const list = t.rubriques[rubrique] ?? [];
-    const featured = list.filter((x) => x.enAvant).length;
-    const el = { ...e, enAvant: e.enAvant && featured < 5 };
-    return { ...t, rubriques: { ...t.rubriques, [rubrique]: [...list, el] }, medias: [...t.medias, ...medias] };
+    return { ...t, rubriques: { ...t.rubriques, [rubrique]: [...list, e] }, medias: [...t.medias, ...medias] };
   });
+  return true;
 }
 
 export function removeElement(id: string, rubrique: RubriqueId, elementId: string): void {

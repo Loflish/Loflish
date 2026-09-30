@@ -39,11 +39,7 @@ export interface Element {
   lien?: string;
   /** Pour les 5 sens. */
   sens?: Sens;
-  /** Pour « Objets / créations / accomplissements ». */
-  nature?: 'objet' | 'création' | 'accomplissement';
   medias?: string[];
-  /** Mis en avant sur la page principale (5 maximum par rubrique). */
-  enAvant?: boolean;
 }
 
 export type RubriqueId =
@@ -57,6 +53,8 @@ export type RubriqueId =
   | 'lieux'
   | 'convictions'
   | 'objets'
+  | 'creations'
+  | 'accomplissements'
   | 'aimeVivre'
   | 'petitesChoses';
 
@@ -78,7 +76,6 @@ export interface Trace {
   id: string;
   /** Nom affiché : identité, pseudonyme ou « Anonyme ». */
   nom: string;
-  pronoms?: string;
   pseudo?: string;
   type: TraceType;
   couleur: string; // id GRIS
@@ -101,6 +98,11 @@ export interface Trace {
   rubriques: Partial<Record<RubriqueId, Element[]>>;
   medias: Media[];
   versions: Version[];
+  /**
+   * Date (ISO) à laquelle l'auteur a terminé sa trace : elle est alors scellée
+   * cinq ans, sans aucune modification possible.
+   */
+  scelleeLe?: string;
   parametres?: Parametres;
   /** Données de démonstration. */
   demo?: boolean;
@@ -123,7 +125,9 @@ export const RUBRIQUES: Rubrique[] = [
   { id: 'personnes', titre: 'Personnes qui ont compté', icone: 'personnes' },
   { id: 'lieux', titre: 'Lieux qui ont compté', icone: 'lieu' },
   { id: 'convictions', titre: 'Convictions / ce en quoi je croyais', icone: 'feuille' },
-  { id: 'objets', titre: 'Objets importants / créations / accomplissements', icone: 'objet' },
+  { id: 'objets', titre: 'Objets importants', icone: 'objet' },
+  { id: 'creations', titre: 'Mes créations', icone: 'creation' },
+  { id: 'accomplissements', titre: 'Mes accomplissements', icone: 'accomplissement' },
   { id: 'aimeVivre', titre: 'Ce que j’aurais encore aimé vivre', icone: 'horizon' },
   { id: 'petitesChoses', titre: 'Les petites choses qui me rendaient heureux·se', icone: 'fleur' },
 ];
@@ -144,6 +148,18 @@ export const QUESTIONS: [string, string, string, string] = [
 ];
 
 export const LIMITES = { q: 1200, q4: 200, sens: 800 };
+
+/**
+ * Au plus 5 fragments par rubrique ; pour les 5 sens, au plus 5 par sens.
+ * Rien n'est caché : tout ce qui est déposé est montré.
+ */
+export const MAX_FRAGMENTS = 5;
+
+/** Combien de fragments peut encore recevoir une rubrique (ou un sens). */
+export function placesRestantes(items: Element[], rubrique: RubriqueId, sens?: Sens): number {
+  const list = rubrique === 'sens' ? items.filter((e) => e.sens === sens) : items;
+  return Math.max(0, MAX_FRAGMENTS - list.length);
+}
 
 /** Catégories proposées pour « Œuvres / cultures » (saisie libre possible avec « Autre »). */
 export const CATEGORIES_OEUVRES = [
