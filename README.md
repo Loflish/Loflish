@@ -53,6 +53,11 @@ entièrement procédural). Si un fichier manque, le site revient seul au rendu p
   techniques : mouillé, granulation, sur lin, auréole séchée, fleurs d'eau, glacis, pinceau sec),
   teintées dans la couleur GRIS exacte de chaque personne.
 - **Carte** : les océans sont une aquarelle d'eau peinte.
+- **Fond vivant d'Explorer** : boucle vidéo (Kling) qui part du fond peint et y revient, lumière qui
+  respire à peine ; image fixe sur téléphone ou en mode économie de données.
+- **Entrer dans sa mémoire** : une vraie tache filmée (Kling), réduite à un masque
+  (`design/hd/masque_encre.py`), s'ouvre depuis la bulle cliquée dans sa couleur GRIS exacte.
+- **Matière des bulles** : tirée au hasard pour chaque personne, jamais choisie, et fixe.
 
 Préparation des images : `python3 design/hd/preparer.py fond|lin|taches …` (voir l'en-tête du script).
 

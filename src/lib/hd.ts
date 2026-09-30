@@ -22,6 +22,12 @@ export const FONDS: Record<Fond, { large: string; haut: string }> = {
   texte: { large: `${base}fond-texte-16x9.webp`, haut: `${base}fond-texte-9x16.webp` },
 };
 
+/** Téléphone ou connexion économe : on garde les images fixes, plus légères. */
+export const LEGER =
+  typeof window !== 'undefined' &&
+  (window.matchMedia('(max-width: 700px)').matches ||
+    (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true);
+
 // Sur téléphone, 30 taches réparties entre toutes les techniques suffisent (site plus léger).
 const petitEcran = typeof window !== 'undefined' && window.matchMedia('(max-width: 700px)').matches;
 const indices = petitEcran
@@ -29,6 +35,10 @@ const indices = petitEcran
   : Array.from({ length: NB_TACHES }, (_, i) => i + 1);
 
 export const HD_FILES = {
+  /** Diffusion d'encre filmée, recolorée dans la couleur de la bulle (transition vers une mémoire). */
+  encre: [`${base}encre.webm`, `${base}encre.mp4`],
+  /** Le fond d'Explorer qui vit : boucle vidéo partant et revenant au fond peint. */
+  fondVideo: [`${base}fond-explorer.webm`, `${base}fond-explorer.mp4`],
   lin: `${base}lin.webp`,
   eau: `${base}carte-eau.webp`,
   taches: indices.map((n) => `${base}taches/tache-${String(n).padStart(2, '0')}.webp`),
@@ -55,6 +65,10 @@ export function loadTaches(): Promise<HTMLImageElement[]> {
   return loading;
 }
 
+/**
+ * La matière d'une bulle est tirée au hasard pour chaque personne (jamais
+ * choisie) et reste la sienne : une aquarelle sèche ne change plus de forme.
+ */
 export function tacheFor(seed: number): HTMLImageElement | null {
   return taches.length ? taches[seed % taches.length] : null;
 }

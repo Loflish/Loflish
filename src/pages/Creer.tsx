@@ -381,7 +381,7 @@ function ColorPicker({ value, onChange, seed }: { value: string; onChange: (id: 
       <div className="couleurs-grille" role="radiogroup" aria-label="Couleur de la bulle">
         {GRIS_PALETTE.map((c) => (
           <button key={c.id} role="radio" aria-checked={value === c.id} aria-label={c.label} className="couleur" onClick={() => onChange(c.id)}>
-            <BubbleImage id={`${seed}-${c.id}`} couleur={c.id} size={46} />
+            <BubbleImage id={seed} couleur={c.id} size={46} />
           </button>
         ))}
       </div>

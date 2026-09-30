@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { allTraces, apercu, getTrace, TYPE_LABEL, useMesTraces } from '../data/store';
 import { Atmosphere, paperTexture } from '../engine/atmosphere';
 import { clearSpriteCache } from '../engine/bubbleSprite';
-import { FONDS, HD, HD_FILES, loadTaches, type Fond } from '../lib/hd';
+import { Encre } from '../engine/encre';
+import { FONDS, HD, HD_FILES, LEGER, loadTaches, type Fond } from '../lib/hd';
 import { Constellation, MODES } from '../engine/constellation';
 import { colorById } from '../lib/palette';
 import { useMuseum } from '../lib/museum';
@@ -25,15 +26,23 @@ const FOND_BY_MODE: Record<keyof typeof MODES, Fond> = {
  */
 function FondsPeints({ actif }: { actif: Fond }) {
   const [vus, setVus] = useState<Fond[]>([actif]);
+  const [video, setVideo] = useState(true);
   useEffect(() => setVus((v) => (v.includes(actif) ? v : [...v, actif])), [actif]);
   return (
     <>
       {vus.map((f) => (
         <div key={f} className={`fond-peint${f === actif ? ' is-on' : ''}`} aria-hidden="true">
-          <picture>
-            <source media="(max-aspect-ratio: 3/4)" srcSet={FONDS[f].haut} />
-            <img src={FONDS[f].large} alt="" onError={(e) => ((e.currentTarget.closest('.fond-peint') as HTMLElement).hidden = true)} />
-          </picture>
+          {f === 'explorer' && !LEGER && video ? (
+            <video poster={FONDS.explorer.large} autoPlay muted loop playsInline>
+              <source src={HD_FILES.fondVideo[0]} type="video/webm" />
+              <source src={HD_FILES.fondVideo[1]} type="video/mp4" onError={() => setVideo(false)} />
+            </video>
+          ) : (
+            <picture>
+              <source media="(max-aspect-ratio: 3/4)" srcSet={FONDS[f].haut} />
+              <img src={FONDS[f].large} alt="" onError={(e) => ((e.currentTarget.closest('.fond-peint') as HTMLElement).hidden = true)} />
+            </picture>
+          )}
         </div>
       ))}
     </>
@@ -51,6 +60,8 @@ export function Backdrop() {
   const hoverLabel = useRef<HTMLDivElement>(null);
   const nearLabels = useRef<(HTMLDivElement | null)[]>([]);
   const cardRef = useRef<HTMLDivElement>(null);
+  const encreRef = useRef<HTMLCanvasElement>(null);
+  const encre = useRef<Encre | null>(null);
   const enterBtn = useRef<HTMLButtonElement>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -76,6 +87,7 @@ export function Backdrop() {
     const presences = allTraces().map((t) => ({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex }));
     const c = new Constellation(cvsRef.current!, presences);
     engine.current = c;
+    if (HD && encreRef.current) encre.current = new Encre(encreRef.current, HD_FILES.encre);
     if (HD) {
       // les bulles attendent leurs taches d'aquarelle HD (2 s au plus, sinon rendu procédural)
       c.spritesAllowed = false;
@@ -178,10 +190,19 @@ export function Backdrop() {
   const interactive = MODES[mode].interactive;
 
   const enter = async () => {
-    if (!selected) return;
+    if (!selected || !trace) return;
     setEntering(true);
-    await engine.current?.enter(selected);
-    navigate(`/trace/${selected}`);
+    const pos = engine.current?.screenPos(selected);
+    const ink = encre.current;
+    if (pos && ink?.ready) {
+      // l'encre de sa couleur s'ouvre depuis sa bulle, puis la mémoire apparaît
+      await Promise.all([engine.current?.enter(selected), ink.play(pos.x, pos.y, pos.r, colorById(trace.couleur).hex, 1500)]);
+      navigate(`/trace/${selected}`);
+      window.setTimeout(() => ink.fadeOut(), 350);
+    } else {
+      await engine.current?.enter(selected);
+      navigate(`/trace/${selected}`);
+    }
   };
 
   return (
@@ -202,6 +223,8 @@ export function Backdrop() {
         <div className="paper" aria-hidden="true" style={{ backgroundImage: paper ? `url(${paper})` : undefined }} />
       )}
       <div className={`veil${entering ? ' is-on' : ''}`} aria-hidden="true" />
+      {/* au-dessus des pages : l'encre recouvre encore la mémoire qui s'ouvre */}
+      {createPortal(<canvas ref={encreRef} className="encre" aria-hidden="true" hidden />, document.body)}
 
       <div className="names" aria-hidden="true">
         {[0, 1, 2].map((i) => (
