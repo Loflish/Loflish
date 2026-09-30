@@ -44,10 +44,17 @@ npm run build    # build statique dans dist/ (chemins relatifs, hébergeable par
 ## Matières HD (Higgsfield)
 
 Couche optionnelle, activée par `HD` dans `src/lib/hd.ts` (mettre `false` pour revenir au rendu
-entièrement procédural) : fond peint 4K sous l'atmosphère vivante, texture de lin, et bulles dont
-la matière vient de vraies taches d'aquarelle teintées dans la couleur GRIS exacte de chaque personne.
-Les images générées se préparent avec `python3 design/hd/preparer.py <dossier>` (fichiers 0.png à
-4.png) et vont dans `public/hd/`. Si un fichier manque, le site revient seul au rendu procédural.
+entièrement procédural). Si un fichier manque, le site revient seul au rendu procédural.
+
+- **Fonds peints 4K**, un par espace (Explorer, profil, Créer ma trace, pages de texte), en format
+  ordinateur et téléphone, en fondu enchaîné sous l'atmosphère vivante.
+- **Lin HD** raccordable, par-dessus tout, très discret.
+- **Bulles** : leur matière vient de vraies taches d'aquarelle (planches générées en 4K, plusieurs
+  techniques : mouillé, granulation, sur lin, auréole séchée, fleurs d'eau, glacis, pinceau sec),
+  teintées dans la couleur GRIS exacte de chaque personne.
+- **Carte** : les océans sont une aquarelle d'eau peinte.
+
+Préparation des images : `python3 design/hd/preparer.py fond|lin|taches …` (voir l'en-tête du script).
 
 ## Accessibilité & performance
 

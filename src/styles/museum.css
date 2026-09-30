@@ -594,7 +594,8 @@
   position: absolute;
   inset: -4%;
   overflow: hidden;
-  opacity: 0.5;
+  opacity: 0;
+  transition: opacity 1800ms var(--doux);
   /* le fond reste calme et clair autour du logo brodé */
   -webkit-mask-image: radial-gradient(ellipse 34% 22% at 16% 7%, transparent 35%, #000 100%);
   mask-image: radial-gradient(ellipse 34% 22% at 16% 7%, transparent 35%, #000 100%);
@@ -604,6 +605,9 @@
   height: 100%;
   object-fit: cover;
   animation: fond-respire 140s ease-in-out infinite alternate;
+}
+.fond-peint.is-on {
+  opacity: 0.5;
 }
 @keyframes fond-respire {
   from { transform: scale(1) translate(0, 0); }

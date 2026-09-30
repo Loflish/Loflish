@@ -10,11 +10,28 @@ export const HD = true;
 
 const base = `${import.meta.env.BASE_URL}hd/`;
 
+/** Nombre de taches d'aquarelle préparées (public/hd/taches). */
+const NB_TACHES = 77;
+
+/** Un fond peint par espace, en format ordinateur (large) et téléphone (haut). */
+export type Fond = 'explorer' | 'profil' | 'creer' | 'texte';
+export const FONDS: Record<Fond, { large: string; haut: string }> = {
+  explorer: { large: `${base}fond-16x9.webp`, haut: `${base}fond-9x16.webp` },
+  profil: { large: `${base}fond-profil-16x9.webp`, haut: `${base}fond-profil-9x16.webp` },
+  creer: { large: `${base}fond-creer-16x9.webp`, haut: `${base}fond-creer-9x16.webp` },
+  texte: { large: `${base}fond-texte-16x9.webp`, haut: `${base}fond-texte-9x16.webp` },
+};
+
+// Sur téléphone, 30 taches réparties entre toutes les techniques suffisent (site plus léger).
+const petitEcran = typeof window !== 'undefined' && window.matchMedia('(max-width: 700px)').matches;
+const indices = petitEcran
+  ? Array.from({ length: 30 }, (_, i) => Math.floor((i * NB_TACHES) / 30) + 1)
+  : Array.from({ length: NB_TACHES }, (_, i) => i + 1);
+
 export const HD_FILES = {
-  fondLarge: `${base}fond-16x9.webp`,
-  fondHaut: `${base}fond-9x16.webp`,
   lin: `${base}lin.webp`,
-  taches: Array.from({ length: 18 }, (_, i) => `${base}taches/tache-${String(i + 1).padStart(2, '0')}.webp`),
+  eau: `${base}carte-eau.webp`,
+  taches: indices.map((n) => `${base}taches/tache-${String(n).padStart(2, '0')}.webp`),
 };
 
 let taches: HTMLImageElement[] = [];

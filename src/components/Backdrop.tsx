@@ -4,11 +4,41 @@ import { useNavigate } from 'react-router-dom';
 import { allTraces, apercu, getTrace, TYPE_LABEL, useMesTraces } from '../data/store';
 import { Atmosphere, paperTexture } from '../engine/atmosphere';
 import { clearSpriteCache } from '../engine/bubbleSprite';
-import { HD, HD_FILES, loadTaches } from '../lib/hd';
+import { FONDS, HD, HD_FILES, loadTaches, type Fond } from '../lib/hd';
 import { Constellation, MODES } from '../engine/constellation';
 import { colorById } from '../lib/palette';
 import { useMuseum } from '../lib/museum';
 import { Icon } from './Icon';
+
+const FOND_BY_MODE: Record<keyof typeof MODES, Fond> = {
+  explore: 'explorer',
+  perdre: 'explorer',
+  trace: 'profil',
+  creer: 'creer',
+  texte: 'texte',
+  minimal: 'creer',
+};
+
+/**
+ * Un fond peint par espace, en fondu enchaîné très lent. Chaque image n'est
+ * chargée que la première fois que l'on entre dans l'espace correspondant.
+ */
+function FondsPeints({ actif }: { actif: Fond }) {
+  const [vus, setVus] = useState<Fond[]>([actif]);
+  useEffect(() => setVus((v) => (v.includes(actif) ? v : [...v, actif])), [actif]);
+  return (
+    <>
+      {vus.map((f) => (
+        <div key={f} className={`fond-peint${f === actif ? ' is-on' : ''}`} aria-hidden="true">
+          <picture>
+            <source media="(max-aspect-ratio: 3/4)" srcSet={FONDS[f].haut} />
+            <img src={FONDS[f].large} alt="" onError={(e) => ((e.currentTarget.closest('.fond-peint') as HTMLElement).hidden = true)} />
+          </picture>
+        </div>
+      ))}
+    </>
+  );
+}
 
 const ATMOSPHERE_BY_MODE = { explore: 1, perdre: 0.9, trace: 0.7, creer: 0.55, texte: 0.85, minimal: 0.3 } as const;
 
@@ -156,14 +186,7 @@ export function Backdrop() {
 
   return (
     <div className={`backdrop mode-${mode}`} aria-hidden={!interactive}>
-      {HD && (
-        <div className="fond-peint" aria-hidden="true">
-          <picture>
-            <source media="(max-aspect-ratio: 3/4)" srcSet={HD_FILES.fondHaut} />
-            <img src={HD_FILES.fondLarge} alt="" onError={(e) => ((e.currentTarget.closest('.fond-peint') as HTMLElement).hidden = true)} />
-          </picture>
-        </div>
-      )}
+      {HD && <FondsPeints actif={FOND_BY_MODE[mode]} />}
       <canvas ref={atmoRef} className={`backdrop-atmosphere${HD ? ' sur-fond-peint' : ''}`} aria-hidden="true" />
       <canvas
         ref={cvsRef}

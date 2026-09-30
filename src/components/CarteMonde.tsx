@@ -7,6 +7,7 @@ import world from 'world-atlas/countries-110m.json';
 import { allTraces } from '../data/store';
 import type { Trace } from '../data/types';
 import { bubbleDataUrl } from '../engine/bubbleSprite';
+import { HD, HD_FILES } from '../lib/hd';
 import { colorById, hexToRgb } from '../lib/palette';
 
 /**
@@ -83,12 +84,18 @@ export function CarteMonde() {
             <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.5 1.05" result="ga" />
             <feComposite in="SourceGraphic" in2="ga" operator="in" />
           </filter>
+          {HD && (
+            <pattern id="eau-peinte" patternUnits="userSpaceOnUse" width={W} height={H}>
+              <image href={HD_FILES.eau} width={W} height={H} preserveAspectRatio="xMidYMid slice" />
+            </pattern>
+          )}
           {/* motif des eaux : petites vagues décoratives, très discrètes */}
           <pattern id="eaux" width="26" height="14" patternUnits="userSpaceOnUse">
             <path d="M1 9 q 5 -5 11 0 t 11 0" fill="none" stroke="rgba(87,83,92,0.13)" strokeWidth="0.8" strokeLinecap="round" />
           </pattern>
         </defs>
         <path d={paths.sphere} fill="rgb(214, 227, 224)" filter="url(#aplat-grain)" />
+        {HD && <path d={paths.sphere} fill="url(#eau-peinte)" opacity={0.85} />}
         <path d={paths.sphere} fill="url(#eaux)" />
         <g filter="url(#trait-main)">
           {paths.list.map((p) => {
