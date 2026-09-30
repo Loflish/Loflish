@@ -594,6 +594,10 @@
   position: absolute;
   inset: -4%;
   overflow: hidden;
+  opacity: 0.5;
+  /* le fond reste calme et clair autour du logo brodé */
+  -webkit-mask-image: radial-gradient(ellipse 34% 22% at 16% 7%, transparent 35%, #000 100%);
+  mask-image: radial-gradient(ellipse 34% 22% at 16% 7%, transparent 35%, #000 100%);
 }
 .fond-peint img {
   width: 100%;
@@ -607,12 +611,12 @@
 }
 .backdrop-atmosphere.sur-fond-peint {
   mix-blend-mode: multiply;
-  opacity: 0.55;
+  opacity: 0.45;
 }
 .lin-hd {
   position: absolute;
   inset: 0;
   background-size: 900px 900px;
   mix-blend-mode: multiply;
-  opacity: 0.28;
+  opacity: 0.13;
 }

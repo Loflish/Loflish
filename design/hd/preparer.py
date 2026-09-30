@@ -68,5 +68,5 @@ for sheet in ['3.png', '4.png']:
         shade = 255 - a * 105                            # densité (sert au multiply)
         rgba = np.dstack([shade, shade, shade, alpha * 255]).astype(np.uint8)
         n += 1
-        Image.fromarray(rgba, 'RGBA').resize((512, 512), Image.LANCZOS).save(out / 'taches' / f'tache-{n:02d}.webp', lossless=False, quality=90)
+        Image.fromarray(rgba, 'RGBA').resize((384, 384), Image.LANCZOS).save(out / 'taches' / f'tache-{n:02d}.webp', quality=82, method=6)
 print('taches :', n)

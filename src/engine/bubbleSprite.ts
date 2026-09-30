@@ -282,7 +282,7 @@ function paintTache(ctx: CanvasRenderingContext2D, tache: HTMLImageElement, hex:
   t.fillRect(0, 0, size, size);
   // 2. la densité : la tache assombrit là où elle était plus chargée
   t.globalCompositeOperation = 'multiply';
-  t.globalAlpha = 0.6;
+  t.globalAlpha = 0.28;
   place();
   ctx.drawImage(tmp, 0, 0);
 }

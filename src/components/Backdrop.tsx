@@ -173,8 +173,11 @@ export function Backdrop() {
         aria-label="Constellation des présences. Flèches pour se déplacer, plus et moins pour s’approcher, Entrée pour rencontrer la présence la plus proche du centre."
         style={{ pointerEvents: interactive ? 'auto' : 'none' }}
       />
-      <div className="paper" aria-hidden="true" style={{ backgroundImage: paper ? `url(${paper})` : undefined }} />
-      {HD && <div className="lin-hd" aria-hidden="true" style={{ backgroundImage: `url(${HD_FILES.lin})` }} />}
+      {HD ? (
+        <div className="lin-hd" aria-hidden="true" style={{ backgroundImage: `url(${HD_FILES.lin})` }} />
+      ) : (
+        <div className="paper" aria-hidden="true" style={{ backgroundImage: paper ? `url(${paper})` : undefined }} />
+      )}
       <div className={`veil${entering ? ' is-on' : ''}`} aria-hidden="true" />
 
       <div className="names" aria-hidden="true">
