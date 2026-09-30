@@ -5,7 +5,7 @@ import { allTraces, apercu, getTrace, TYPE_LABEL, useMesTraces } from '../data/s
 import { Atmosphere, paperTexture } from '../engine/atmosphere';
 import { clearSpriteCache } from '../engine/bubbleSprite';
 import { Encre } from '../engine/encre';
-import { FONDS, HD, HD_FILES, LEGER, loadMatieres, type Fond } from '../lib/hd';
+import { FONDS, HD, HD_FILES, LEGER, loadMatieres, loadTaches, type Fond } from '../lib/hd';
 import { Constellation, MODES } from '../engine/constellation';
 import { colorById } from '../lib/palette';
 import { useMuseum } from '../lib/museum';
@@ -33,7 +33,8 @@ function FondsPeints({ actif }: { actif: Fond }) {
   useEffect(() => setVus((v) => (v.includes(actif) ? v : [...v, actif])), [actif]);
   useEffect(() => {
     let t = 0;
-    const go = () => (t = window.setTimeout(() => setPret(true), 1200));
+    // la vidéo passe après les taches d'aquarelle des bulles : elle ne leur vole pas la connexion
+    const go = () => void loadTaches().then(() => (t = window.setTimeout(() => setPret(true), 1200)));
     if (document.readyState === 'complete') go();
     else window.addEventListener('load', go, { once: true });
     // onglet caché : la vidéo se repose
@@ -114,14 +115,15 @@ export function Backdrop() {
     engine.current = c;
     if (HD && encreRef.current) encre.current = new Encre(encreRef.current, HD_FILES.encre);
     if (HD) {
-      // les bulles attendent leurs taches d'aquarelle HD (2 s au plus, sinon rendu procédural)
+      // les bulles s'affichent tout de suite en lavis provisoire, puis prennent leur vraie
+      // matière d'aquarelle dès que les taches HD sont là (8 s au plus, sinon rendu procédural)
       c.spritesAllowed = false;
       const go = () => {
         clearSpriteCache();
         c.resetSprites();
         c.spritesAllowed = true;
       };
-      const fallback = window.setTimeout(go, 2000);
+      const fallback = window.setTimeout(go, 8000);
       // les taches de base, plus les matières choisies par chacun
       loadMatieres(traces.map((t) => t.matiere)).then(() => {
         window.clearTimeout(fallback);

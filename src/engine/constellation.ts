@@ -1,5 +1,5 @@
 import { drift, gaussian, hashString, rng } from '../lib/random';
-import { bubbleSprite, SPRITE_DIAMETER } from './bubbleSprite';
+import { bubbleSprite, provisionalSprite, SPRITE_DIAMETER } from './bubbleSprite';
 
 /**
  * Constellation de présences.
@@ -181,21 +181,34 @@ export class Constellation {
         breath: rr() * TAU,
         breathSpeed: TAU / (7 + rr() * 6),
         alpha: 1,
-        sprite: null,
+        // visible dès la première image ; la vraie matière la remplace ensuite
+        sprite: provisionalSprite(p.hex),
       };
       return b;
     });
     this.byId = new Map(this.bubbles.map((b) => [b.p.id, b]));
-    this.spriteQueue = this.bubbles.filter((b) => !b.sprite);
+    this.spriteQueue = this.visiblesDabord(this.bubbles);
     this.cell = this.D * 2.8;
     this.cols = Math.max(1, Math.floor(this.worldW / this.cell));
     this.rows = Math.max(1, Math.floor(this.worldH / this.cell));
   }
 
-  /** Regénère toutes les bulles (ex. quand les matières HD sont chargées). */
+  /**
+   * Regénère toutes les bulles (ex. quand les matières HD sont chargées). Chaque
+   * bulle garde son image actuelle jusqu'à ce que la nouvelle soit prête : aucune
+   * ne disparaît, et celles qui sont à l'écran passent en premier.
+   */
   resetSprites(): void {
-    for (const b of this.bubbles) b.sprite = null;
-    this.spriteQueue = this.bubbles.slice();
+    this.spriteQueue = this.visiblesDabord(this.bubbles);
+  }
+
+  /** Ordre de génération : les bulles les plus proches du centre de la vue d'abord. */
+  private visiblesDabord(list: Bubble[]): Bubble[] {
+    const d = (b: Bubble) => Math.hypot(this.wrapD(b.x - this.cam.x, this.worldW), this.wrapD(b.y - this.cam.y, this.worldH));
+    return list
+      .map((b) => [d(b), b] as const)
+      .sort((a, b) => a[0] - b[0])
+      .map(([, b]) => b);
   }
 
   /** Ajoute une nouvelle présence : elle apparaît fondue dans le décor puis devient comme les autres. */
@@ -220,7 +233,7 @@ export class Constellation {
       breath: 0,
       breathSpeed: TAU / 9,
       alpha: 0,
-      sprite: null,
+      sprite: provisionalSprite(p.hex),
     };
     this.bubbles.unshift(b);
     this.byId.set(p.id, b);

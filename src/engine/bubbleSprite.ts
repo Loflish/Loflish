@@ -290,6 +290,37 @@ function paintTache(ctx: CanvasRenderingContext2D, tache: HTMLImageElement, hex:
   ctx.drawImage(tmp, 0, 0);
 }
 
+const provisoires = new Map<string, HTMLCanvasElement>();
+
+/**
+ * Bulle provisoire, instantanée : un simple lavis de sa couleur au bord un peu
+ * plus chargé. Elle s'affiche dès la première image, le temps que la vraie
+ * matière d'aquarelle arrive ; elle est ensuite remplacée sur place.
+ */
+export function provisionalSprite(hex: string): HTMLCanvasElement {
+  const hit = provisoires.get(hex);
+  if (hit) return hit;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = SPRITE_SIZE;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const c = SPRITE_SIZE / 2;
+    const R = (SPRITE_SIZE * SPRITE_DIAMETER) / 2;
+    const [r, g, b] = hexToRgb(hex);
+    const grad = ctx.createRadialGradient(c - R * 0.15, c - R * 0.2, R * 0.1, c, c, R);
+    grad.addColorStop(0, `rgba(${r},${g},${b},0.42)`);
+    grad.addColorStop(0.78, `rgba(${r},${g},${b},0.62)`);
+    grad.addColorStop(0.95, `rgba(${r},${g},${b},0.8)`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(c, c, R, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  provisoires.set(hex, canvas);
+  return canvas;
+}
+
 /** Image de la bulle pour le DOM (profil, Se perdre, création). */
 export function bubbleDataUrl(seedKey: string, hex: string, size = 320, matiere?: number): string {
   return bubbleSprite(seedKey, hex, { size, matiere }).toDataURL('image/png');
