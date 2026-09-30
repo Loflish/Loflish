@@ -122,6 +122,61 @@
   line-height: 1.6;
   max-width: 40rem;
 }
+.aide-monde {
+  display: grid;
+  gap: 0.2rem;
+  margin: 1.4rem 0 1.2rem;
+  padding: 1.1rem 1.3rem;
+  border: 1px solid var(--encre);
+  border-radius: var(--rayon);
+  max-width: 34rem;
+  text-decoration: none;
+  transition: background 400ms var(--doux);
+}
+.aide-monde:hover {
+  background: rgba(47, 44, 51, 0.05);
+}
+.aide-monde-titre {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+}
+.aide-monde-lien {
+  font-size: var(--t-s);
+  color: var(--encre-2);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.lignes-directes {
+  margin-top: 1.4rem;
+}
+.lignes-directes summary {
+  cursor: pointer;
+  font-size: var(--t-s);
+  color: var(--encre-2);
+}
+.mot-fondateur {
+  margin: 2rem 0 1rem;
+  padding: 1.2rem 1.4rem;
+  border-left: 2px solid var(--encre-2);
+  background: rgba(243, 241, 236, 0.7);
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+.mot-fondateur p + p {
+  margin-top: 0.7rem;
+}
+.mot-fondateur-titre {
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--encre-2);
+}
+.mot-fondateur-signature {
+  font-style: italic;
+  color: var(--encre-2);
+}
 .lignes {
   margin: 1.6rem 0;
   display: grid;
@@ -157,7 +212,7 @@
   margin-top: 0.4rem;
 }
 
-/* ——— juridique, archives, carte */
+/* ——— juridique, archives */
 
 .sommaire {
   list-style: decimal;
@@ -181,29 +236,6 @@
   font-family: var(--serif);
   font-size: 1.1rem;
   color: var(--encre-2);
-}
-.pays-liste {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 0 2rem;
-  margin-bottom: 2rem;
-}
-.pays-liste li {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid var(--filet);
-}
-.pays-bulles {
-  display: flex;
-  gap: 2px;
-  width: 100px;
-  flex: none;
-}
-.pays-nom {
-  font-family: var(--serif);
-  font-size: 1.08rem;
 }
 
 /* ——— créer ma trace */
@@ -563,102 +595,6 @@
 }
 .ma-trace-autre {
   margin: 1.6rem 0 0.6rem;
-}
-
-/* ——— carte du monde peinte */
-.carte-monde {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 16rem;
-  gap: clamp(1.4rem, 3vw, 2.6rem);
-  align-items: start;
-}
-.carte-cadre {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--rayon);
-}
-.carte-svg {
-  width: 100%;
-  height: auto;
-  display: block;
-  cursor: grab;
-  touch-action: pan-y;
-  user-select: none;
-}
-.carte-svg.is-zoom {
-  touch-action: none;
-}
-.carte-svg:active {
-  cursor: grabbing;
-}
-.carte-zoom {
-  position: absolute;
-  right: 0.6rem;
-  bottom: 0.6rem;
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0.15rem;
-  background: var(--papier-dense);
-  border: 1px solid var(--filet);
-  border-radius: 999px;
-}
-.carte-zoom .lien-discret {
-  padding: 0 0.7rem 0 0.4rem;
-}
-.carte-zoom .icon-btn:disabled {
-  opacity: 0.35;
-}
-.carte-moins {
-  display: block;
-  width: 12px;
-  height: 1.4px;
-  background: currentColor;
-  border-radius: 1px;
-}
-.pays-actif {
-  cursor: pointer;
-  transition: filter 500ms var(--doux);
-}
-.pays-actif:hover,
-.pays-actif.is-on,
-.pays-actif:focus-visible {
-  filter: brightness(0.93) saturate(1.2);
-  outline: none;
-}
-.pays-actif.is-on {
-  stroke: rgba(47, 44, 51, 0.9);
-  stroke-width: 1;
-}
-.carte-panneau {
-  padding-top: 0.6rem;
-  border-top: 1px solid var(--filet);
-}
-.carte-pays {
-  font-family: var(--serif);
-  font-size: var(--t-xl);
-  line-height: 1.2;
-  margin-bottom: 0.8rem;
-}
-.carte-noms {
-  display: grid;
-  gap: 0.2rem;
-  max-height: 22rem;
-  overflow: auto;
-}
-.carte-noms a {
-  font-family: var(--serif);
-  font-size: 1.05rem;
-  text-decoration: none;
-}
-.carte-noms a:hover {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-}
-@media (max-width: 760px) {
-  .carte-monde {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* ——— papier fait main : les panneaux qui s'ouvrent gardent leur transparence,

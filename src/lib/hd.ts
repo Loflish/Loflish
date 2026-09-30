@@ -15,13 +15,12 @@ const base = `${import.meta.env.BASE_URL}hd/`;
 export const NB_MATIERES = 77;
 const NB_TACHES = NB_MATIERES;
 
-/** Un fond peint par espace, en format ordinateur (large) et téléphone (haut). */
-export type Fond = 'explorer' | 'profil' | 'creer' | 'texte';
+/** Les fonds, en format ordinateur (large) et téléphone (haut). */
+export type Fond = 'explorer' | 'tissu';
 export const FONDS: Record<Fond, { large: string; haut: string }> = {
   explorer: { large: `${base}fond-16x9.webp`, haut: `${base}fond-9x16.webp` },
-  profil: { large: `${base}fond-profil-16x9.webp`, haut: `${base}fond-profil-9x16.webp` },
-  creer: { large: `${base}fond-creer-16x9.webp`, haut: `${base}fond-creer-9x16.webp` },
-  texte: { large: `${base}fond-texte-16x9.webp`, haut: `${base}fond-texte-9x16.webp` },
+  /** Toutes les pages sauf la constellation : un tissu de coton ivoire, plis doux, fibres visibles. */
+  tissu: { large: `${base}fond-tissu-16x9.webp`, haut: `${base}fond-tissu-9x16.webp` },
 };
 
 /** Téléphone ou connexion économe : on garde les images fixes, plus légères. */
@@ -55,7 +54,6 @@ export const HD_FILES = {
    */
   fondVideo: fondVideo(),
   lin: `${base}lin.webp`,
-  eau: `${base}carte-eau.webp`,
 };
 
 const tacheUrl = (n: number) => `${base}taches/tache-${String(n).padStart(2, '0')}.webp`;

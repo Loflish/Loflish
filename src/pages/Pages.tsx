@@ -2,7 +2,6 @@ import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Footer, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
-import { CarteMonde } from '../components/CarteMonde';
 import { allTraces } from '../data/store';
 import { useMuseumMode } from '../lib/museum';
 
@@ -78,8 +77,18 @@ export function Ressources() {
         <h2 id="h-aide" className="intertitre">Si tu penses au suicide, tu n’es pas seul·e.</h2>
         <p>
           Nos mots mémoriaux parle de la mémoire et de la vie, pas d’y mettre fin. Si tu traverses un moment très difficile, des personnes
-          formées peuvent t’écouter maintenant, gratuitement et sans jugement.
+          formées peuvent t’écouter maintenant, gratuitement, sans jugement, dans ton pays et dans ta langue.
         </p>
+        <a className="aide-monde" href="https://findahelpline.com" target="_blank" rel="noreferrer">
+          <span className="aide-monde-titre">Trouver une ligne d’écoute, partout dans le monde</span>
+          <span className="aide-monde-lien">findahelpline.com</span>
+        </a>
+        <p className="petit">
+          En cas de danger immédiat, appelle les services d’urgence de ton pays (par exemple le <strong>112</strong> en Europe, le{' '}
+          <strong>911</strong> en Amérique du Nord).
+        </p>
+        <details className="lignes-directes">
+          <summary>Quelques lignes directes</summary>
         <ul className="lignes">
           {LIGNES.map(([pays, num, desc]) => (
             <li key={pays}>
@@ -91,18 +100,15 @@ export function Ressources() {
             </li>
           ))}
         </ul>
-        <p className="petit">
-          En cas de danger immédiat, appelle les urgences : <strong>112</strong> (Europe), <strong>911</strong> (Amérique du Nord). Pour
-          les autres pays : <a href="https://findahelpline.com" target="_blank" rel="noreferrer">findahelpline.com</a>.
-        </p>
-        <p className="muted petit">Liste à vérifier et compléter pays par pays avant la mise en ligne.</p>
+          <p className="muted petit">Liste à vérifier avant la mise en ligne ; pour tous les autres pays, findahelpline.com.</p>
+        </details>
       </section>
       <div className="deux-colonnes">
         <section className="texte-courant">
           <h2 className="intertitre">Comment fonctionne le musée</h2>
           <p>
-            Chaque trace est publique une fois publiée. Les brouillons restent privés. Les quatre réponses fondamentales peuvent évoluer
-            tous les cinq ans ; les fragments, eux, restent vivants.
+            Les brouillons restent privés. Une trace devient publique quand son auteur scelle ses quatre réponses : elles ne changent
+            plus pendant cinq ans. Chaque fragment ajouté ensuite est scellé à son tour, au moment où il est déposé.
           </p>
         </section>
         <section className="texte-courant">
@@ -181,16 +187,6 @@ export function Archives() {
           </li>
         </ol>
       </div>
-    </Page>
-  );
-}
-
-export function Carte() {
-  return (
-    <Page className="carte">
-      <h1 className="page-titre">Carte du monde</h1>
-      <p className="lead">Des présences venues du monde entier. Aucune compétition : seulement le monde, ensemble.</p>
-      <CarteMonde />
     </Page>
   );
 }

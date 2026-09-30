@@ -357,3 +357,44 @@ ul {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* icônes brodées : le fil reste net, légèrement fondu dans la matière du fond */
+.icon-brodee {
+  display: inline-block;
+  flex: none;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  margin: -0.09em;
+}
+
+/* ——— les 200 caractères, brodés lettre à lettre */
+.texte-brode {
+  font-style: normal;
+  line-height: 1.45;
+  word-spacing: 0.06em;
+}
+.brode-mot {
+  display: inline-block;
+  white-space: nowrap;
+}
+.brode-lettre {
+  position: relative;
+  display: inline-block;
+  height: 0.7em;
+  vertical-align: baseline;
+}
+.brode-fil {
+  position: absolute;
+  left: 0;
+  background-repeat: no-repeat;
+  mix-blend-mode: multiply;
+}
+.brode-repli {
+  font-family: var(--serif);
+  font-style: italic;
+}
+.apercu-texte .texte-brode,
+.perdre-texte .texte-brode,
+.question-200 .texte-brode {
+  font-size: 1.28em;
+}

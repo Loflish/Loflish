@@ -1,11 +1,29 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { BubbleImage, Footer } from '../components/Chrome';
+import { TexteBrode } from '../components/TexteBrode';
 import { Icon } from '../components/Icon';
 import { FragmentEditor } from '../components/FragmentEditor';
-import { MediaThumb } from '../components/Media';
-import { dateLongue, estScellee, getTrace, isMine, modifierReponses, removeElement, reouverture, sceller, TYPE_LABEL, useMesTraces } from '../data/store';
-import { LIMITES, QUESTIONS, RUBRIQUES, SENS_QUESTIONS, type Element, type Media, type Rubrique, type RubriqueId, type Trace } from '../data/types';
+import { ChoixMedia, MediaThumb, MediaVue, OuvrirMedia, type MediaChoisi } from '../components/Media';
+import {
+  addMedia,
+  basculerEnAvant,
+  basculerMediaEnAvant,
+  dateLongue,
+  enAvantDabord,
+  estScelle,
+  estScellee,
+  getTrace,
+  isMine,
+  mediasLibres,
+  modifierReponses,
+  removeElement,
+  reouverture,
+  TYPE_LABEL,
+  useMesTraces,
+} from '../data/store';
+import { LIMITES, MAX_EN_AVANT, MAX_MEDIAS, QUESTIONS, RUBRIQUES, SENS_QUESTIONS, type Element, type Media, type Rubrique, type RubriqueId, type Trace } from '../data/types';
+import { creerMedia } from '../lib/fichiers';
 import { colorById } from '../lib/palette';
 import { useMuseumMode } from '../lib/museum';
 
@@ -14,6 +32,7 @@ const Q_ICONS = ['parole', 'coeur', 'globe', 'plume'];
 type SalleState =
   | { kind: 'rubrique'; r: Rubrique }
   | { kind: 'medias' }
+  | { kind: 'ajout-media' }
   | { kind: 'versions' }
   | { kind: 'question'; i: number };
 
@@ -29,9 +48,12 @@ export function TracePage() {
   const [salle, setSalle] = useState<SalleState | null>(null);
   const [copied, setCopied] = useState(false);
   const scellee = !!trace && estScellee(trace);
-  // modifiable tant que l'auteur ne l'a pas terminée ; ensuite scellée cinq ans
-  const canEdit = editable && auteur && !scellee;
+  // l'auteur dépose des fragments et des médias (chacun scellé à son dépôt) ;
+  // ses réponses, scellées à la publication, ne changent qu'après cinq ans
+  const canAjouter = editable && auteur;
+  const canRepondre = editable && auteur && !scellee;
   const [edition, setEdition] = useState(false);
+  const [vue, setVue] = useState<Media | null>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -71,6 +93,7 @@ export function TracePage() {
   const color = colorById(trace.couleur);
 
   return (
+    <OuvrirMedia.Provider value={setVue}>
     <main className="trace" style={{ ['--bulle' as string]: color.hex }}>
       <nav className="trace-nav" aria-label="Navigation du profil">
         <Link to="/" className="lien-discret">
@@ -93,7 +116,7 @@ export function TracePage() {
         </div>
       </nav>
 
-      {editable && auteur && <Scellement trace={trace} />}
+      {editable && auteur && <Bandeau trace={trace} />}
 
       {/* ——— En-tête : bulle + identité */}
       <header className="trace-head emerge">
@@ -138,15 +161,15 @@ export function TracePage() {
           <h2 id="h-questions" className="bloc-titre">
             Les 4 questions obligatoires
           </h2>
-          {canEdit && !edition && (
+          {canRepondre && !edition && (
             <p className="bloc-note bloc-note-auteur">
-              Tu peux encore modifier tes réponses tant que ta trace n’est pas terminée.{' '}
+              Cinq ans ont passé : tu peux donner de nouvelles réponses. Elles seront scellées à leur tour.{' '}
               <button className="lien-discret petit" onClick={() => setEdition(true)}>
-                Modifier mes réponses
+                Donner de nouvelles réponses
               </button>
             </p>
           )}
-          {canEdit && edition ? (
+          {canRepondre && edition ? (
             <ReponsesEditor trace={trace} onClose={() => setEdition(false)} />
           ) : (
           <ol className="questions-grid">
@@ -160,7 +183,7 @@ export function TracePage() {
                 </h3>
                 {i === 1 && trace.q2Destinataire && <p className="question-dest">— à {trace.q2Destinataire}</p>}
                 <blockquote className="question-reponse">
-                  <p>{i < 3 && answer.length > 170 ? answer.slice(0, 160).replace(/\s+\S*$/, '') + '…' : answer}</p>
+                  <p>{i === 3 ? <TexteBrode texte={answer} /> : answer.length > 170 ? answer.slice(0, 160).replace(/\s+\S*$/, '') + '…' : answer}</p>
                 </blockquote>
                 {i < 3 && answer.length > 170 && (
                   <button className="lien-discret petit" onClick={() => setSalle({ kind: 'question', i })}>
@@ -184,14 +207,14 @@ export function TracePage() {
                 {trace.memoire.relation ? `, ${trace.memoire.relation.toLowerCase()}` : ''}.
               </p>
               {trace.memoire.origine && <blockquote className="citation">« {trace.memoire.origine} »</blockquote>}
-              {canEdit &&
+              {canRepondre &&
                 (edition ? (
                   <ReponsesEditor trace={trace} onClose={() => setEdition(false)} />
                 ) : (
                   <p className="bloc-note bloc-note-auteur">
-                    Ces 200 caractères apparaissent dans l’aperçu de sa bulle.{' '}
+                    Cinq ans ont passé : tu peux réécrire les 200 caractères de sa bulle.{' '}
                     <button className="lien-discret petit" onClick={() => setEdition(true)}>
-                      Modifier
+                      Réécrire
                     </button>
                   </p>
                 ))}
@@ -212,7 +235,7 @@ export function TracePage() {
         <ul className="fragments-grid">
           {RUBRIQUES.map((r) => (
             <li key={r.id}>
-              <FragmentTile r={r} trace={trace} canEdit={canEdit} onOpen={() => setSalle({ kind: 'rubrique', r })} />
+              <FragmentTile r={r} trace={trace} canEdit={canAjouter} onOpen={() => setSalle({ kind: 'rubrique', r })} />
             </li>
           ))}
         </ul>
@@ -220,32 +243,7 @@ export function TracePage() {
 
       {/* ——— Médias, versions, paramètres */}
       <div className={`trace-bas emerge${auteur ? '' : ' sans-parametres'}`}>
-        <section className="bloc medias" aria-labelledby="h-medias">
-          <div className="bloc-entete">
-            <h2 id="h-medias" className="bloc-titre">
-              <Icon name="archive" size={22} /> Médias & documents
-            </h2>
-            <span className="compte">{trace.medias.length} éléments</span>
-            {trace.medias.length > 0 && (
-              <button className="lien-discret petit" onClick={() => setSalle({ kind: 'medias' })}>
-                Voir tout <Icon name="fleche" size={14} />
-              </button>
-            )}
-          </div>
-          <div className="medias-rang">
-            {trace.medias.slice(0, auteur ? 5 : 6).map((m) => (
-              <MediaThumb key={m.id} m={m} size="s" />
-            ))}
-            {auteur && (
-              <button className="media-ajout" title="Prototype : l’ajout de médias sera branché au stockage des fichiers.">
-                <Icon name="plus" size={20} />
-                <span>Ajouter des médias</span>
-              </button>
-            )}
-            {trace.medias.length === 0 && !auteur && <p className="muted petit">Aucun média déposé pour l’instant.</p>}
-          </div>
-          <p className="bloc-note">Images, audio, vidéo, liens, fichiers autorisés.</p>
-        </section>
+        <BlocMedias trace={trace} auteur={canAjouter} onVoirTout={() => setSalle({ kind: 'medias' })} onAjouter={() => setSalle({ kind: 'ajout-media' })} />
 
         <section className="bloc versions" aria-labelledby="h-versions">
           <div className="bloc-entete">
@@ -298,7 +296,7 @@ export function TracePage() {
 
       {salle && (
         <Salle onClose={() => setSalle(null)} titre={salleTitre(salle, trace)}>
-          {salle.kind === 'rubrique' && <RubriqueDetail r={salle.r} trace={trace} canEdit={canEdit} />}
+          {salle.kind === 'rubrique' && <RubriqueDetail r={salle.r} trace={trace} canEdit={canAjouter} />}
           {salle.kind === 'question' && trace.questions && (
             <div className="salle-question">
               <p className="salle-q">{QUESTIONS[salle.i]}</p>
@@ -309,13 +307,8 @@ export function TracePage() {
               </p>
             </div>
           )}
-          {salle.kind === 'medias' && (
-            <div className="salle-medias">
-              {trace.medias.map((m) => (
-                <MediaThumb key={m.id} m={m} size="l" />
-              ))}
-            </div>
-          )}
+          {salle.kind === 'medias' && <MediasTout trace={trace} auteur={canAjouter} />}
+          {salle.kind === 'ajout-media' && <MediaAjout trace={trace} onDone={() => setSalle({ kind: 'medias' })} />}
           {salle.kind === 'versions' && (
             <div className="salle-versions">
               <ol className="versions-liste versions-longue">
@@ -328,70 +321,46 @@ export function TracePage() {
                 ))}
               </ol>
               <p className="muted petit">
-                Une trace se complète et se modifie librement jusqu’à ce que son auteur la termine. Elle est alors scellée
-                pendant cinq ans : plus rien ne change. Chaque version reste datée dans l’historique.
+                Les réponses sont scellées à la publication ; chaque fragment et chaque média, au moment où il est déposé. Rien de
+                ce qui est scellé ne change pendant cinq ans. Chaque version reste datée dans l’historique.
               </p>
             </div>
           )}
         </Salle>
       )}
+      {vue && <MediaVue m={vue} onClose={() => setVue(null)} />}
     </main>
+    </OuvrirMedia.Provider>
   );
 }
 
 /**
- * Bandeau de l'auteur : tant que la trace n'est pas terminée, tout se modifie ;
- * une fois terminée, elle est scellée cinq ans, sans retour en arrière.
+ * Bandeau de l'auteur : la trace est publique, ses réponses sont scellées, et
+ * chaque dépôt (fragment ou média) est scellé à son tour.
  */
-function Scellement({ trace }: { trace: Trace }) {
-  const [confirmer, setConfirmer] = useState(false);
-  const laquelle = trace.type === 'memoire' ? 'cette mémoire' : 'ta trace';
-  if (estScellee(trace)) {
+function Bandeau({ trace }: { trace: Trace }) {
+  const memoire = trace.type === 'memoire';
+  if (!estScellee(trace)) {
     return (
-      <p className="trace-bandeau trace-bandeau-scellee emerge">
-        <Icon name="cadenas" size={18} />
-        <span>
-          {trace.type === 'memoire' ? 'Cette mémoire est terminée' : 'Ta trace est terminée'} et scellée depuis le{' '}
-          {dateLongue(trace.scelleeLe!)}. Elle pourra être modifiée à nouveau à partir du {dateLongue(reouverture(trace)!)}.
-        </span>
+      <p className="trace-bandeau emerge">
+        Cinq ans ont passé depuis la publication : {memoire ? 'les 200 caractères de cette mémoire peuvent' : 'tes réponses peuvent'} de
+        nouveau évoluer.
       </p>
     );
   }
-  const fin = new Date();
-  fin.setFullYear(fin.getFullYear() + 5);
   return (
-    <div className="trace-bandeau emerge">
-      {!confirmer ? (
-        <>
-          <p>
-            {trace.type === 'memoire' ? 'C’est la mémoire que tu as déposée.' : 'C’est ta trace.'} Complète et modifie{' '}
-            {laquelle} autant que tu veux. Quand tu auras terminé, elle sera scellée pendant cinq ans.
-          </p>
-          <button className="bouton bouton-discret" onClick={() => setConfirmer(true)}>
-            J’ai terminé
-          </button>
-        </>
-      ) : (
-        <>
-          <p>
-            Une fois terminée, {laquelle} ne pourra plus être modifiée pendant cinq ans, jusqu’au {dateLongue(fin)}. Aucun retour en
-            arrière ne sera possible.
-          </p>
-          <div className="trace-bandeau-actions">
-            <button className="bouton" onClick={() => sceller(trace.id)}>
-              Terminer et sceller
-            </button>
-            <button className="lien-discret" onClick={() => setConfirmer(false)}>
-              Pas encore
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+    <p className="trace-bandeau trace-bandeau-scellee emerge">
+      <Icon name="cadenas" size={18} />
+      <span>
+        {memoire ? 'Cette mémoire est publique. Ses 200 caractères sont scellés' : 'Ta trace est publique. Tes quatre réponses sont scellées'}{' '}
+        jusqu’au {dateLongue(reouverture(trace)!)}. Chaque fragment et chaque média que tu déposes est scellé à son tour : une fois déposé,
+        il ne peut plus être modifié ni retiré pendant cinq ans.
+      </span>
+    </p>
   );
 }
 
-/** Modifier ses réponses (ou les 200 caractères d'une mémoire) avant de sceller. */
+/** De nouvelles réponses (ou 200 caractères), une fois les cinq ans passés ; elles sont scellées à leur tour. */
 function ReponsesEditor({ trace, onClose }: { trace: Trace; onClose: () => void }) {
   const [q, setQ] = useState<[string, string, string, string]>(trace.questions ?? ['', '', '', '']);
   const [ap, setAp] = useState(trace.memoire?.aperçu ?? '');
@@ -451,6 +420,8 @@ function salleTitre(s: SalleState, t: Trace): string {
       return s.r.titre;
     case 'medias':
       return 'Médias & documents';
+    case 'ajout-media':
+      return 'Déposer un média ou un document';
     case 'versions':
       return 'Historique des versions';
     case 'question':
@@ -465,8 +436,9 @@ function mediasOf(items: Element[], trace: Trace): Media[] {
 
 function FragmentTile({ r, trace, canEdit, onOpen }: { r: Rubrique; trace: Trace; canEdit: boolean; onOpen: () => void }) {
   const items = trace.rubriques[r.id] ?? [];
-  const medias = mediasOf(items, trace).slice(0, 3);
-  const first = items[0];
+  const { avant } = enAvantDabord(items);
+  const medias = mediasOf(avant, trace).slice(0, 3);
+  const first = avant[0];
   const empty = items.length === 0;
   return (
     <button className={`fragment${empty ? ' is-empty' : ''}`} onClick={onOpen} disabled={empty && !canEdit}>
@@ -476,11 +448,7 @@ function FragmentTile({ r, trace, canEdit, onOpen }: { r: Rubrique; trace: Trace
         {!empty && <Icon name="fleche" size={16} />}
       </span>
       <span className="fragment-compte">
-        {empty
-          ? canEdit
-            ? '+ Ajouter un premier fragment'
-            : 'Rien n’a été déposé ici'
-          : `${items.length} élément${items.length > 1 ? 's' : ''}${canEdit && (r.id === 'sens' || items.length < 5) ? ' · ajouter' : ''}`}
+        {empty ? (canEdit ? '+ Ajouter un premier fragment' : 'Rien n’a été déposé ici') : `${items.length} élément${items.length > 1 ? 's' : ''}${canEdit ? ' · ajouter' : ''}`}
       </span>
       {medias.length > 0 && (
         <span className="fragment-medias">
@@ -499,7 +467,21 @@ function FragmentTile({ r, trace, canEdit, onOpen }: { r: Rubrique; trace: Trace
   );
 }
 
-function ElementView({ e, trace, onRemove }: { e: Element; trace: Trace; onRemove?: () => void }) {
+function ElementView({
+  e,
+  trace,
+  auteur,
+  pleinAvant,
+  onBasculer,
+  onRemove,
+}: {
+  e: Element;
+  trace: Trace;
+  auteur?: boolean;
+  pleinAvant?: boolean;
+  onBasculer?: () => void;
+  onRemove?: () => void;
+}) {
   const medias = (e.medias ?? []).map((id) => trace.medias.find((m) => m.id === id)).filter(Boolean) as Media[];
   const meta = [e.categorie, e.lien, e.quand, e.lieu].filter(Boolean).join(' · ');
   return (
@@ -514,10 +496,24 @@ function ElementView({ e, trace, onRemove }: { e: Element; trace: Trace; onRemov
           ))}
         </div>
       )}
-      {onRemove && (
-        <button className="lien-discret petit element-retirer" onClick={onRemove}>
-          Retirer ce fragment
-        </button>
+      {auteur && (
+        <p className="element-auteur">
+          {e.scelleLe && estScelle(e) && (
+            <span className="element-scelle">
+              <Icon name="cadenas" size={14} /> Scellé le {dateLongue(e.scelleLe)}
+            </span>
+          )}
+          {onBasculer && (
+            <button className="lien-discret petit" onClick={onBasculer} disabled={!e.enAvant && pleinAvant}>
+              {e.enAvant ? 'Ne plus mettre en avant' : pleinAvant ? `${MAX_EN_AVANT} déjà mis en avant` : 'Mettre en avant'}
+            </button>
+          )}
+          {onRemove && (
+            <button className="lien-discret petit element-retirer" onClick={onRemove}>
+              Retirer ce fragment
+            </button>
+          )}
+        </p>
       )}
     </article>
   );
@@ -525,24 +521,43 @@ function ElementView({ e, trace, onRemove }: { e: Element; trace: Trace; onRemov
 
 function RubriqueDetail({ r, trace, canEdit }: { r: Rubrique; trace: Trace; canEdit: boolean }) {
   const items = trace.rubriques[r.id] ?? [];
-  const remove = (e: Element) => (canEdit ? () => removeElement(trace.id, r.id, e.id) : undefined);
+  const [tout, setTout] = useState(false);
+  const { avant, reste } = enAvantDabord(items);
+  const visibles = tout ? [...avant, ...reste] : avant;
+  const pleinAvant = items.filter((e) => e.enAvant).length >= MAX_EN_AVANT;
   const editor = canEdit ? <FragmentEditor key={items.length} traceId={trace.id} rubrique={r.id} items={items} /> : null;
+  const vueElement = (e: Element) => (
+    <ElementView
+      key={e.id}
+      e={e}
+      trace={trace}
+      auteur={canEdit}
+      pleinAvant={pleinAvant}
+      onBasculer={canEdit ? () => basculerEnAvant(trace.id, r.id, e.id) : undefined}
+      // un fragment scellé ne se retire qu'une fois ses cinq ans passés
+      onRemove={canEdit && !estScelle(e) ? () => removeElement(trace.id, r.id, e.id) : undefined}
+    />
+  );
+  const voirTout = reste.length > 0 && (
+    <button className="lien-discret voir-tout" onClick={() => setTout((x) => !x)}>
+      {tout ? 'Ne montrer que les fragments mis en avant' : `Voir tout (${items.length} fragments)`} <Icon name="fleche" size={14} />
+    </button>
+  );
 
   if (r.id === 'sens') {
     return (
       <div className="sens-detail">
         {(Object.keys(SENS_QUESTIONS) as (keyof typeof SENS_QUESTIONS)[]).map((s) => {
-          const list = items.filter((e) => e.sens === s);
+          const list = visibles.filter((e) => e.sens === s);
           if (!list.length) return null;
           return (
             <section key={s} className="sens-groupe">
               <h3 className="salle-q">{SENS_QUESTIONS[s].question}</h3>
-              {list.map((e) => (
-                <ElementView key={e.id} e={e} trace={trace} onRemove={remove(e)} />
-              ))}
+              {list.map(vueElement)}
             </section>
           );
         })}
+        {voirTout}
         {editor}
       </div>
     );
@@ -550,11 +565,135 @@ function RubriqueDetail({ r, trace, canEdit }: { r: Rubrique; trace: Trace; canE
 
   return (
     <div className="rubrique-detail">
-      {items.length === 0 && canEdit && <p className="muted">Rien encore ici. Ce que tu ajoutes est publié sur ta trace.</p>}
-      {items.map((e) => (
-        <ElementView key={e.id} e={e} trace={trace} onRemove={remove(e)} />
-      ))}
+      {items.length === 0 && canEdit && <p className="muted">Rien encore ici. Ce que tu déposes est publié sur ta trace, et scellé.</p>}
+      {visibles.map(vueElement)}
+      {voirTout}
       {editor}
+    </div>
+  );
+}
+
+/** Médias & documents sur le profil : les 5 mis en avant, puis « Voir tout ». */
+function BlocMedias({ trace, auteur, onVoirTout, onAjouter }: { trace: Trace; auteur: boolean; onVoirTout: () => void; onAjouter: () => void }) {
+  const libres = mediasLibres(trace);
+  const { avant } = enAvantDabord(libres);
+  return (
+    <section className="bloc medias" aria-labelledby="h-medias">
+      <div className="bloc-entete">
+        <h2 id="h-medias" className="bloc-titre">
+          <Icon name="archive" size={22} /> Médias & documents
+        </h2>
+        <span className="compte">
+          {libres.length}
+          {auteur ? ` / ${MAX_MEDIAS}` : ''} élément{libres.length > 1 ? 's' : ''}
+        </span>
+        {libres.length > 0 && (
+          <button className="lien-discret petit" onClick={onVoirTout}>
+            Voir tout <Icon name="fleche" size={14} />
+          </button>
+        )}
+      </div>
+      <div className="medias-rang">
+        {avant.map((m) => (
+          <MediaThumb key={m.id} m={m} size="s" />
+        ))}
+        {auteur && libres.length < MAX_MEDIAS && (
+          <button className="media-ajout" onClick={onAjouter}>
+            <Icon name="plus" size={20} />
+            <span>Déposer un média</span>
+          </button>
+        )}
+        {libres.length === 0 && !auteur && <p className="muted petit">Aucun média déposé pour l’instant.</p>}
+      </div>
+      <p className="bloc-note">Photos, vidéos, enregistrements, documents et liens. Les médias joints aux fragments restent dans leurs fragments.</p>
+    </section>
+  );
+}
+
+function MediasTout({ trace, auteur }: { trace: Trace; auteur: boolean }) {
+  const libres = mediasLibres(trace);
+  const { avant, reste } = enAvantDabord(libres);
+  const plein = libres.filter((m) => m.enAvant).length >= MAX_EN_AVANT;
+  return (
+    <div className="salle-medias-tout">
+      {[...avant, ...reste].map((m) => (
+        <div key={m.id} className="media-case">
+          <MediaThumb m={m} size="l" />
+          {auteur && (
+            <button className="lien-discret petit" onClick={() => basculerMediaEnAvant(trace.id, m.id)} disabled={!m.enAvant && plein}>
+              {m.enAvant ? 'Ne plus mettre en avant' : plein ? `${MAX_EN_AVANT} déjà mis en avant` : 'Mettre en avant'}
+            </button>
+          )}
+        </div>
+      ))}
+      {libres.length === 0 && <p className="muted">Aucun média déposé pour l’instant.</p>}
+    </div>
+  );
+}
+
+/** Déposer un média ou un document dans « Médias & documents » (20 au plus), scellé à son dépôt. */
+function MediaAjout({ trace, onDone }: { trace: Trace; onDone: () => void }) {
+  const [choix, setChoix] = useState<MediaChoisi>(null);
+  const [titre, setTitre] = useState('');
+  const [legende, setLegende] = useState('');
+  const [confirmer, setConfirmer] = useState(false);
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState('');
+  const restant = MAX_MEDIAS - mediasLibres(trace).length;
+  const deposer = async () => {
+    if (!choix || envoi) return;
+    if (!confirmer) return setConfirmer(true);
+    setEnvoi(true);
+    try {
+      const m = await creerMedia(choix, `m-${Date.now().toString(36)}`, titre.trim());
+      if (!addMedia(trace.id, { ...m, legende: legende.trim() || undefined })) throw new Error(`Tu as déjà déposé ${MAX_MEDIAS} médias.`);
+      onDone();
+    } catch (err) {
+      setErreur(err instanceof Error && err.message ? err.message : 'Ce média n’a pas pu être déposé.');
+    } finally {
+      setEnvoi(false);
+      setConfirmer(false);
+    }
+  };
+  return (
+    <div className="editeur media-ajout-form">
+      <p className="editeur-titre">
+        <Icon name="plus" size={16} /> Déposer un média
+        <span className="editeur-places">
+          {restant} place{restant > 1 ? 's' : ''} sur {MAX_MEDIAS}
+        </span>
+      </p>
+      <div className="field">
+        <ChoixMedia value={choix} onChange={setChoix} id="ajout-media" />
+      </div>
+      <label className="field">
+        <span className="field-label">Titre (facultatif)</span>
+        <input value={titre} maxLength={90} onChange={(e) => setTitre(e.target.value)} />
+      </label>
+      <label className="field">
+        <span className="field-label">Légende (facultatif)</span>
+        <textarea rows={3} maxLength={400} value={legende} onChange={(e) => setLegende(e.target.value)} />
+      </label>
+      {erreur && (
+        <p className="editeur-erreur" role="alert">
+          {erreur}
+        </p>
+      )}
+      {confirmer && (
+        <p className="editeur-scelle" role="alert">
+          <Icon name="cadenas" size={16} /> Une fois déposé, ce média sera scellé : tu ne pourras plus le retirer pendant cinq ans.
+        </p>
+      )}
+      <div className="editeur-actions">
+        <button className="bouton" disabled={!choix || envoi} onClick={deposer}>
+          {envoi ? 'Dépôt…' : confirmer ? 'Déposer et sceller' : 'Déposer'}
+        </button>
+        {confirmer && !envoi && (
+          <button className="lien-discret" onClick={() => setConfirmer(false)}>
+            Relire encore
+          </button>
+        )}
+      </div>
     </div>
   );
 }

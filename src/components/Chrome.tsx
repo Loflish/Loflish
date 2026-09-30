@@ -56,7 +56,6 @@ export function BubbleImage({
 const MENU = [
   { to: '/projet', label: 'Le projet', icon: 'projet' },
   { to: '/archives', label: 'Archives', icon: 'archive' },
-  { to: '/carte', label: 'Carte du monde', icon: 'carte' },
   { to: '/ressources', label: 'Ressources & aide', icon: 'aide' },
   { to: '/soutenir', label: 'Soutenir', icon: 'soutenir' },
   { to: '/juridique', label: 'Juridique & confidentialité', icon: 'juridique' },

@@ -9,15 +9,17 @@ import { FONDS, HD, HD_FILES, LEGER, loadMatieres, loadTaches, type Fond } from 
 import { Constellation, MODES } from '../engine/constellation';
 import { colorById } from '../lib/palette';
 import { useMuseum } from '../lib/museum';
+import { TexteBrode } from './TexteBrode';
 import { Icon } from './Icon';
 
+// la constellation garde sa peinture vivante ; partout ailleurs, le tissu
 const FOND_BY_MODE: Record<keyof typeof MODES, Fond> = {
   explore: 'explorer',
-  perdre: 'explorer',
-  trace: 'profil',
-  creer: 'creer',
-  texte: 'texte',
-  minimal: 'creer',
+  perdre: 'tissu',
+  trace: 'tissu',
+  creer: 'tissu',
+  texte: 'tissu',
+  minimal: 'tissu',
 };
 
 /**
@@ -246,7 +248,11 @@ export function Backdrop() {
         style={{ pointerEvents: interactive ? 'auto' : 'none' }}
       />
       {HD ? (
-        <div className="lin-hd" aria-hidden="true" style={{ backgroundImage: `url(${HD_FILES.lin})` }} />
+        <>
+          <div className="lin-hd" aria-hidden="true" style={{ backgroundImage: `url(${HD_FILES.lin})` }} />
+          {/* les fibres du papier chiffon, sur le tissu de toutes les pages sauf la constellation */}
+          <div className="fibres" aria-hidden="true" />
+        </>
       ) : (
         <div className="paper" aria-hidden="true" style={{ backgroundImage: paper ? `url(${paper})` : undefined }} />
       )}
@@ -281,7 +287,9 @@ export function Backdrop() {
             {TYPE_LABEL[trace.type]}
             {trace.pays ? ` · ${trace.pays}` : ''}
           </p>
-          <p className="apercu-texte">{apercu(trace)}</p>
+          <p className="apercu-texte">
+            <TexteBrode texte={apercu(trace)} />
+          </p>
           <button ref={enterBtn} className="lien-entrer" onClick={enter}>
             Entrer dans sa mémoire <Icon name="fleche" size={16} />
           </button>

@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BubbleImage, Footer, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { dateLongue, estScellee, reouverture, TYPE_LABEL, useMesTraces } from '../data/store';
+import { MAX_FRAGMENTS } from '../data/types';
 import { RUBRIQUES } from '../data/types';
 import { useMuseumMode } from '../lib/museum';
 
@@ -41,7 +42,8 @@ export function MaTrace() {
                   </p>
                   {estScellee(t) && (
                     <p className="ma-trace-scellee">
-                      <Icon name="cadenas" size={16} /> Terminée et scellée jusqu’au {dateLongue(reouverture(t)!)}
+                      <Icon name="cadenas" size={16} /> {t.type === 'memoire' ? 'Ses 200 caractères' : 'Tes réponses'} sont scellées jusqu’au{' '}
+                      {dateLongue(reouverture(t)!)} ; chaque fragment est scellé à son dépôt
                     </p>
                   )}
                   <div className="ma-trace-actions">
@@ -55,8 +57,6 @@ export function MaTrace() {
                 </div>
               </div>
 
-              {!estScellee(t) && (
-                <>
               <h3 className="intertitre">Compléter mes fragments d’existence</h3>
               <ul className="ma-trace-rubriques">
                 {RUBRIQUES.map((r) => {
@@ -67,15 +67,21 @@ export function MaTrace() {
                         <Icon name={r.icone} size={22} />
                         <span className="ma-trace-rubrique-titre">{r.titre}</span>
                         <span className="ma-trace-rubrique-n">
-                          {r.id === 'sens' ? (n === 0 ? 'Ajouter' : `${n} · ajouter`) : n >= 5 ? '5 sur 5' : n === 0 ? 'Ajouter' : `${n} sur 5 · ajouter`}
+                          {r.id === 'sens'
+                            ? n === 0
+                              ? 'Ajouter'
+                              : `${n} · ajouter`
+                            : n >= MAX_FRAGMENTS
+                              ? `${MAX_FRAGMENTS} sur ${MAX_FRAGMENTS}`
+                              : n === 0
+                                ? 'Ajouter'
+                                : `${n} sur ${MAX_FRAGMENTS} · ajouter`}
                         </span>
                       </button>
                     </li>
                   );
                 })}
               </ul>
-                </>
-              )}
             </section>
           ))
         )}

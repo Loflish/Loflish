@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BubbleImage, Dock, Logo } from '../components/Chrome';
+import { TexteBrode } from '../components/TexteBrode';
 import { Icon } from '../components/Icon';
 import { allTraces, apercu, TYPE_LABEL } from '../data/store';
 import { shuffle } from '../lib/random';
@@ -76,7 +77,9 @@ export function SePerdre() {
             {TYPE_LABEL[t.type]}
             {t.pays ? ` · ${t.pays}` : ''}
           </p>
-          <p className="perdre-texte">{apercu(t)}</p>
+          <p className="perdre-texte">
+            <TexteBrode texte={apercu(t)} />
+          </p>
           <Link to={`/trace/${t.id}`} className="lien-entrer">
             Ouvrir la trace <Icon name="fleche" size={16} />
           </Link>

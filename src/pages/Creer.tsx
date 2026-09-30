@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BubbleImage, PageTop } from '../components/Chrome';
+import { TexteBrode } from '../components/TexteBrode';
 import { Icon } from '../components/Icon';
 import { peutCreer, publishLocal, useMesTraces } from '../data/store';
 import { LIMITES, QUESTIONS, type Trace } from '../data/types';
@@ -240,6 +241,25 @@ export function Creer() {
               <input type="checkbox" checked={d.majeur} onChange={(e) => up({ majeur: e.target.checked })} />
               <span>J’ai 18 ans ou plus.</span>
             </label>
+            <aside className="mot-fondateur" aria-labelledby="h-mot">
+              <p id="h-mot" className="mot-fondateur-titre">
+                Un mot avant de commencer
+              </p>
+              <p>Laisser sa trace, ce n’est pas dire adieu. Ce musée existe pour célébrer des vies, jamais pour y mettre fin.</p>
+              <p>
+                Si tu penses au suicide, je t’en prie, n’en fais rien : parle à quelqu’un maintenant. Des personnes formées t’écoutent,
+                gratuitement, partout dans le monde et dans ta langue :{' '}
+                <a href="https://findahelpline.com" target="_blank" rel="noreferrer">
+                  findahelpline.com
+                </a>
+                . En cas de danger immédiat, appelle les services d’urgence.
+              </p>
+              <p>
+                J’ai créé Nos mots mémoriaux pour lutter contre l’oubli. Je refuse de porter sur ma conscience la mort de qui que ce soit :
+                ta vie compte infiniment plus que ta trace.
+              </p>
+              <p className="mot-fondateur-signature">— la personne qui a créé ce musée</p>
+            </aside>
             <p className="muted petit">Prototype : aucun compte n’est réellement créé, rien n’est envoyé.</p>
           </section>
         )}
@@ -336,7 +356,9 @@ export function Creer() {
               <div>
                 <p className="apercu-nom">{displayName}</p>
                 <p className="apercu-type">{d.kind === 'memoire' ? 'Mémoire pour une personne décédée' : 'Trace personnelle'}</p>
-                <p className="apercu-texte">{d.kind === 'memoire' ? d.souvenir.slice(0, 200) : d.q[3]}</p>
+                <p className="apercu-texte">
+                  <TexteBrode texte={d.kind === 'memoire' ? d.souvenir.slice(0, 200) : d.q[3]} />
+                </p>
               </div>
             </div>
             <p className="muted petit">Au survol, on ne voit que ton nom. Au clic, cet aperçu apparaît, puis on peut entrer dans ta mémoire.</p>
@@ -358,7 +380,12 @@ export function Creer() {
           <section className="etape">
             <h1 className="etape-titre">Avant de publier</h1>
             <div className="verif">
-              <h2>Ta trace sera publique</h2>
+              <h2>{d.kind === 'memoire' ? 'Cette mémoire sera publique et scellée' : 'Ta trace sera publique et scellée'}</h2>
+              <p>
+                En publiant, {d.kind === 'memoire' ? 'les 200 caractères et le premier souvenir sont scellés' : 'tes quatre réponses sont scellées'}{' '}
+                : ils ne pourront plus être modifiés pendant cinq ans. Chaque fragment que tu ajouteras ensuite sera scellé à son tour, au
+                moment où tu le déposes.
+              </p>
               <p>Tout ce qui est publié pourra être lu par n’importe quel visiteur, retrouvé par la recherche, et partagé ou capturé par d’autres.</p>
               <label className="check">
                 <input type="checkbox" checked={d.droits} onChange={(e) => up({ droits: e.target.checked })} />
@@ -401,7 +428,7 @@ export function Creer() {
             </button>
           ) : (
             <button className="bouton" disabled={!canNext} onClick={publish}>
-              Publier ma trace dans Nos mots mémoriaux
+              Sceller et publier ma trace
             </button>
           )}
         </div>

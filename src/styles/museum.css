@@ -614,6 +614,25 @@
 .fond-peint.fond-explorer.is-on {
   opacity: 0.7;
 }
+.fond-peint.fond-tissu.is-on {
+  opacity: 1;
+}
+/* sur le tissu, les nappes du shader se font presque oublier */
+.backdrop:not(.mode-explore) .backdrop-atmosphere.sur-fond-peint {
+  opacity: 0.12;
+}
+.fibres {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: var(--papier-chiffon);
+  background-size: 520px 520px;
+  opacity: 0;
+  transition: opacity 1800ms var(--doux);
+}
+.backdrop:not(.mode-explore) .fibres {
+  opacity: 1;
+}
 .mode-explore .backdrop-atmosphere.sur-fond-peint,
 .mode-perdre .backdrop-atmosphere.sur-fond-peint {
   opacity: 0.3;
@@ -643,4 +662,8 @@
   pointer-events: none;
   transition: opacity 1300ms var(--doux);
   will-change: transform, opacity;
+}
+.fond-peint.fond-tissu {
+  -webkit-mask-image: none;
+  mask-image: none;
 }

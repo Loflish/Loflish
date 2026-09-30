@@ -21,10 +21,10 @@ npm run build    # build statique dans dist/ (chemins relatifs, hébergeable par
 | --- | --- |
 | **Explorer** (`/`) | Constellation plein écran : fond pictural vivant, bulles qui se promènent, survol = nom seul, clic = aperçu (les 200 caractères), « Entrer dans sa mémoire » = transition douce vers le profil, retour au même endroit. Recherche et filtres discrets. |
 | **Se perdre** | Une présence à la fois, hasard équitable, glisser / boutons / flèches, aucun signal de popularité. |
-| **Profil** (`/trace/:id`) | Architecture « Proposition A révisée » : une seule zone bulle, identité, type de trace, pays, dates clés ; les 4 questions obligatoires ; les 12 fragments d'existence ; médias & documents ; historique des versions ; paramètres non publics (vue auteur). Chaque rubrique s'ouvre en « salle » (5 éléments mis en avant, puis « Tout voir »). Profil de référence : `/trace/sakinah`. |
-| **Ma trace** (`/ma-trace`) | L'espace de l'auteur : voir son profil, retrouver sa bulle dans le musée, compléter ses 12 rubriques (texte, dates, lieux, photos). Dans la constellation, sa propre bulle est entourée d'un fil « ta trace », visible uniquement sur son appareil. |
-| **Créer ma trace** | Choisir → Compte (18+) → Identité (couleur GRIS et matière d'aquarelle au choix, parmi le catalogue complet) → 4 questions (1200 / 200 caractères, sans texte d'accompagnement) → Aperçu → Enrichir → Vérifier → Publier. Brouillon privé enregistré automatiquement. Parcours distinct « mémoire pour une personne décédée » (sans les 4 questions). |
-| **Menu** | Dock centré en bas : Explorer · Se perdre · Créer ma trace (devient « Ma trace » une fois publiée) · Menu → Le projet, Archives, Carte du monde, Ressources & aide, Soutenir, Juridique & confidentialité, Compte. |
+| **Profil** (`/trace/:id`) | Architecture « Proposition A révisée » : une seule zone bulle, identité, type de trace, pays, dates clés ; les 4 questions obligatoires (les 200 caractères brodés) ; les 14 fragments d'existence ; médias & documents ; historique des versions ; paramètres non publics (vue auteur). Chaque rubrique s'ouvre en « salle » : 10 fragments au plus (10 par sens pour les 5 sens), dont 5 mis en avant, puis « Voir tout ». Médias & documents : 20 au plus, 5 mis en avant ; chaque fragment peut porter un média. Photos, vidéos, enregistrements, documents (PDF lisible sur place) et liens (YouTube et Vimeo lus sur place) s'ouvrent dans une visionneuse. Profil de référence : `/trace/sakinah`. |
+| **Ma trace** (`/ma-trace`) | L'espace de l'auteur : voir son profil, retrouver sa bulle dans le musée, compléter ses 14 rubriques. Deux bulles au plus par personne : sa propre trace et une mémoire pour une personne décédée. Dans la constellation, sa propre bulle est entourée d'un fil « ta trace », visible uniquement sur son appareil. |
+| **Créer ma trace** | Choisir → Compte (18+, avec un mot du créateur du musée et findahelpline.com) → Identité (couleur GRIS et matière d'aquarelle au choix) → 4 questions (1200 / 200 caractères) → Aperçu → Enrichir → Vérifier → **Sceller et publier**. Le brouillon reste privé ; publier scelle les réponses pour cinq ans et rend la trace publique. Ensuite, chaque fragment et chaque média est scellé au moment où il est déposé, après une confirmation explicite. Parcours distinct « mémoire pour une personne décédée ». |
+| **Menu** | Dock centré en bas : Explorer · Se perdre · Créer ma trace (devient « Ma trace » une fois publiée) · Menu → Le projet, Archives, Ressources & aide, Soutenir, Juridique & confidentialité, Compte. |
 
 ## Direction artistique — où elle vit dans le code
 
@@ -36,6 +36,12 @@ npm run build    # build statique dans dist/ (chemins relatifs, hébergeable par
   `src/engine/constellation.ts`.
 - **Fond vivant** (lin + nappes de pigment façon Monet, très lent) — `src/engine/atmosphere.ts`.
 - **Typographies** : Newsreader (expressive) + Manrope (fonctionnelle) — `src/styles/tokens.css`.
+- **Alphabet brodé** (les 200 caractères) : lettres brodées au point arrière, générées « dans l'esprit »
+  d'un abécédaire fait main puis découpées (`design/hd/alphabet.py` → `public/hd/alphabet.webp` +
+  `src/data/alphabet.json`), composant `TexteBrode`. Latin et accents français brodés ; toute autre
+  écriture (arabe, cyrillique, chinois, hindi…) s'écrit dans la typographie du site, sans rien perdre.
+- **Icônes brodées** : les symboles des rubriques et des questions (`public/hd/icones`) ; les icônes
+  d'interface restent au trait.
 - **Logo brodé** : détouré depuis la photo du tableau, fibres et points conservés, bordeaux
   réservé au logo. Version sur une ligne recomposée lettre par lettre (`design/logo/logo_ligne.py`),
   version trois lignes d'origine conservée dans `design/logo/`. À refaire depuis le scan définitif.
@@ -45,13 +51,13 @@ npm run build    # build statique dans dist/ (chemins relatifs, hébergeable par
 Couche optionnelle, activée par `HD` dans `src/lib/hd.ts` (mettre `false` pour revenir au rendu
 entièrement procédural). Si un fichier manque, le site revient seul au rendu procédural.
 
-- **Fonds peints 4K**, un par espace (Explorer, profil, Créer ma trace, pages de texte), en format
-  ordinateur et téléphone, en fondu enchaîné sous l'atmosphère vivante.
+- **Fond d'Explorer** : peinture 4K (et sa boucle vivante, ci-dessous). **Partout ailleurs** (profil, Se
+  perdre, Créer, pages) : un tissu de coton ivoire aux plis doux (`fond-tissu`), avec les fibres du papier
+  chiffon par-dessus ; les bulles continuent de passer, légères.
 - **Lin HD** raccordable, par-dessus tout, très discret.
 - **Bulles** : leur matière vient de vraies taches d'aquarelle (planches générées en 4K, plusieurs
   techniques : mouillé, granulation, sur lin, auréole séchée, fleurs d'eau, glacis, pinceau sec),
   teintées dans la couleur GRIS exacte de chaque personne.
-- **Carte** : les océans sont une aquarelle d'eau peinte.
 - **Fond vivant d'Explorer** : boucle de 15 s générée en 4K (Kling) qui part du fond peint et y
   revient, raccord fondu sur une demi-seconde ; les nappes coulent et respirent, lentement mais
   visiblement. Livrée en 2560 ou 1920 px selon l'écran, en AV1, VP9 puis H.264 ; la peinture fixe

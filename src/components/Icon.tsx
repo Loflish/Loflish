@@ -1,7 +1,18 @@
+import { HD } from '../lib/hd';
+
 /**
- * Icônes au trait, légèrement irrégulières : une impression dessinée,
- * sans imiter une fausse broderie. Trait fin, extrémités arrondies.
+ * Icônes au trait, légèrement irrégulières : une impression dessinée.
+ * Les symboles du musée (rubriques, questions) sont de vraies broderies au
+ * point arrière (générées puis détourées, public/hd/icones) ; les icônes
+ * d'interface (flèches, fermer…) restent au trait, pour la clarté.
  */
+
+const BRODEES: Record<string, string> = {
+  parole: 'bulle', bulle: 'bulle', coeur: 'coeur', globe: 'globe', plume: 'plume', oeil: 'oeil', image: 'image', livre: 'livre',
+  note: 'note', personnes: 'personnes', lieu: 'lieu', feuille: 'feuille', objet: 'objet', creation: 'creation',
+  accomplissement: 'accomplissement', horizon: 'horizon', fleur: 'fleur',
+};
+const ICONES = `${import.meta.env.BASE_URL}hd/icones/`;
 
 const P: Record<string, string> = {
   // questions
@@ -52,6 +63,22 @@ const P: Record<string, string> = {
 };
 
 export function Icon({ name, size = 22, title }: { name: string; size?: number; title?: string }) {
+  const brodee = HD && BRODEES[name];
+  if (brodee) {
+    // la broderie a besoin d'un peu plus de place que le trait pour rester lisible
+    const s = Math.round(size * 1.18);
+    return (
+      <img
+        className="icon icon-brodee"
+        src={`${ICONES}${brodee}.webp`}
+        width={s}
+        height={s}
+        alt={title ?? ''}
+        aria-hidden={title ? undefined : true}
+        draggable={false}
+      />
+    );
+  }
   const d = P[name] ?? P.plume;
   return (
     <svg

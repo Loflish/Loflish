@@ -1,6 +1,6 @@
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { Backdrop } from './components/Backdrop';
-import { Archives, Carte, Compte, Juridique, Projet, Ressources, Soutenir } from './pages/Pages';
+import { Archives, Compte, Juridique, Projet, Ressources, Soutenir } from './pages/Pages';
 import { Creer } from './pages/Creer';
 import { Explorer } from './pages/Explorer';
 import { MaTrace } from './pages/MaTrace';
@@ -28,7 +28,6 @@ export function App() {
           <Route path="/soutenir" element={<Soutenir />} />
           <Route path="/juridique" element={<Juridique />} />
           <Route path="/archives" element={<Archives />} />
-          <Route path="/carte" element={<Carte />} />
           <Route path="/compte" element={<Compte />} />
           <Route path="*" element={<Explorer />} />
         </Routes>

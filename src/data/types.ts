@@ -16,8 +16,20 @@ export interface Media {
   legende?: string;
   /** Durée affichée pour l'audio / la vidéo. */
   duree?: string;
-  /** Image réellement déposée (redimensionnée), affichée telle quelle. */
+  /** Image de démonstration ou ancienne photo en ligne (data URL), affichée telle quelle. */
   src?: string;
+  /** Fichier réellement déposé, gardé dans le stockage des médias (IndexedDB dans le prototype). */
+  fichier?: boolean;
+  mime?: string;
+  /** Nom du fichier d'origine et poids, pour les documents. */
+  nom?: string;
+  taille?: number;
+  /** Adresse d'un lien (http ou https). */
+  url?: string;
+  /** Posé en avant sur le profil (5 au plus parmi les médias & documents). */
+  enAvant?: boolean;
+  /** Date (ISO) du dépôt : un média déposé est scellé. */
+  scelleLe?: string;
   /** Teinte douce de l'emplacement de démonstration (quand il n'y a pas de vraie photo). */
   teinte?: string;
   /** Rubrique d'origine : un média n'existe qu'une fois mais peut être relié à plusieurs rubriques. */
@@ -39,7 +51,12 @@ export interface Element {
   lien?: string;
   /** Pour les 5 sens. */
   sens?: Sens;
+  /** Un média ou document au plus par fragment. */
   medias?: string[];
+  /** Posé en avant sur le profil (5 au plus par rubrique). */
+  enAvant?: boolean;
+  /** Date (ISO) du dépôt : un fragment est scellé dès qu'il est déposé. */
+  scelleLe?: string;
 }
 
 export type RubriqueId =
@@ -99,8 +116,8 @@ export interface Trace {
   medias: Media[];
   versions: Version[];
   /**
-   * Date (ISO) à laquelle l'auteur a terminé sa trace : elle est alors scellée
-   * cinq ans, sans aucune modification possible.
+   * Date (ISO) à laquelle l'auteur a scellé ses réponses : la trace devient alors
+   * publique, et ses réponses ne changent plus pendant cinq ans.
    */
   scelleeLe?: string;
   parametres?: Parametres;
@@ -150,10 +167,13 @@ export const QUESTIONS: [string, string, string, string] = [
 export const LIMITES = { q: 1200, q4: 200, sens: 800 };
 
 /**
- * Au plus 5 fragments par rubrique ; pour les 5 sens, au plus 5 par sens.
- * Rien n'est caché : tout ce qui est déposé est montré.
+ * Au plus 10 fragments par rubrique (pour les 5 sens : 10 par sens), dont 5
+ * posés en avant sur le profil ; « Voir tout » montre le reste.
  */
-export const MAX_FRAGMENTS = 5;
+export const MAX_FRAGMENTS = 10;
+export const MAX_EN_AVANT = 5;
+/** Médias & documents : 20 au plus (les médias joints aux fragments ne comptent pas). */
+export const MAX_MEDIAS = 20;
 
 /** Combien de fragments peut encore recevoir une rubrique (ou un sens). */
 export function placesRestantes(items: Element[], rubrique: RubriqueId, sens?: Sens): number {
