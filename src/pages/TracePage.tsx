@@ -216,22 +216,44 @@ export function TracePage() {
         <h2 id="h-fragments" className="bloc-titre">
           Fragments de mon existence
         </h2>
-        {/* les 5 sens, côte à côte : chacun est une rubrique à part, avec ses propres limites */}
-        <h3 className="fragments-famille">Les 5 sens · une dernière fois</h3>
-        <ul className="fragments-grid fragments-sens">
-          {RUBRIQUES.filter((r) => r.famille === 'sens').map((r) => (
+        {/* pour qui visite, les rubriques encore vides se replient : le profil commence par ce qui a été déposé */}
+        {(() => {
+          const montree = (r: Rubrique) => canAjouter || (trace.rubriques[r.id]?.length ?? 0) > 0;
+          const sens = RUBRIQUES.filter((r) => r.famille === 'sens' && montree(r));
+          const autres = RUBRIQUES.filter((r) => !r.famille && montree(r));
+          const vides = RUBRIQUES.filter((r) => !montree(r));
+          const tuile = (r: Rubrique) => (
             <li key={r.id}>
               <FragmentTile r={r} trace={trace} canEdit={canAjouter} onOpen={() => setSalle({ kind: 'rubrique', r })} />
             </li>
-          ))}
-        </ul>
-        <ul className="fragments-grid">
-          {RUBRIQUES.filter((r) => !r.famille).map((r) => (
-            <li key={r.id}>
-              <FragmentTile r={r} trace={trace} canEdit={canAjouter} onOpen={() => setSalle({ kind: 'rubrique', r })} />
-            </li>
-          ))}
-        </ul>
+          );
+          return (
+            <>
+              {/* les 5 sens, côte à côte : chacun est une rubrique à part, avec ses propres limites */}
+              {sens.length > 0 && (
+                <>
+                  <h3 className="fragments-famille">Les 5 sens · une dernière fois</h3>
+                  <ul className="fragments-grid fragments-sens">{sens.map(tuile)}</ul>
+                </>
+              )}
+              <ul className="fragments-grid">{autres.map(tuile)}</ul>
+              {vides.length > 0 && (
+                <details className="fragments-vides">
+                  <summary>
+                    Ce qui n’a pas encore été déposé ({vides.length} rubrique{vides.length > 1 ? 's' : ''})
+                  </summary>
+                  <ul className="fragments-vides-liste">
+                    {vides.map((r) => (
+                      <li key={r.id}>
+                        <Icon name={r.icone} size={18} /> {r.titre}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </>
+          );
+        })()}
       </section>
 
       {/* ——— Médias, paramètres */}
@@ -416,7 +438,8 @@ function FragmentTile({ r, trace, canEdit, onOpen }: { r: Rubrique; trace: Trace
         </OuvrirMedia.Provider>
       )}
       {first && (
-        <span className="fragment-extrait">
+        // sans image, le fragment mis en avant devient une citation : c'est lui qu'on lit d'abord
+        <span className={`fragment-extrait${medias.length ? '' : ' fragment-citation'}`}>
           {first.titre ? <em>{first.titre} — </em> : null}
           {first.texte}
         </span>

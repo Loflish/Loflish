@@ -944,3 +944,49 @@ div.trace-bandeau > p {
   align-content: start;
   justify-items: start;
 }
+
+/* ——— une tuile sans image : le fragment mis en avant, comme une citation */
+.fragment-extrait.fragment-citation {
+  font-size: 1.14rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--encre);
+  -webkit-line-clamp: 4;
+}
+.fragment-extrait.fragment-citation em {
+  font-style: normal;
+}
+
+/* ——— les rubriques encore vides, repliées pour qui visite */
+.fragments-vides {
+  margin-top: 1.4rem;
+  font-size: var(--t-s);
+  color: var(--encre-2);
+}
+.fragments-vides summary {
+  cursor: pointer;
+  width: max-content;
+  max-width: 100%;
+}
+.fragments-vides-liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.4rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--encre-3);
+}
+.fragments-vides-liste li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ——— l'onde d'un enregistrement, cousue : chaque barre est un fil au point avant */
+.waveform span {
+  background: repeating-linear-gradient(to bottom, var(--fil) 0 4px, transparent 4px 6px);
+  border-radius: 1.5px;
+  opacity: 0.62;
+  min-width: 2px;
+}

@@ -164,17 +164,30 @@ export const QUESTIONS: [string, string, string, string] = [
 export const LIMITES = { q: 1200, q4: 200, sens: 800 };
 
 /**
- * Au plus 10 fragments par rubrique (chacun des 5 sens est une rubrique), dont
- * 5 posés en avant sur le profil ; « Voir tout » montre le reste.
+ * Combien de fragments une rubrique peut recevoir : cela dépend de ce qu'on y
+ * dépose. Les réponses brèves (les 5 sens, les petites choses…) : 10. Les
+ * textes longs (souvenirs, ce que je n'ai jamais dit, parole libre) : 7, plus
+ * rares et plus forts. Les personnes et les lieux : 15. Dans tous les cas, 5
+ * sont posés en avant sur le profil ; « Voir tout » montre le reste.
  */
 export const MAX_FRAGMENTS = 10;
+const LIMITE_PAR_RUBRIQUE: Partial<Record<RubriqueId, number>> = {
+  souvenirs: 7,
+  jamaisDit: 7,
+  paroleLibre: 7,
+  personnes: 15,
+  lieux: 15,
+};
+export function limiteDe(rubrique: RubriqueId): number {
+  return LIMITE_PAR_RUBRIQUE[rubrique] ?? MAX_FRAGMENTS;
+}
 export const MAX_EN_AVANT = 5;
 /** Médias & documents : 20 au plus (les médias joints aux fragments ne comptent pas). */
 export const MAX_MEDIAS = 20;
 
 /** Combien de fragments peut encore recevoir une rubrique. */
-export function placesRestantes(items: Element[]): number {
-  return Math.max(0, MAX_FRAGMENTS - items.length);
+export function placesRestantes(items: Element[], rubrique: RubriqueId): number {
+  return Math.max(0, limiteDe(rubrique) - items.length);
 }
 
 /** Catégories proposées pour « Œuvres / cultures » (saisie libre possible avec « Autre »). */

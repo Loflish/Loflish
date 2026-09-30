@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BubbleImage, Footer, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { dateLongue, estScellee, reouverture, TYPE_LABEL, useMesTraces } from '../data/store';
-import { MAX_FRAGMENTS } from '../data/types';
+import { limiteDe } from '../data/types';
 import { RUBRIQUES } from '../data/types';
 import { useMuseumMode } from '../lib/museum';
 
@@ -67,11 +67,11 @@ export function MaTrace() {
                         <Icon name={r.icone} size={22} />
                         <span className="ma-trace-rubrique-titre">{r.titre}</span>
                         <span className="ma-trace-rubrique-n">
-                          {n >= MAX_FRAGMENTS
-                              ? `${MAX_FRAGMENTS} sur ${MAX_FRAGMENTS}`
+                          {n >= limiteDe(r.id)
+                              ? `${limiteDe(r.id)} sur ${limiteDe(r.id)}`
                               : n === 0
                                 ? 'Ajouter'
-                                : `${n} sur ${MAX_FRAGMENTS} · ajouter`}
+                                : `${n} sur ${limiteDe(r.id)} · ajouter`}
                         </span>
                       </button>
                     </li>

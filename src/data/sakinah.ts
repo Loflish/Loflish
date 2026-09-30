@@ -71,7 +71,6 @@ export const SAKINAH: Trace = {
       { id: 'so4', titre: 'La nuit à l’hôpital', texte: 'Ma sœur m’a tenu la main toute la nuit sans rien dire. Je n’ai jamais su la remercier correctement.', quand: '2019', enAvant: true },
       { id: 'so3', titre: 'Le premier appartement', texte: 'Un matelas par terre, deux assiettes, une plante qu’on m’avait offerte. J’étais riche.', quand: '2014', lieu: 'Lyon', enAvant: true },
       { id: 'so7', titre: 'La première vague', texte: 'Le jour où j’ai nagé seule jusqu’à la bouée. Je suis revenue en pleurant de joie, personne n’a compris pourquoi.', quand: 'Août 2021', lieu: 'Essaouira' },
-      { id: 'so8', titre: 'Le mariage de Nour', texte: 'J’ai fait un discours que j’avais répété trente fois. J’en ai oublié la moitié. C’était mieux comme ça.', quand: '2022' },
       { id: 'so9', titre: 'Le carnet oublié dans le train', texte: 'Un inconnu me l’a renvoyé par la poste, avec un petit mot : « vos dessins m’ont tenu compagnie jusqu’à Marseille ».', quand: '2018' },
     ],
     chapitres: [

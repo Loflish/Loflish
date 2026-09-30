@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { addElement } from '../data/store';
-import { CATEGORIES_OEUVRES, MAX_EN_AVANT, MAX_FRAGMENTS, placesRestantes, type Element, type Media, type RubriqueId } from '../data/types';
+import { CATEGORIES_OEUVRES, MAX_EN_AVANT, limiteDe, placesRestantes, type Element, type Media, type RubriqueId } from '../data/types';
 import { creerMedia } from '../lib/fichiers';
 import { Icon } from './Icon';
 import { ChoixMedia, type MediaChoisi } from './Media';
@@ -83,7 +83,7 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
         enAvant: enAvant && !pleinAvant,
       };
       if (!addElement(traceId, rubrique, el, medias)) {
-        setErreur(`Cette rubrique a déjà ses ${MAX_FRAGMENTS} fragments.`);
+        setErreur(`Cette rubrique a déjà ses ${limiteDe(rubrique)} fragments.`);
         return;
       }
     } catch (err) {
@@ -100,15 +100,15 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
     onDone?.();
   };
 
-  const restant = placesRestantes(items);
-  if (restant === 0) return <p className="editeur-complet">Cette rubrique a ses {MAX_FRAGMENTS} fragments.</p>;
+  const restant = placesRestantes(items, rubrique);
+  if (restant === 0) return <p className="editeur-complet">Cette rubrique a ses {limiteDe(rubrique)} fragments.</p>;
 
   return (
     <form className="editeur" onSubmit={submit}>
       <p className="editeur-titre">
         <Icon name="plus" size={16} /> Ajouter un fragment
         <span className="editeur-places">
-          {restant} place{restant > 1 ? 's' : ''} sur {MAX_FRAGMENTS}
+          {restant} place{restant > 1 ? 's' : ''} sur {limiteDe(rubrique)}
         </span>
       </p>
       {has('titre') && (

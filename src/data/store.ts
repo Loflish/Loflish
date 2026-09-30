@@ -265,7 +265,7 @@ export function modifierReponses(id: string, questions: Trace['questions'], aper
  */
 export function addElement(id: string, rubrique: RubriqueId, e: Element, medias: Media[] = []): boolean {
   const t = local.find((x) => x.id === id);
-  if (!t || placesRestantes(t.rubriques[rubrique] ?? []) === 0) return false;
+  if (!t || placesRestantes(t.rubriques[rubrique] ?? [], rubrique) === 0) return false;
   const maintenant = new Date().toISOString();
   updateLocal(id, (t) => {
     const list = t.rubriques[rubrique] ?? [];
