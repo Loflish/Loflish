@@ -16,7 +16,9 @@ export interface Media {
   legende?: string;
   /** Durée affichée pour l'audio / la vidéo. */
   duree?: string;
-  /** Teinte douce de l'emplacement de démonstration (aucune vraie photo dans le prototype). */
+  /** Image réellement déposée (redimensionnée), affichée telle quelle. */
+  src?: string;
+  /** Teinte douce de l'emplacement de démonstration (quand il n'y a pas de vraie photo). */
   teinte?: string;
   /** Rubrique d'origine : un média n'existe qu'une fois mais peut être relié à plusieurs rubriques. */
   origine?: RubriqueId;
@@ -140,3 +142,9 @@ export const QUESTIONS: [string, string, string, string] = [
 ];
 
 export const LIMITES = { q: 1200, q4: 200, sens: 800 };
+
+/** Catégories proposées pour « Œuvres / cultures » (saisie libre possible avec « Autre »). */
+export const CATEGORIES_OEUVRES = [
+  'Livre', 'Film', 'Série', 'Musique', 'Chanson', 'Peinture', 'Photographie', 'Manga', 'Bande dessinée',
+  'Anime', 'Jeu vidéo', 'Théâtre', 'Poésie', 'Danse', 'Podcast', 'Sculpture', 'Architecture', 'Autre',
+];

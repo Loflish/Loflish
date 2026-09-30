@@ -4,7 +4,7 @@ import { BubbleImage, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { publishLocal } from '../data/store';
 import { LIMITES, QUESTIONS, type Trace } from '../data/types';
-import { GRIS_FAMILIES, GRIS_PALETTE, colorById, type GrisFamily } from '../lib/palette';
+import { GRIS_PALETTE, colorById } from '../lib/palette';
 import { useMuseum, useMuseumMode } from '../lib/museum';
 
 /**
@@ -375,24 +375,16 @@ export function Creer() {
 }
 
 function ColorPicker({ value, onChange, seed }: { value: string; onChange: (id: string) => void; seed: string }) {
-  const families = Object.keys(GRIS_FAMILIES) as GrisFamily[];
   return (
     <fieldset className="couleurs">
-      <legend className="field-label">La couleur de ta bulle</legend>
-      <p className="muted petit">Toutes les couleurs viennent de l’univers de GRIS. Une couleur ne signifie rien : elle est simplement la tienne.</p>
-      {families.map((f) => (
-        <div key={f} className="couleurs-famille">
-          <span className="couleurs-nom">{GRIS_FAMILIES[f]}</span>
-          <div className="couleurs-rang" role="radiogroup" aria-label={GRIS_FAMILIES[f]}>
-            {GRIS_PALETTE.filter((c) => c.family === f).map((c) => (
-              <button key={c.id} role="radio" aria-checked={value === c.id} aria-label={c.label} title={c.label} className="couleur" onClick={() => onChange(c.id)}>
-                <BubbleImage id={`${seed}-${c.id}`} couleur={c.id} size={46} />
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
-      {value && <p className="couleur-choisie">{colorById(value).label}</p>}
+      <legend className="field-label">Choisis la couleur de ta bulle</legend>
+      <div className="couleurs-grille" role="radiogroup" aria-label="Couleur de la bulle">
+        {GRIS_PALETTE.map((c) => (
+          <button key={c.id} role="radio" aria-checked={value === c.id} aria-label={c.label} className="couleur" onClick={() => onChange(c.id)}>
+            <BubbleImage id={`${seed}-${c.id}`} couleur={c.id} size={46} />
+          </button>
+        ))}
+      </div>
     </fieldset>
   );
 }

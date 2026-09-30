@@ -1,10 +1,13 @@
 /**
- * Palette des présences — GRIS (Nomada Studio).
+ * Palette des présences — GRIS.
  *
  * Règle non négociable de la direction artistique : GRIS est la seule
  * référence chromatique directe des bulles. Chaque teinte ci-dessous est
- * reprise telle quelle d'une palette du dépôt de référence
- * https://github.com/scpederzani/GRIScolors (fichier palettes_and_functions.R).
+ * reprise telle quelle du dépôt de référence donné dans le brief,
+ * https://github.com/scpederzani/GRIScolors (fichier palettes_and_functions.R) :
+ * des palettes relevées par une fan dans les tableaux du jeu GRIS
+ * (Nomada Studio), nommées d'après ses scènes. Ce ne sont pas des valeurs
+ * officielles du studio.
  *
  * 30 couleurs, 5 familles × 6. Les noirs, blancs, gris neutres et les
  * bordeaux profonds de GRIS sont volontairement écartés :

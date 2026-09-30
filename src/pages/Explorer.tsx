@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { allTraces, TYPE_LABEL } from '../data/store';
+import { allTraces, TYPE_LABEL, useMesTraces } from '../data/store';
 import { RUBRIQUES, type RubriqueId, type Trace } from '../data/types';
 import { Dock, Logo } from '../components/Chrome';
 import { Icon } from '../components/Icon';
@@ -16,7 +16,8 @@ function searchable(t: Trace): string {
 
 export function Explorer() {
   useMuseumMode('explore');
-  const { engine, reducedMotion } = useMuseum();
+  const { engine } = useMuseum();
+  const maTrace = useMesTraces()[0];
   const [moved, setMoved] = useState(false);
   const [hint, setHint] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -74,9 +75,16 @@ export function Explorer() {
         <Logo />
       </div>
 
-      <button className="explorer-search lien-discret" onClick={() => setSearchOpen(true)} aria-expanded={searchOpen}>
-        <Icon name="recherche" size={18} /> Rechercher
-      </button>
+      <div className="explorer-actions">
+        <button className="lien-discret" onClick={() => setSearchOpen(true)} aria-expanded={searchOpen}>
+          <Icon name="recherche" size={18} /> Rechercher
+        </button>
+        {maTrace && (
+          <button className="lien-discret" onClick={() => engine.current?.focusOn(maTrace.id)}>
+            <Icon name="lieu" size={18} /> Retrouver ma bulle
+          </button>
+        )}
+      </div>
 
       {moved && (
         <button className="explorer-reset lien-discret" onClick={() => engine.current?.resetView()}>
@@ -85,7 +93,6 @@ export function Explorer() {
       )}
 
       <p className={`explorer-hint${hint ? '' : ' is-hidden'}`} aria-hidden={!hint}>
-        {reducedMotion ? 'Mouvement réduit · ' : ''}
         <span className="hint-large">Glisser pour se promener · molette pour s’approcher · cliquer sur une bulle pour la rencontrer</span>
         <span className="hint-small">Glisser · pincer · toucher une bulle</span>
       </p>

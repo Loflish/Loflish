@@ -22,8 +22,9 @@ npm run build    # build statique dans dist/ (chemins relatifs, hébergeable par
 | **Explorer** (`/`) | Constellation plein écran : fond pictural vivant, bulles qui se promènent, survol = nom seul, clic = aperçu (les 200 caractères), « Entrer dans sa mémoire » = transition douce vers le profil, retour au même endroit. Recherche et filtres discrets. |
 | **Se perdre** | Une présence à la fois, hasard équitable, glisser / boutons / flèches, aucun signal de popularité. |
 | **Profil** (`/trace/:id`) | Architecture « Proposition A révisée » : une seule zone bulle, identité, type de trace, pays, dates clés ; les 4 questions obligatoires ; les 12 fragments d'existence ; médias & documents ; historique des versions ; paramètres non publics (vue auteur). Chaque rubrique s'ouvre en « salle » (5 éléments mis en avant, puis « Tout voir »). Profil de référence : `/trace/sakinah`. |
+| **Ma trace** (`/ma-trace`) | L'espace de l'auteur : voir son profil, retrouver sa bulle dans le musée, compléter ses 12 rubriques (texte, dates, lieux, photos). Dans la constellation, sa propre bulle est entourée d'un fil « ta trace », visible uniquement sur son appareil. |
 | **Créer ma trace** | Choisir → Compte (18+) → Identité (couleur GRIS au choix) → 4 questions (1200 / 200 caractères, sans texte d'accompagnement) → Aperçu → Enrichir → Vérifier → Publier. Brouillon privé enregistré automatiquement. Parcours distinct « mémoire pour une personne décédée » (sans les 4 questions). |
-| **Menu** | Dock centré en bas : Explorer · Se perdre · Créer ma trace · Menu → Le projet, Archives, Carte du monde, Ressources & aide, Soutenir, Juridique & confidentialité, Compte, Accessibilité & affichage. |
+| **Menu** | Dock centré en bas : Explorer · Se perdre · Créer ma trace (devient « Ma trace » une fois publiée) · Menu → Le projet, Archives, Carte du monde, Ressources & aide, Soutenir, Juridique & confidentialité, Compte. |
 
 ## Direction artistique — où elle vit dans le code
 
@@ -37,13 +38,14 @@ npm run build    # build statique dans dist/ (chemins relatifs, hébergeable par
 - **Aplats nabis** (couleur plate au bord irrégulier) — composant `Aplat` dans `src/components/Media.tsx`.
 - **Typographies** : Newsreader (expressive) + Manrope (fonctionnelle) — `src/styles/tokens.css`.
 - **Logo brodé** : détouré depuis la photo du tableau, fibres et points conservés, bordeaux
-  réservé au logo — `public/brand/`. Script de détourage et PNG haute définition : `design/logo/`.
-  À remplacer par le scan définitif du tableau en relançant le script.
+  réservé au logo. Version sur une ligne recomposée lettre par lettre (`design/logo/logo_ligne.py`),
+  version trois lignes d'origine conservée dans `design/logo/`. À refaire depuis le scan définitif.
 
 ## Accessibilité & performance
 
-- `prefers-reduced-motion` respecté, plus un réglage manuel (Menu → Accessibilité & affichage).
-- Constellation désactivable ; au clavier : Tab jusqu'à la constellation, flèches pour se déplacer,
+- Constellation et mouvement toujours présents (choix du projet) ; si le système demande de réduire
+  les animations, les bulles ralentissent sans s'arrêter.
+- Au clavier : Tab jusqu'à la constellation, flèches pour se déplacer,
   `+`/`-` pour s'approcher, Entrée pour rencontrer la présence la plus proche du centre.
 - Fond rendu en basse résolution à cadence réduite ; bulles générées progressivement avec un budget
   de temps par image ; moins de bulles sur mobile.

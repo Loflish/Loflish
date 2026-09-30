@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { BubbleImage, DisplaySettings, Footer, PageTop } from '../components/Chrome';
+import { BubbleImage, Footer, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { Aplat } from '../components/Media';
 import { allTraces } from '../data/store';
@@ -216,12 +216,14 @@ export function Compte() {
     <Page className="compte-page">
       <h1 className="page-titre">Compte</h1>
       <p className="lead">La connexion (e-mail vérifié, clé d’accès) arrivera avec la version connectée.</p>
-      <p>
-        <Link to="/trace/sakinah" className="lien-entrer">
-          Voir un exemple de trace en vue auteur <Icon name="fleche" size={16} />
+      <div className="liens-colonne">
+        <Link to="/ma-trace" className="lien-entrer">
+          Ma trace et mes fragments <Icon name="fleche" size={16} />
         </Link>
-      </p>
-      <DisplaySettings />
+        <Link to="/trace/sakinah" className="lien-entrer">
+          Voir un exemple de trace complète <Icon name="fleche" size={16} />
+        </Link>
+      </div>
     </Page>
   );
 }

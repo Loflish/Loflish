@@ -2,7 +2,8 @@ import { GRIS_PALETTE } from '../lib/palette';
 import { hashString, pick, rng, shuffle } from '../lib/random';
 import { MEMOIRES, NOMS, PAYS, POOL, PRENOMS, PSEUDOS, Q1, Q2, Q3, Q4, SENS_POOL } from './pools';
 import { SAKINAH } from './sakinah';
-import type { Element, RubriqueId, Trace } from './types';
+import { useSyncExternalStore } from 'react';
+import type { Element, Media, RubriqueId, Trace } from './types';
 
 /**
  * Registre des traces du prototype.
@@ -99,13 +100,67 @@ export function getTrace(id: string): Trace | undefined {
   return allTraces().find((t) => t.id === id);
 }
 
-export function publishLocal(t: Trace): void {
-  local = [t, ...local.filter((x) => x.id !== t.id)];
+// ——— traces de l'utilisateur (prototype : conservées dans ce navigateur)
+
+const listeners = new Set<() => void>();
+let snapshot = local.slice();
+
+function save(): void {
+  snapshot = local.slice();
   try {
     localStorage.setItem(LOCAL_KEY, JSON.stringify(local));
   } catch {
-    /* stockage indisponible : la trace reste en mémoire pour la session */
+    /* stockage plein ou indisponible : la trace reste en mémoire pour la session */
   }
+  listeners.forEach((fn) => fn());
+}
+
+export function publishLocal(t: Trace): void {
+  local = [t, ...local.filter((x) => x.id !== t.id)];
+  save();
+}
+
+/** Mes traces (visibles comme « miennes » uniquement sur cet appareil). */
+export function useMesTraces(): Trace[] {
+  return useSyncExternalStore(
+    (fn) => {
+      listeners.add(fn);
+      return () => listeners.delete(fn);
+    },
+    () => snapshot,
+  );
+}
+
+export function isMine(id: string): boolean {
+  return local.some((t) => t.id === id);
+}
+
+function touch(t: Trace, note: string): Trace {
+  const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const last = t.versions[0];
+  const versions = last && last.date === today ? t.versions : [{ v: (last?.v ?? 0) + 1, date: today, note }, ...t.versions];
+  return { ...t, majLe: today, versions };
+}
+
+export function updateLocal(id: string, fn: (t: Trace) => Trace, note = 'Mise à jour des fragments'): void {
+  local = local.map((t) => (t.id === id ? touch(fn(t), note) : t));
+  save();
+}
+
+export function addElement(id: string, rubrique: RubriqueId, e: Element, medias: Media[] = []): void {
+  updateLocal(id, (t) => {
+    const list = t.rubriques[rubrique] ?? [];
+    const featured = list.filter((x) => x.enAvant).length;
+    const el = { ...e, enAvant: e.enAvant && featured < 5 };
+    return { ...t, rubriques: { ...t.rubriques, [rubrique]: [...list, el] }, medias: [...t.medias, ...medias] };
+  });
+}
+
+export function removeElement(id: string, rubrique: RubriqueId, elementId: string): void {
+  updateLocal(id, (t) => ({
+    ...t,
+    rubriques: { ...t.rubriques, [rubrique]: (t.rubriques[rubrique] ?? []).filter((e) => e.id !== elementId) },
+  }));
 }
 
 /** Texte d'aperçu : les 200 caractères par défaut, ou l'aperçu d'une mémoire. */

@@ -3,6 +3,7 @@ import { Backdrop } from './components/Backdrop';
 import { Archives, Carte, Compte, Juridique, Projet, Ressources, Soutenir } from './pages/Pages';
 import { Creer } from './pages/Creer';
 import { Explorer } from './pages/Explorer';
+import { MaTrace } from './pages/MaTrace';
 import { SePerdre } from './pages/SePerdre';
 import { TracePage } from './pages/TracePage';
 
@@ -21,6 +22,7 @@ export function App() {
           <Route path="/se-perdre" element={<SePerdre />} />
           <Route path="/trace/:id" element={<TracePage />} />
           <Route path="/creer" element={<Creer />} />
+          <Route path="/ma-trace" element={<MaTrace />} />
           <Route path="/projet" element={<Projet />} />
           <Route path="/ressources" element={<Ressources />} />
           <Route path="/soutenir" element={<Soutenir />} />

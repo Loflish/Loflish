@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { allTraces, apercu, getTrace, TYPE_LABEL } from '../data/store';
+import { allTraces, apercu, getTrace, TYPE_LABEL, useMesTraces } from '../data/store';
 import { Atmosphere, paperTexture } from '../engine/atmosphere';
 import { Constellation, MODES } from '../engine/constellation';
 import { colorById } from '../lib/palette';
@@ -11,7 +11,8 @@ import { Icon } from './Icon';
 const ATMOSPHERE_BY_MODE = { explore: 1, perdre: 0.9, trace: 0.7, creer: 0.55, texte: 0.85, minimal: 0.3 } as const;
 
 export function Backdrop() {
-  const { engine, mode, settings, reducedMotion } = useMuseum();
+  const { engine, mode, reducedMotion } = useMuseum();
+  const mesTraces = useMesTraces();
   const atmoRef = useRef<HTMLCanvasElement>(null);
   const cvsRef = useRef<HTMLCanvasElement>(null);
   const atmo = useRef<Atmosphere | null>(null);
@@ -30,10 +31,13 @@ export function Backdrop() {
     const a = new Atmosphere(atmoRef.current!);
     atmo.current = a;
     const place = () => {
-      const small = window.innerWidth < 700;
-      a.setCalmZone(small ? 60 : 96, small ? 62 : 96, small ? 110 : 170);
+      // zone calme autour du logo brodé (en haut à gauche, sur une ligne)
+      const logo = document.querySelector('.logo img')?.getBoundingClientRect();
+      if (logo && logo.width) a.setCalmZone(logo.left + logo.width / 2, logo.top + logo.height / 2, logo.width * 0.62);
+      else a.setCalmZone(190, 50, 220);
       a.resize();
     };
+    window.setTimeout(place, 600);
     place();
     a.run();
 
@@ -113,8 +117,12 @@ export function Backdrop() {
 
   useEffect(() => {
     engine.current?.setReducedMotion(reducedMotion);
-    atmo.current?.setStill(reducedMotion);
   }, [reducedMotion, engine]);
+
+  // ta bulle se distingue — uniquement sur ton appareil, pour toi seul·e
+  useEffect(() => {
+    engine.current?.setOwn(new Set(mesTraces.map((t) => t.id)));
+  }, [mesTraces, engine]);
 
   useEffect(() => {
     if (selected && document.activeElement === cvsRef.current) enterBtn.current?.focus({ preventScroll: true });
@@ -131,15 +139,15 @@ export function Backdrop() {
   };
 
   return (
-    <div className={`backdrop mode-${mode}${settings.constellation ? '' : ' no-constellation'}`} aria-hidden={!interactive}>
+    <div className={`backdrop mode-${mode}`} aria-hidden={!interactive}>
       <canvas ref={atmoRef} className="backdrop-atmosphere" aria-hidden="true" />
       <canvas
         ref={cvsRef}
         className="backdrop-constellation"
-        tabIndex={interactive && settings.constellation ? 0 : -1}
+        tabIndex={interactive ? 0 : -1}
         role="application"
         aria-label="Constellation des présences. Flèches pour se déplacer, plus et moins pour s’approcher, Entrée pour rencontrer la présence la plus proche du centre."
-        style={{ pointerEvents: interactive && settings.constellation ? 'auto' : 'none' }}
+        style={{ pointerEvents: interactive ? 'auto' : 'none' }}
       />
       <div className="paper" aria-hidden="true" style={{ backgroundImage: paper ? `url(${paper})` : undefined }} />
       <div className={`veil${entering ? ' is-on' : ''}`} aria-hidden="true" />

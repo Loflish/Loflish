@@ -44,6 +44,10 @@ interface Bubble {
   v: number;
   pref: number;
   prefTimer: number;
+  /** tempérament : certains marchent vite, d'autres flânent */
+  temper: number;
+  /** attention portée aux autres lors des croisements */
+  heed: number;
   sa: number;
   sb: number;
   slow: number;
@@ -163,7 +167,9 @@ export class Constellation {
         th: rr() * TAU,
         v: 4 + rr() * 8,
         pref: rr() * TAU,
-        prefTimer: 4 + rr() * 16,
+        prefTimer: 2 + rr() * 10,
+        temper: 0.6 + rr() * 0.9,
+        heed: 0.25 + rr() * 0.75,
         sa: rr() * 1000,
         sb: rr() * 1000,
         slow: 1,
@@ -195,6 +201,8 @@ export class Constellation {
       v: 2,
       pref: rr() * TAU,
       prefTimer: 10,
+      temper: 1,
+      heed: 0.6,
       sa: rr() * 1000,
       sb: rr() * 1000,
       slow: 1,
@@ -240,6 +248,11 @@ export class Constellation {
     return f;
   }
 
+  private own = new Set<string>();
+  setOwn(ids: Set<string>): void {
+    this.own = ids;
+  }
+
   setMatch(ids: Set<string> | null): void {
     this.match = ids;
   }
@@ -266,7 +279,7 @@ export class Constellation {
 
   private animateCam(to: Partial<Cam>, dur: number, done?: () => void): void {
     const target: Cam = { ...this.cam, ...to };
-    if (this.reduced || dur <= 0) {
+    if (dur <= 0) {
       this.cam = target;
       done?.();
       return;
@@ -292,7 +305,7 @@ export class Constellation {
       this.selectedId = id;
       b.targetScale = 1.5;
       this.animateCam({ x: b.x, y: b.y, zoom: Math.min(this.maxZoom, this.cam.zoom * 1.6) }, 1300);
-      window.setTimeout(resolve, this.reduced ? 0 : 950);
+      window.setTimeout(resolve, 950);
     });
   }
 
@@ -529,8 +542,9 @@ export class Constellation {
     this.time += dt;
     const spec = MODES[this.mode];
     this.modeAlpha += (spec.alpha - this.modeAlpha) * Math.min(1, dt * 1.6);
-    const targetSpeed = this.reduced ? 0 : spec.speed;
-    this.modeSpeed = this.reduced ? 0 : this.modeSpeed + (targetSpeed - this.modeSpeed) * Math.min(1, dt * 1.2);
+    // « réduire les animations » du système : le mouvement ralentit mais ne s'arrête jamais
+    const targetSpeed = spec.speed * (this.reduced ? 0.35 : 1);
+    this.modeSpeed += (targetSpeed - this.modeSpeed) * Math.min(1, dt * 1.2);
 
     // caméra
     if (this.camAnim) {
@@ -561,7 +575,8 @@ export class Constellation {
     this.cam.x += this.keyVel.x * dt;
     this.cam.y += this.keyVel.y * dt;
 
-    const avoidR = this.D * 2.6;
+    // on ne regarde que les passants proches : les bulles peuvent se frôler, voire se chevaucher un instant
+    const avoidR = this.D * 1.7;
     const t = this.time;
     this.rebuildGrid();
 
@@ -571,21 +586,22 @@ export class Constellation {
       b.scale += (b.targetScale - b.scale) * Math.min(1, dt * 3);
       const targetAlpha = this.match ? (this.match.has(b.p.id) ? 1 : 0.13) : 1;
       b.alpha += (targetAlpha - b.alpha) * Math.min(1, dt * (b.alpha < 0.2 && targetAlpha === 1 ? 0.35 : 1.5));
-      if (!this.reduced) b.breath += b.breathSpeed * dt;
+      b.breath += b.breathSpeed * dt;
 
       if (this.modeSpeed < 0.001) continue;
 
-      // 1. errance : légère courbure permanente, jamais périodique
-      let turn = drift(t * 0.07 + b.sa) * 0.42;
-      // 2. intentions : de temps à autre la bulle « choisit » un nouveau cap
+      // 1. errance : une courbure qui change sans cesse, jamais périodique
+      let turn = drift(t * 0.11 + b.sa) * 0.95;
+      // 2. intentions : régulièrement, la bulle « décide » d'aller ailleurs
       b.prefTimer -= dt;
       if (b.prefTimer < 0) {
-        b.pref = b.th + gaussian(Math.random) * 1.3;
-        b.prefTimer = 7 + Math.random() * 20;
+        b.pref = b.th + gaussian(Math.random) * 1.9;
+        b.prefTimer = 3 + Math.random() * 11;
       }
-      turn += angleDiff(b.pref, b.th) * 0.12;
+      turn += angleDiff(b.pref, b.th) * 0.28;
 
-      // 3. évitement : infléchir sa route quand quelqu'un arrive en face
+      // 3. croisements : chacun fait un léger écart pour ceux qui arrivent en face,
+      //    avec plus ou moins d'attention (certains passent sans détour)
       let ax = 0;
       let ay = 0;
       let crowd = 0;
@@ -603,15 +619,15 @@ export class Constellation {
             const dy = this.wrapD(b.y - o.y, this.worldH);
             const d = Math.hypot(dx, dy);
             if (d > avoidR || d === 0) continue;
-            const wgt = (1 - d / avoidR) ** 2;
-            // on anticipe davantage ceux qui sont devant soi
-            const ahead = Math.max(0, -(dx * Math.cos(b.th) + dy * Math.sin(b.th)) / d);
-            ax += (dx / d) * wgt * (0.6 + ahead);
-            ay += (dy / d) * wgt * (0.6 + ahead);
+            const ahead = -(dx * Math.cos(b.th) + dy * Math.sin(b.th)) / d;
+            if (ahead < 0.2) continue; // derrière ou à côté : on ne s'en soucie pas
+            const wgt = (1 - d / avoidR) ** 2 * ahead * b.heed;
+            ax += (dx / d) * wgt;
+            ay += (dy / d) * wgt;
             crowd += wgt;
-            // chevauchement : séparation très douce, sans rebond
-            if (d < this.D * 1.05) {
-              const push = (this.D * 1.05 - d) * 0.5 * Math.min(1, dt * 2.2);
+            // superposés presque exactement : on se sépare, très lentement
+            if (d < this.D * 0.3) {
+              const push = (this.D * 0.3 - d) * 0.3 * dt;
               b.x += (dx / d) * push;
               b.y += (dy / d) * push;
             }
@@ -620,16 +636,15 @@ export class Constellation {
       }
       if (crowd > 0) {
         const away = Math.atan2(ay, ax);
-        turn += angleDiff(away, b.th) * Math.min(1.6, crowd * 1.4);
+        turn += angleDiff(away, b.th) * Math.min(1.2, crowd * 1.6);
       }
-      const maxTurn = 0.9;
+      const maxTurn = 1.4;
       b.th += Math.max(-maxTurn, Math.min(maxTurn, turn)) * dt;
 
-      // 4. allure : avance, ralentit, s'arrête presque, repart
-      const n = drift(t * 0.045 + b.sb);
-      let target = n < -0.42 ? 0.5 : 3 + ((n + 0.42) / 1.42) * 13;
-      target *= 1 - Math.min(0.5, crowd * 0.25);
-      b.v += (target - b.v) * Math.min(1, dt * 0.5);
+      // 4. allure : chacun son tempérament — avance, flâne, s'arrête presque, repart
+      const n = drift(t * 0.06 + b.sb);
+      const target = (n < -0.4 ? 0.6 : 4 + ((n + 0.4) / 1.4) * 22) * b.temper;
+      b.v += (target - b.v) * Math.min(1, dt * 0.6);
 
       const sp = b.v * b.slow * this.modeSpeed;
       b.x += Math.cos(b.th) * sp * dt;
@@ -689,12 +704,13 @@ export class Constellation {
     }
 
     let focusDraw: { x: number; y: number; r: number } | null = null;
+    const ownDraw: { x: number; y: number; r: number; a: number }[] = [];
     for (const b of this.bubbles) {
       if (!b.sprite) continue;
       const x = this.wrapD(b.x - this.cam.x, this.worldW) * z + this.w / 2;
       const y = this.wrapD(b.y - this.cam.y, this.worldH) * z + this.h / 2;
       if (x < -margin || y < -margin || x > this.w + margin || y > this.h + margin) continue;
-      const breath = this.reduced ? 1 : 1 + Math.sin(b.breath) * 0.018;
+      const breath = 1 + Math.sin(b.breath) * 0.018;
       const size = base * b.scale * breath;
       let a = this.modeAlpha * b.alpha * (this.calmZones.length ? this.calmFactor(x, y) : 1);
       if (this.enteringId && b.p.id !== this.enteringId) a *= 0.35;
@@ -708,6 +724,27 @@ export class Constellation {
       }
       ctx.drawImage(b.sprite, x - size / 2, y - size / 2, size, size);
       if (b.p.id === this.focusId) focusDraw = { x, y, r: (this.D * z * b.scale) / 2 + 7 };
+      if (this.own.has(b.p.id)) ownDraw.push({ x, y, r: (this.D * z * b.scale) / 2, a });
+    }
+    ctx.globalAlpha = 1;
+
+    // ta propre bulle : un fil brodé tout autour et « ta trace » en dessous
+    for (const o of ownDraw) {
+      const rr = o.r + 7 + Math.sin(this.time * 0.8) * 0.8;
+      ctx.globalAlpha = Math.min(1, o.a) * 0.85;
+      ctx.strokeStyle = 'rgb(87, 83, 92)';
+      ctx.lineWidth = 1.3;
+      ctx.lineCap = 'round';
+      ctx.setLineDash([3.2, 3.4]);
+      ctx.lineDashOffset = -this.time * 2.5;
+      ctx.beginPath();
+      ctx.arc(o.x, o.y, rr, 0, TAU);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgb(47, 44, 51)';
+      ctx.font = 'italic 14px "Newsreader Variable", Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('ta trace', o.x, o.y + rr + 16);
     }
     ctx.globalAlpha = 1;
 

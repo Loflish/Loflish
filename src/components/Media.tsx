@@ -13,7 +13,8 @@ export function MediaThumb({ m, size = 'm' }: { m: Media; size?: 's' | 'm' | 'l'
   return (
     <figure className={`media media-${m.kind} media-${size}`}>
       <div className="media-surface" style={{ ['--teinte' as string]: m.teinte ?? '#DDD8CE' }}>
-        {m.kind === 'image' && <span className="media-placeholder">emplacement photo</span>}
+        {m.kind === 'image' && m.src && <img className="media-img" src={m.src} alt={m.legende || m.titre} loading="lazy" />}
+        {m.kind === 'image' && !m.src && <span className="media-placeholder">emplacement photo</span>}
         {m.kind === 'video' && (
           <span className="media-play" aria-hidden="true">
             <Icon name="play" size={size === 's' ? 16 : 22} />

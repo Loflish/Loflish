@@ -318,17 +318,33 @@ ul {
   50% { transform: scale(1.025); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 1ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
-  }
+/* Les textes déposés par les personnes doivent toujours tenir dans leur cadre,
+   même une suite de 200 caractères sans espace. */
+.apercu-nom,
+.apercu-texte,
+.perdre-nom,
+.perdre-texte,
+.trace-nom,
+.trace-sous,
+.question-reponse,
+.question-dest,
+.fragment-titre,
+.fragment-extrait,
+.element-titre,
+.element-texte,
+.element-meta,
+.salle-reponse,
+.salle-titre,
+.citation,
+.provenance-qui,
+.result-nom,
+.ma-trace-nom,
+.media figcaption {
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
-[data-motion='reduit'] *,
-[data-motion='reduit'] *::before,
-[data-motion='reduit'] *::after {
-  animation-duration: 1ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 1ms !important;
+.name-label {
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

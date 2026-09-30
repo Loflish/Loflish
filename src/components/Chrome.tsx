@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { bubbleDataUrl } from '../engine/bubbleSprite';
 import { colorById } from '../lib/palette';
-import { useMuseum } from '../lib/museum';
+import { useMesTraces } from '../data/store';
 import { Icon } from './Icon';
 
-const logoUrl = `${import.meta.env.BASE_URL}brand/logo-brode.webp`;
-// version réduite : même broderie, densité du fil légèrement renforcée pour rester lisible en petit
-const logoPetitUrl = `${import.meta.env.BASE_URL}brand/logo-brode-petit.webp`;
+// Logo sur une ligne, recomposé à partir des lettres brodées du tableau (design/logo/logo_ligne.py).
+// La version « petit » renforce très légèrement la densité du fil pour rester lisible à petite taille.
+const logoUrl = `${import.meta.env.BASE_URL}brand/logo-ligne-petit.webp`;
 
 /**
  * Logo brodé — véritable broderie numérisée, jamais vectorisée.
@@ -16,12 +16,7 @@ const logoPetitUrl = `${import.meta.env.BASE_URL}brand/logo-brode-petit.webp`;
 export function Logo({ size = 'normal' }: { size?: 'normal' | 'petit' }) {
   return (
     <Link to="/" className={`logo logo-${size}`} aria-label="Nos mots mémoriaux — retour à la constellation">
-      <img
-        src={size === 'petit' ? logoPetitUrl : logoUrl}
-        alt="Nos mots mémoriaux, brodé à la main en fil bordeaux"
-        width={900}
-        height={1008}
-      />
+      <img src={logoUrl} alt="Nos mots mémoriaux, brodé à la main en fil bordeaux" width={900} height={88} />
     </Link>
   );
 }
@@ -58,6 +53,7 @@ export function Dock() {
   const location = useLocation();
   const panelRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const aTrace = useMesTraces().some((t) => t.type === 'personnelle');
 
   useEffect(() => setOpen(false), [location.pathname]);
   useEffect(() => {
@@ -90,7 +86,6 @@ export function Dock() {
               ))}
             </ul>
           </nav>
-          <DisplaySettings />
           <p className="menu-help">
             Un moment difficile ? <Link to="/ressources">Des personnes peuvent t’écouter, maintenant.</Link>
           </p>
@@ -103,9 +98,15 @@ export function Dock() {
         <NavLink to="/se-perdre" className="dock-item">
           Se perdre
         </NavLink>
-        <NavLink to="/creer" className="dock-item">
-          Créer ma trace
-        </NavLink>
+        {aTrace ? (
+          <NavLink to="/ma-trace" className="dock-item">
+            Ma trace
+          </NavLink>
+        ) : (
+          <NavLink to="/creer" className="dock-item">
+            Créer ma trace
+          </NavLink>
+        )}
         <button
           ref={btnRef}
           className="dock-item dock-menu"
@@ -117,50 +118,6 @@ export function Dock() {
         </button>
       </nav>
     </>
-  );
-}
-
-/** Compte / Menu → Accessibilité & affichage */
-export function DisplaySettings() {
-  const { settings, setSettings } = useMuseum();
-  return (
-    <fieldset className="reglages">
-      <legend>Accessibilité & affichage</legend>
-      <div className="reglage">
-        <span id="lbl-const">Constellation en arrière-plan</span>
-        <div className="segmented" role="radiogroup" aria-labelledby="lbl-const">
-          {[
-            [true, 'Activée'],
-            [false, 'Désactivée'],
-          ].map(([v, l]) => (
-            <button
-              key={String(v)}
-              role="radio"
-              aria-checked={settings.constellation === v}
-              onClick={() => setSettings({ constellation: v as boolean })}
-            >
-              {l as string}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="reglage">
-        <span id="lbl-motion">Mouvement</span>
-        <div className="segmented" role="radiogroup" aria-labelledby="lbl-motion">
-          {(
-            [
-              ['systeme', 'Système'],
-              ['normal', 'Normal'],
-              ['reduit', 'Réduit'],
-            ] as const
-          ).map(([v, l]) => (
-            <button key={v} role="radio" aria-checked={settings.motion === v} onClick={() => setSettings({ motion: v })}>
-              {l}
-            </button>
-          ))}
-        </div>
-      </div>
-    </fieldset>
   );
 }
 

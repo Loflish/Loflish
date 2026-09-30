@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BubbleImage, Footer } from '../components/Chrome';
 import { Icon } from '../components/Icon';
+import { FragmentEditor } from '../components/FragmentEditor';
 import { Aplat, MediaThumb } from '../components/Media';
-import { getTrace, TYPE_LABEL } from '../data/store';
-import { LIMITES, QUESTIONS, RUBRIQUES, SENS_QUESTIONS, type Element, type Media, type Rubrique, type Trace } from '../data/types';
+import { getTrace, isMine, removeElement, TYPE_LABEL, useMesTraces } from '../data/store';
+import { LIMITES, QUESTIONS, RUBRIQUES, SENS_QUESTIONS, type Element, type Media, type Rubrique, type RubriqueId, type Trace } from '../data/types';
 import { colorById } from '../lib/palette';
 import { useMuseumMode } from '../lib/museum';
 
@@ -19,17 +20,25 @@ type SalleState =
 export function TracePage() {
   useMuseumMode('trace');
   const { id = '' } = useParams();
+  useMesTraces(); // se met à jour quand on ajoute un fragment
   const trace = getTrace(id);
   const navigate = useNavigate();
-  const mine = id === 'sakinah' || id.startsWith('moi-');
+  const location = useLocation();
+  const editable = isMine(id);
+  const mine = id === 'sakinah' || editable;
   const [auteur, setAuteur] = useState(mine);
   const [salle, setSalle] = useState<SalleState | null>(null);
   const [copied, setCopied] = useState(false);
+  const canEdit = editable && auteur;
 
   useEffect(() => {
     window.scrollTo(0, 0);
     setAuteur(mine);
-  }, [id, mine]);
+    // arrivée depuis « Ma trace » : ouvrir directement une rubrique
+    const ouvrir = (location.state as { ouvrir?: RubriqueId } | null)?.ouvrir;
+    const r = RUBRIQUES.find((x) => x.id === ouvrir);
+    if (r) setSalle({ kind: 'rubrique', r });
+  }, [id, mine, location.state]);
 
   if (!trace) {
     return (
@@ -45,14 +54,15 @@ export function TracePage() {
   const share = async () => {
     const url = window.location.href;
     try {
-      if (navigator.share) await navigator.share({ title: `${trace.nom} — Nos mots mémoriaux`, url });
-      else {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 2400);
-      }
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2400);
     } catch {
-      /* partage annulé */
+      try {
+        await navigator.share?.({ title: `${trace.nom} — Nos mots mémoriaux`, url });
+      } catch {
+        /* partage indisponible */
+      }
     }
   };
 
@@ -80,6 +90,12 @@ export function TracePage() {
           </button>
         </div>
       </nav>
+
+      {canEdit && (
+        <p className="trace-bandeau emerge">
+          C’est ta trace. Ouvre une rubrique pour y ajouter tes fragments d’existence : tout ce que tu ajoutes est publié.
+        </p>
+      )}
 
       {/* ——— En-tête : bulle + identité */}
       <header className="trace-head emerge">
@@ -131,6 +147,11 @@ export function TracePage() {
           <h2 id="h-questions" className="bloc-titre">
             Les 4 questions obligatoires
           </h2>
+          {canEdit && (
+            <p className="bloc-note bloc-note-auteur">
+              Tes quatre réponses sont gravées : une nouvelle version sera possible dans cinq ans (ou exceptionnellement avant).
+            </p>
+          )}
           <ol className="questions-grid">
             {trace.questions.map((answer, i) => (
               <li key={i} className={`question${i === 3 ? ' question-200' : ''}`}>
@@ -183,7 +204,7 @@ export function TracePage() {
         <ul className="fragments-grid">
           {RUBRIQUES.map((r) => (
             <li key={r.id}>
-              <FragmentTile r={r} trace={trace} auteur={auteur} onOpen={() => setSalle({ kind: 'rubrique', r })} />
+              <FragmentTile r={r} trace={trace} auteur={auteur} canEdit={canEdit} onOpen={() => setSalle({ kind: 'rubrique', r })} />
             </li>
           ))}
         </ul>
@@ -269,7 +290,7 @@ export function TracePage() {
 
       {salle && (
         <Salle onClose={() => setSalle(null)} titre={salleTitre(salle, trace)}>
-          {salle.kind === 'rubrique' && <RubriqueDetail r={salle.r} trace={trace} />}
+          {salle.kind === 'rubrique' && <RubriqueDetail r={salle.r} trace={trace} canEdit={canEdit} />}
           {salle.kind === 'question' && trace.questions && (
             <div className="salle-question">
               <p className="salle-q">{QUESTIONS[salle.i]}</p>
@@ -328,20 +349,26 @@ function mediasOf(items: Element[], trace: Trace): Media[] {
   return [...new Set(ids)].map((id) => trace.medias.find((m) => m.id === id)).filter(Boolean) as Media[];
 }
 
-function FragmentTile({ r, trace, auteur, onOpen }: { r: Rubrique; trace: Trace; auteur: boolean; onOpen: () => void }) {
+function FragmentTile({ r, trace, auteur, canEdit, onOpen }: { r: Rubrique; trace: Trace; auteur: boolean; canEdit: boolean; onOpen: () => void }) {
   const items = trace.rubriques[r.id] ?? [];
   const medias = mediasOf(items, trace).slice(0, 3);
   const first = items.find((e) => e.enAvant) ?? items[0];
   const empty = items.length === 0;
   return (
-    <button className={`fragment${empty ? ' is-empty' : ''}`} onClick={onOpen} disabled={empty && !auteur}>
+    <button className={`fragment${empty ? ' is-empty' : ''}`} onClick={onOpen} disabled={empty && !canEdit}>
       <span className="fragment-head">
         <Icon name={r.icone} size={26} />
         <span className="fragment-titre">{r.titre}</span>
         {!empty && <Icon name="fleche" size={16} />}
       </span>
       <span className="fragment-compte">
-        {empty ? (auteur ? 'Ajouter un premier fragment' : 'Rien n’a été déposé ici pour l’instant') : `${items.length} élément${items.length > 1 ? 's' : ''}`}
+        {empty
+          ? canEdit
+            ? '+ Ajouter un premier fragment'
+            : auteur
+              ? 'Exemple de démonstration'
+              : 'Rien n’a été déposé ici pour l’instant'
+          : `${items.length} élément${items.length > 1 ? 's' : ''}${canEdit ? ' · ajouter' : ''}`}
       </span>
       {medias.length > 0 && (
         <span className="fragment-medias">
@@ -360,7 +387,7 @@ function FragmentTile({ r, trace, auteur, onOpen }: { r: Rubrique; trace: Trace;
   );
 }
 
-function ElementView({ e, trace }: { e: Element; trace: Trace }) {
+function ElementView({ e, trace, onRemove }: { e: Element; trace: Trace; onRemove?: () => void }) {
   const medias = (e.medias ?? []).map((id) => trace.medias.find((m) => m.id === id)).filter(Boolean) as Media[];
   const meta = [e.nature, e.categorie, e.lien, e.quand, e.lieu].filter(Boolean).join(' · ');
   return (
@@ -375,12 +402,19 @@ function ElementView({ e, trace }: { e: Element; trace: Trace }) {
           ))}
         </div>
       )}
+      {onRemove && (
+        <button className="lien-discret petit element-retirer" onClick={onRemove}>
+          Retirer ce fragment
+        </button>
+      )}
     </article>
   );
 }
 
-function RubriqueDetail({ r, trace }: { r: Rubrique; trace: Trace }) {
+function RubriqueDetail({ r, trace, canEdit }: { r: Rubrique; trace: Trace; canEdit: boolean }) {
   const items = trace.rubriques[r.id] ?? [];
+  const remove = (e: Element) => (canEdit ? () => removeElement(trace.id, r.id, e.id) : undefined);
+  const editor = canEdit ? <FragmentEditor traceId={trace.id} rubrique={r.id} /> : null;
   const [all, setAll] = useState(false);
   const featured = items.filter((e) => e.enAvant).slice(0, 5);
   const rest = items.filter((e) => !featured.includes(e));
@@ -395,28 +429,31 @@ function RubriqueDetail({ r, trace }: { r: Rubrique; trace: Trace }) {
             <section key={s} className="sens-groupe">
               <h3 className="salle-q">{SENS_QUESTIONS[s].question}</h3>
               {list.map((e) => (
-                <ElementView key={e.id} e={e} trace={trace} />
+                <ElementView key={e.id} e={e} trace={trace} onRemove={remove(e)} />
               ))}
             </section>
           );
         })}
+        {editor}
       </div>
     );
   }
 
   return (
     <div className="rubrique-detail">
+      {items.length === 0 && canEdit && <p className="muted">Rien encore ici. Ce que tu ajoutes est publié sur ta trace.</p>}
       {featured.map((e) => (
-        <ElementView key={e.id} e={e} trace={trace} />
+        <ElementView key={e.id} e={e} trace={trace} onRemove={remove(e)} />
       ))}
       {rest.length > 0 &&
         (all ? (
-          rest.map((e) => <ElementView key={e.id} e={e} trace={trace} />)
+          rest.map((e) => <ElementView key={e.id} e={e} trace={trace} onRemove={remove(e)} />)
         ) : (
           <button className="lien-discret" onClick={() => setAll(true)}>
             Tout voir ({rest.length} de plus) <Icon name="fleche" size={14} />
           </button>
         ))}
+      {editor}
     </div>
   );
 }
