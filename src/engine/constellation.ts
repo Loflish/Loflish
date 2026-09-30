@@ -17,6 +17,7 @@ export interface Presence {
   id: string;
   nom: string;
   hex: string;
+  matiere?: number;
 }
 
 export type Mode = 'explore' | 'perdre' | 'trace' | 'creer' | 'texte' | 'minimal';
@@ -708,7 +709,7 @@ export class Constellation {
     const t0 = performance.now();
     while (this.spritesAllowed && this.spriteQueue.length && performance.now() - t0 < 7) {
       const b = this.spriteQueue.shift()!;
-      b.sprite = bubbleSprite(b.p.id, b.p.hex);
+      b.sprite = bubbleSprite(b.p.id, b.p.hex, { matiere: b.p.matiere });
     }
 
     let focusDraw: { x: number; y: number; r: number } | null = null;

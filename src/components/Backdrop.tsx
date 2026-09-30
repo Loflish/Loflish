@@ -5,7 +5,7 @@ import { allTraces, apercu, getTrace, TYPE_LABEL, useMesTraces } from '../data/s
 import { Atmosphere, paperTexture } from '../engine/atmosphere';
 import { clearSpriteCache } from '../engine/bubbleSprite';
 import { Encre } from '../engine/encre';
-import { FONDS, HD, HD_FILES, LEGER, loadTaches, type Fond } from '../lib/hd';
+import { FONDS, HD, HD_FILES, LEGER, loadMatieres, type Fond } from '../lib/hd';
 import { Constellation, MODES } from '../engine/constellation';
 import { colorById } from '../lib/palette';
 import { useMuseum } from '../lib/museum';
@@ -32,7 +32,8 @@ function FondsPeints({ actif }: { actif: Fond }) {
     <>
       {vus.map((f) => (
         <div key={f} className={`fond-peint${f === actif ? ' is-on' : ''}`} aria-hidden="true">
-          {f === 'explorer' && !LEGER && video ? (
+          {/* la vidéo ne tourne que dans l'espace actif : ailleurs, l'image fixe suffit */}
+          {f === 'explorer' && f === actif && !LEGER && video ? (
             <video poster={FONDS.explorer.large} autoPlay muted loop playsInline>
               <source src={HD_FILES.fondVideo[0]} type="video/webm" />
               <source src={HD_FILES.fondVideo[1]} type="video/mp4" onError={() => setVideo(false)} />
@@ -84,7 +85,8 @@ export function Backdrop() {
     place();
     a.run();
 
-    const presences = allTraces().map((t) => ({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex }));
+    const traces = allTraces();
+    const presences = traces.map((t) => ({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex, matiere: t.matiere }));
     const c = new Constellation(cvsRef.current!, presences);
     engine.current = c;
     if (HD && encreRef.current) encre.current = new Encre(encreRef.current, HD_FILES.encre);
@@ -97,7 +99,8 @@ export function Backdrop() {
         c.spritesAllowed = true;
       };
       const fallback = window.setTimeout(go, 2000);
-      loadTaches().then(() => {
+      // les taches de base, plus les matières choisies par chacun
+      loadMatieres(traces.map((t) => t.matiere)).then(() => {
         window.clearTimeout(fallback);
         go();
       });

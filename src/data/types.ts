@@ -82,6 +82,8 @@ export interface Trace {
   pseudo?: string;
   type: TraceType;
   couleur: string; // id GRIS
+  /** matière d'aquarelle choisie (1 à 77) ; absente = tirée au hasard, fixe */
+  matiere?: number;
   pays?: string;
   creeLe: string;
   majLe: string;

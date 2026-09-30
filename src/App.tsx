@@ -4,6 +4,7 @@ import { Archives, Carte, Compte, Juridique, Projet, Ressources, Soutenir } from
 import { Creer } from './pages/Creer';
 import { Explorer } from './pages/Explorer';
 import { MaTrace } from './pages/MaTrace';
+import { Musee } from './pages/Musee';
 import { SePerdre } from './pages/SePerdre';
 import { TracePage } from './pages/TracePage';
 
@@ -24,6 +25,7 @@ export function App() {
           <Route path="/creer" element={<Creer />} />
           <Route path="/ma-trace" element={<MaTrace />} />
           <Route path="/projet" element={<Projet />} />
+          <Route path="/musee" element={<Musee />} />
           <Route path="/ressources" element={<Ressources />} />
           <Route path="/soutenir" element={<Soutenir />} />
           <Route path="/juridique" element={<Juridique />} />

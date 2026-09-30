@@ -11,8 +11,9 @@ export const HD = true;
 
 const base = `${import.meta.env.BASE_URL}hd/`;
 
-/** Nombre de taches d'aquarelle préparées (public/hd/taches). */
-const NB_TACHES = 77;
+/** Nombre de taches d'aquarelle préparées (public/hd/taches) : le catalogue complet des matières. */
+export const NB_MATIERES = 77;
+const NB_TACHES = NB_MATIERES;
 
 /** Un fond peint par espace, en format ordinateur (large) et téléphone (haut). */
 export type Fond = 'explorer' | 'profil' | 'creer' | 'texte';
@@ -42,8 +43,9 @@ export const HD_FILES = {
   fondVideo: [`${base}fond-explorer.webm`, `${base}fond-explorer.mp4`],
   lin: `${base}lin.webp`,
   eau: `${base}carte-eau.webp`,
-  taches: indices.map((n) => `${base}taches/tache-${String(n).padStart(2, '0')}.webp`),
 };
+
+const tacheUrl = (n: number) => `${base}taches/tache-${String(n).padStart(2, '0')}.webp`;
 
 /** Aplats de gouache (masques : on les remplit de n'importe quelle couleur). */
 export type FormeAplat = 'rectangle' | 'arche' | 'bande' | 'ovale';
@@ -76,31 +78,61 @@ export function installSurfaces(): void {
   r.style.setProperty('--papier-washi', abs('papier-washi.webp'));
 }
 
-let taches: HTMLImageElement[] = [];
-let loading: Promise<HTMLImageElement[]> | null = null;
+const taches = new Map<number, HTMLImageElement>();
+const enCours = new Map<number, Promise<void>>();
+let loading: Promise<void> | null = null;
 
-/** Charge les taches d'aquarelle une seule fois ; résout avec celles qui existent. */
-export function loadTaches(): Promise<HTMLImageElement[]> {
-  if (!HD) return Promise.resolve([]);
-  if (loading) return loading;
-  loading = Promise.all(
-    HD_FILES.taches.map(
-      (src) =>
-        new Promise<HTMLImageElement | null>((res) => {
-          const img = new Image();
-          img.onload = () => res(img);
-          img.onerror = () => res(null);
-          img.src = src;
-        }),
-    ),
-  ).then((list) => (taches = list.filter(Boolean) as HTMLImageElement[]));
+function charger(n: number): Promise<void> {
+  if (!HD || n < 1 || n > NB_TACHES) return Promise.resolve();
+  let p = enCours.get(n);
+  if (!p) {
+    p = new Promise<void>((res) => {
+      const img = new Image();
+      img.onload = () => {
+        taches.set(n, img);
+        res();
+      };
+      img.onerror = () => res();
+      img.src = tacheUrl(n);
+    });
+    enCours.set(n, p);
+  }
+  return p;
+}
+
+/** Charge une seule fois les taches d'aquarelle de base (toutes sur ordinateur, 30 sur téléphone). */
+export function loadTaches(): Promise<void> {
+  if (!HD) return Promise.resolve();
+  loading ??= Promise.all(indices.map(charger)).then(() => undefined);
   return loading;
 }
 
+/** Charge des matières précises (celles que des personnes ont choisies). */
+export function loadMatieres(list: (number | undefined)[]): Promise<void> {
+  return Promise.all([loadTaches(), ...list.filter((n): n is number => !!n).map(charger)]).then(() => undefined);
+}
+
+/** Le catalogue complet, pour choisir sa matière. */
+export function loadCatalogue(): Promise<void> {
+  return loadMatieres(Array.from({ length: NB_TACHES }, (_, i) => i + 1));
+}
+
+/** Sans choix, la matière d'une personne est tirée de son identifiant : au hasard, mais fixe. */
+export function matiereFor(seed: number): number {
+  return (seed % NB_TACHES) + 1;
+}
+
 /**
- * La matière d'une bulle est tirée au hasard pour chaque personne (jamais
- * choisie) et reste la sienne : une aquarelle sèche ne change plus de forme.
+ * La tache d'aquarelle d'une matière. Si elle n'est pas (encore) chargée —
+ * téléphone, connexion lente —, la plus proche dans le catalogue la remplace.
  */
-export function tacheFor(seed: number): HTMLImageElement | null {
-  return taches.length ? taches[seed % taches.length] : null;
+export function tacheFor(n: number): HTMLImageElement | null {
+  if (!taches.size) return null;
+  const hit = taches.get(n);
+  if (hit) return hit;
+  for (let d = 1; d < NB_TACHES; d++) {
+    const a = taches.get(n - d) ?? taches.get(n + d);
+    if (a) return a;
+  }
+  return null;
 }

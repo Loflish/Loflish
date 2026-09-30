@@ -4,7 +4,9 @@ import { BubbleImage, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { publishLocal } from '../data/store';
 import { LIMITES, QUESTIONS, type Trace } from '../data/types';
+import { NB_MATIERES, loadCatalogue } from '../lib/hd';
 import { GRIS_PALETTE, colorById } from '../lib/palette';
+import { hashString } from '../lib/random';
 import { useMuseum, useMuseumMode } from '../lib/museum';
 
 /**
@@ -24,6 +26,8 @@ interface Draft {
   pronoms: string;
   pays: string;
   couleur: string;
+  /** matière d'aquarelle de la bulle (1 à 77), choisie dans le catalogue complet */
+  matiere: number;
   q: [string, string, string, string];
   relation: string;
   origine: string;
@@ -41,6 +45,7 @@ const EMPTY: Draft = {
   pronoms: '',
   pays: '',
   couleur: '',
+  matiere: 0,
   q: ['', '', '', ''],
   relation: '',
   origine: '',
@@ -58,9 +63,11 @@ export function Creer() {
   const [d, setD] = useState<Draft>(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      return raw ? { ...EMPTY, ...JSON.parse(raw) } : EMPTY;
+      const x: Draft = raw ? { ...EMPTY, ...JSON.parse(raw) } : { ...EMPTY };
+      // une matière est déjà posée au hasard : on peut la garder ou en choisir une autre
+      return x.matiere ? x : { ...x, matiere: 1 + Math.floor(Math.random() * NB_MATIERES) };
     } catch {
-      return EMPTY;
+      return { ...EMPTY, matiere: 1 + Math.floor(Math.random() * NB_MATIERES) };
     }
   });
   const [step, setStep] = useState(0);
@@ -119,6 +126,7 @@ export function Creer() {
       pronoms: d.pronoms || undefined,
       type: d.kind === 'memoire' ? 'memoire' : 'personnelle',
       couleur: d.couleur,
+      matiere: d.matiere,
       pays: d.pays || undefined,
       creeLe: today,
       majLe: today,
@@ -140,7 +148,7 @@ export function Creer() {
     };
     window.setTimeout(() => {
       publishLocal(t);
-      engine.current?.addPresence({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex });
+      engine.current?.addPresence({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex, matiere: t.matiere });
       try {
         localStorage.removeItem(KEY);
       } catch {
@@ -154,7 +162,7 @@ export function Creer() {
     return (
       <main className="page creer creer-publication" aria-live="polite">
         <div className="publication">
-          <BubbleImage id={draftId} couleur={d.couleur || 'b1'} size={180} className="rejoint" />
+          <BubbleImage id={draftId} couleur={d.couleur || 'b1'} matiere={d.matiere} size={180} className="rejoint" />
           <p className="publication-texte">Ta bulle rejoint les autres.</p>
         </div>
       </main>
@@ -249,7 +257,7 @@ export function Creer() {
               <span className="field-label">Pays associé à {d.kind === 'memoire' ? 'cette mémoire' : 'ma trace'} (facultatif, encouragé)</span>
               <input value={d.pays} onChange={(e) => up({ pays: e.target.value })} maxLength={48} />
             </label>
-            <ColorPicker value={d.couleur} onChange={(couleur) => up({ couleur })} seed={draftId} />
+            <BulleChoix couleur={d.couleur} matiere={d.matiere} seed={draftId} onChange={up} />
           </section>
         )}
 
@@ -296,7 +304,7 @@ export function Creer() {
           <section className="etape etape-apercu">
             <h1 className="etape-titre">Voilà comment ta bulle apparaîtra dans le musée.</h1>
             <div className="apercu-demo">
-              <BubbleImage id={draftId} couleur={d.couleur || 'b1'} size={150} className="breathing" />
+              <BubbleImage id={draftId} couleur={d.couleur || 'b1'} matiere={d.matiere} size={150} className="breathing" />
               <div>
                 <p className="apercu-nom">{displayName}</p>
                 <p className="apercu-type">{d.kind === 'memoire' ? 'Mémoire pour une personne décédée' : 'Trace personnelle'}</p>
@@ -374,17 +382,71 @@ export function Creer() {
   );
 }
 
-function ColorPicker({ value, onChange, seed }: { value: string; onChange: (id: string) => void; seed: string }) {
+/**
+ * Choisir sa bulle : une couleur de GRIS et une matière d'aquarelle, parmi le
+ * catalogue complet. Les matières sont posées comme des taches sur une feuille,
+ * chacune déjà dans la couleur choisie ; la bulle se transforme à chaque essai.
+ */
+function BulleChoix({
+  couleur,
+  matiere,
+  seed,
+  onChange,
+}: {
+  couleur: string;
+  matiere: number;
+  seed: string;
+  onChange: (p: { couleur?: string; matiere?: number }) => void;
+}) {
+  const teinte = couleur || 'b1';
+  useEffect(() => {
+    void loadCatalogue();
+  }, []);
+  const matieres = useMemo(() => Array.from({ length: NB_MATIERES }, (_, i) => i + 1), []);
   return (
-    <fieldset className="couleurs">
-      <legend className="field-label">Choisis la couleur de ta bulle</legend>
-      <div className="couleurs-grille" role="radiogroup" aria-label="Couleur de la bulle">
-        {GRIS_PALETTE.map((c) => (
-          <button key={c.id} role="radio" aria-checked={value === c.id} aria-label={c.label} className="couleur" onClick={() => onChange(c.id)}>
-            <BubbleImage id={seed} couleur={c.id} size={46} />
-          </button>
-        ))}
+    <div className="bulle-choix">
+      <div className="bulle-choix-apercu">
+        <BubbleImage key={`${teinte}-${matiere}`} id={seed} couleur={teinte} matiere={matiere} size={150} className="breathing bulle-change" />
       </div>
-    </fieldset>
+      <div className="bulle-choix-options">
+        <fieldset className="couleurs">
+          <legend className="field-label">Choisis la couleur de ta bulle</legend>
+          <div className="couleurs-grille" role="radiogroup" aria-label="Couleur de la bulle">
+            {GRIS_PALETTE.map((c) => (
+              <button key={c.id} role="radio" aria-checked={couleur === c.id} aria-label={c.label} className="couleur" onClick={() => onChange({ couleur: c.id })}>
+                <BubbleImage id={seed} couleur={c.id} matiere={matiere} size={46} />
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className="couleurs matieres">
+          <legend className="field-label">Choisis sa matière</legend>
+          <div className="matieres-feuille" role="radiogroup" aria-label="Matière de la bulle">
+            {matieres.map((n) => {
+              // posées à la main : un léger décalage, jamais une grille parfaite
+              const h = hashString(`matiere-${n}`);
+              const dx = ((h % 9) - 4) * 0.6;
+              const dy = (((h >> 4) % 9) - 4) * 0.6;
+              return (
+                <button
+                  key={n}
+                  role="radio"
+                  aria-checked={matiere === n}
+                  aria-label={`Matière ${n} sur ${NB_MATIERES}`}
+                  className="couleur matiere"
+                  style={{ transform: `translate(${dx}px, ${dy}px)` }}
+                  onClick={() => onChange({ matiere: n })}
+                >
+                  <BubbleImage id={seed} couleur={teinte} matiere={n} size={46} />
+                </button>
+              );
+            })}
+          </div>
+          <button type="button" className="lien-discret matiere-hasard" onClick={() => onChange({ matiere: 1 + Math.floor(Math.random() * NB_MATIERES) })}>
+            Au hasard
+          </button>
+        </fieldset>
+      </div>
+    </div>
   );
 }

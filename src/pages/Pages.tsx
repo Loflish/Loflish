@@ -49,6 +49,11 @@ export function Projet() {
             physique, le profil complet présenté au dos de chaque œuvre. La mémoire collective du musée pourra aussi être confiée à des
             archives de très longue durée, comme l’Arctic World Archive.
           </p>
+          <p>
+            <Link to="/musee" className="lien-entrer">
+              Imaginer le lieu <Icon name="fleche" size={16} />
+            </Link>
+          </p>
           <p className="vision">Lutter contre l’oubli.</p>
         </div>
         <figure className="objet-reel">

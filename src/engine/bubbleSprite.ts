@@ -1,5 +1,5 @@
 import { hexToRgb, hsl, rgbToHsl } from '../lib/palette';
-import { tacheFor } from '../lib/hd';
+import { matiereFor, tacheFor } from '../lib/hd';
 import { gaussian, hashString, rng } from '../lib/random';
 
 /**
@@ -71,11 +71,14 @@ export function clearSpriteCache(): void {
 
 export interface SpriteOptions {
   size?: number;
+  /** matière choisie (1 à NB_MATIERES) ; sinon tirée au hasard, fixe, depuis la graine */
+  matiere?: number;
 }
 
 export function bubbleSprite(seedKey: string, hex: string, opts: SpriteOptions = {}): HTMLCanvasElement {
   const size = opts.size ?? SPRITE_SIZE;
-  const key = `${seedKey}|${hex}|${size}`;
+  const matiere = opts.matiere ?? matiereFor(hashString(seedKey));
+  const key = `${seedKey}|${hex}|${size}|${matiere}`;
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -93,7 +96,7 @@ export function bubbleSprite(seedKey: string, hex: string, opts: SpriteOptions =
 
   const base = deform(r, basePolygon(r, c, c, R, 12), 4, 0.13);
 
-  const tache = tacheFor(hashString(seedKey));
+  const tache = tacheFor(matiere);
   if (tache) {
     paintTache(ctx, tache, hex, c, R, r);
   } else {
@@ -288,6 +291,6 @@ function paintTache(ctx: CanvasRenderingContext2D, tache: HTMLImageElement, hex:
 }
 
 /** Image de la bulle pour le DOM (profil, Se perdre, création). */
-export function bubbleDataUrl(seedKey: string, hex: string, size = 320): string {
-  return bubbleSprite(seedKey, hex, { size }).toDataURL('image/png');
+export function bubbleDataUrl(seedKey: string, hex: string, size = 320, matiere?: number): string {
+  return bubbleSprite(seedKey, hex, { size, matiere }).toDataURL('image/png');
 }

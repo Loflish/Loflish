@@ -312,6 +312,7 @@
   border: 0;
   padding: 0;
   margin: 2rem 0 0;
+  min-width: 0; /* un fieldset ne rétrécit pas tout seul */
 }
 .couleurs-grille {
   display: grid;
@@ -351,6 +352,42 @@
 }
 .couleur[aria-checked='true'] {
   border-color: var(--encre);
+}
+/* choisir sa bulle : l'aperçu reste en vue pendant que l'on essaie */
+.bulle-choix {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 1.5rem clamp(1.5rem, 4vw, 3rem);
+  align-items: start;
+  margin-top: 2rem;
+}
+.bulle-choix .couleurs {
+  margin-top: 0;
+}
+.bulle-choix-apercu {
+  position: sticky;
+  top: 5.5rem;
+}
+.bulle-change img {
+  animation: bulle-change 900ms var(--doux) both;
+}
+@keyframes bulle-change {
+  from { opacity: 0.2; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+.matieres {
+  margin-top: 1.8rem;
+}
+.matieres-feuille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+  justify-items: center;
+  gap: 0.15rem 0.1rem;
+  margin-top: 0.4rem;
+  max-width: 34rem;
+}
+.matiere-hasard {
+  margin-top: 0.8rem;
 }
 .couleur-choisie {
   margin-top: 0.8rem;
@@ -433,20 +470,13 @@
   .ligne-desc {
     grid-column: 1 / -1;
   }
-  .couleurs-grille {
-  display: grid;
-  grid-template-columns: repeat(6, max-content);
-  gap: 0.25rem 0.35rem;
-  margin-top: 0.4rem;
-}
-@media (max-width: 420px) {
-  .couleurs-grille {
-    grid-template-columns: repeat(5, max-content);
+  .bulle-choix {
+    grid-template-columns: minmax(0, 1fr);
   }
-}
-.couleurs-famille {
-    grid-template-columns: 1fr;
-    gap: 0.3rem;
+
+  .bulle-choix-apercu {
+    position: static;
+    justify-self: center;
   }
   .apercu-demo {
     flex-direction: column;
@@ -678,4 +708,104 @@
   background-image: var(--papier-washi);
   background-size: 640px 640px;
   background-attachment: local;
+}
+
+/* ——— le musée, demain (projections) */
+
+.projection-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: var(--t-xs);
+  color: var(--encre-2);
+  margin: 0 0 clamp(2.5rem, 6vw, 4.5rem);
+}
+.salle-musee {
+  display: grid;
+  grid-template-columns: minmax(0, 17rem) minmax(0, 1fr);
+  gap: clamp(1.4rem, 4vw, 3.5rem);
+  align-items: start;
+  margin-bottom: clamp(3.5rem, 9vw, 7rem);
+}
+.salle-musee-cartel {
+  position: sticky;
+  top: 6rem;
+}
+.salle-musee-numero {
+  font-size: var(--t-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--encre-2);
+}
+.salle-musee-cartel .intertitre {
+  margin-top: 0.4rem;
+}
+.salle-musee-cartel p {
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  color: var(--encre-2);
+}
+.salle-musee-vues {
+  display: grid;
+  gap: clamp(1rem, 3vw, 2rem);
+}
+.salle-musee-vues.vues-2 .vue-salle:nth-child(2) {
+  width: 82%;
+  justify-self: end;
+}
+.vue-salle {
+  margin: 0;
+}
+.vue-cadre {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--lin-clair);
+}
+.vue-cadre video,
+.vue-cadre img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* l'image fixe se refond par-dessus la vidéo en fin de déambulation */
+.vue-cadre img {
+  opacity: 0;
+  transition: opacity 1300ms var(--doux);
+}
+.vue-cadre img.is-on {
+  opacity: 1;
+}
+.vue-projection {
+  position: absolute;
+  left: 0.7rem;
+  bottom: 0.6rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--encre-2);
+  background: rgba(243, 241, 236, 0.82);
+  border-radius: 2px;
+}
+.musee-suite {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  align-items: baseline;
+}
+@media (max-width: 760px) {
+  .salle-musee {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .salle-musee-cartel {
+    position: static;
+  }
+  .salle-musee-vues.vues-2 .vue-salle:nth-child(2) {
+    width: 100%;
+  }
 }

@@ -65,7 +65,7 @@ export function CarteMonde() {
     }));
     const sphere = path({ type: 'Sphere' }) ?? '';
     const bubbles = new Map<string, string>();
-    for (const [, v] of byEn) for (const t of v.traces.slice(0, 3)) bubbles.set(t.id, bubbleDataUrl(t.id, colorById(t.couleur).hex, 64));
+    for (const [, v] of byEn) for (const t of v.traces.slice(0, 3)) bubbles.set(t.id, bubbleDataUrl(t.id, colorById(t.couleur).hex, 64, t.matiere));
     return { pays: byEn, paths: { list: paths, sphere }, bubbles };
   }, []);
 
