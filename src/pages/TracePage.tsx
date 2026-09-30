@@ -25,7 +25,7 @@ import {
   TYPE_LABEL,
   useMesTraces,
 } from '../data/store';
-import { LIMITES, MAX_EN_AVANT, MAX_MEDIAS, QUESTIONS, RUBRIQUES, SENS_QUESTIONS, type Element, type Media, type Rubrique, type RubriqueId, type Sens, type Trace, groupe } from '../data/types';
+import { LIMITES, MAX_EN_AVANT, MAX_MEDIAS, QUESTIONS, RUBRIQUES, type Element, type Media, type Rubrique, type RubriqueId, type Trace } from '../data/types';
 import { creerMedia } from '../lib/fichiers';
 import { colorById } from '../lib/palette';
 import { useMuseumMode } from '../lib/museum';
@@ -216,8 +216,17 @@ export function TracePage() {
         <h2 id="h-fragments" className="bloc-titre">
           Fragments de mon existence
         </h2>
+        {/* les 5 sens, côte à côte : chacun est une rubrique à part, avec ses propres limites */}
+        <h3 className="fragments-famille">Les 5 sens · une dernière fois</h3>
+        <ul className="fragments-grid fragments-sens">
+          {RUBRIQUES.filter((r) => r.famille === 'sens').map((r) => (
+            <li key={r.id}>
+              <FragmentTile r={r} trace={trace} canEdit={canAjouter} onOpen={() => setSalle({ kind: 'rubrique', r })} />
+            </li>
+          ))}
+        </ul>
         <ul className="fragments-grid">
-          {RUBRIQUES.map((r) => (
+          {RUBRIQUES.filter((r) => !r.famille).map((r) => (
             <li key={r.id}>
               <FragmentTile r={r} trace={trace} canEdit={canAjouter} onOpen={() => setSalle({ kind: 'rubrique', r })} />
             </li>
@@ -382,10 +391,7 @@ function mediasOf(items: Element[], trace: Trace): Media[] {
 
 function FragmentTile({ r, trace, canEdit, onOpen }: { r: Rubrique; trace: Trace; canEdit: boolean; onOpen: () => void }) {
   const items = trace.rubriques[r.id] ?? [];
-  const avant =
-    r.id === 'sens'
-      ? (Object.keys(SENS_QUESTIONS) as Sens[]).flatMap((s) => enAvantDabord(groupe(items, 'sens', s)).avant)
-      : enAvantDabord(items).avant;
+  const { avant } = enAvantDabord(items);
   const medias = mediasOf(avant, trace).slice(0, 3);
   const first = avant[0];
   const empty = items.length === 0;
@@ -393,22 +399,25 @@ function FragmentTile({ r, trace, canEdit, onOpen }: { r: Rubrique; trace: Trace
     <button className={`fragment${empty ? ' is-empty' : ''}`} onClick={onOpen} disabled={empty && !canEdit}>
       <span className="fragment-head">
         <Icon name={r.icone} size={26} />
-        <span className="fragment-titre">{r.titre}</span>
+        <span className="fragment-titre">{r.court ?? r.titre}</span>
         {!empty && <Icon name="fleche" size={16} />}
       </span>
       <span className="fragment-compte">
         {empty ? (canEdit ? '+ Ajouter un premier fragment' : 'Rien n’a été déposé ici') : `${items.length} élément${items.length > 1 ? 's' : ''}${canEdit ? ' · ajouter' : ''}`}
       </span>
       {medias.length > 0 && (
-        <span className="fragment-medias">
-          {medias.map((m) => (
-            <MediaThumb key={m.id} m={m} size="s" />
-          ))}
-        </span>
+        // dans une tuile, les vignettes ne sont que des aperçus : un clic ouvre la salle, pas la visionneuse
+        <OuvrirMedia.Provider value={null}>
+          <span className="fragment-medias">
+            {medias.map((m) => (
+              <MediaThumb key={m.id} m={m} size="s" />
+            ))}
+          </span>
+        </OuvrirMedia.Provider>
       )}
       {first && (
         <span className="fragment-extrait">
-          {r.id === 'sens' && first.sens ? <em>{SENS_QUESTIONS[first.sens].court} — </em> : first.titre ? <em>{first.titre} — </em> : null}
+          {first.titre ? <em>{first.titre} — </em> : null}
           {first.texte}
         </span>
       )}
@@ -522,27 +531,9 @@ function RubriqueDetail({ r, trace, canEdit }: { r: Rubrique; trace: Trace; canE
   const items = trace.rubriques[r.id] ?? [];
   const editor = canEdit ? <FragmentEditor key={items.length} traceId={trace.id} rubrique={r.id} items={items} /> : null;
 
-  // les 5 sens : chacun est un fragment à part entière, avec ses 10 places, ses 5 mis en avant et son « Voir tout »
-  if (r.id === 'sens') {
-    return (
-      <div className="sens-detail">
-        {(Object.keys(SENS_QUESTIONS) as Sens[]).map((s) => {
-          const list = groupe(items, 'sens', s);
-          if (!list.length) return null;
-          return (
-            <section key={s} className="sens-groupe">
-              <h3 className="salle-q">{SENS_QUESTIONS[s].question}</h3>
-              <ListeFragments items={list} r={r} trace={trace} canEdit={canEdit} />
-            </section>
-          );
-        })}
-        {editor}
-      </div>
-    );
-  }
-
   return (
     <div className="rubrique-detail">
+      {r.question && <p className="salle-q">{r.question}</p>}
       {items.length === 0 && canEdit && <p className="muted">Rien encore ici. Ce que tu déposes est publié sur ta trace, et scellé.</p>}
       <ListeFragments items={items} r={r} trace={trace} canEdit={canEdit} />
       {editor}

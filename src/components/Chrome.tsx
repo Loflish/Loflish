@@ -79,6 +79,7 @@ export function BubbleImage({
 
 const MENU = [
   { to: '/projet', label: 'Le projet', icon: 'projet' },
+  { to: '/oeuvre-commune', label: 'L’œuvre commune', icon: 'aiguille' },
   { to: '/archives', label: 'Archives', icon: 'archive' },
   { to: '/ressources', label: 'Ressources & aide', icon: 'aide' },
   { to: '/soutenir', label: 'Soutenir', icon: 'soutenir' },

@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { addElement } from '../data/store';
-import { CATEGORIES_OEUVRES, MAX_EN_AVANT, MAX_FRAGMENTS, SENS_QUESTIONS, groupe, placesRestantes, type Element, type Media, type RubriqueId, type Sens } from '../data/types';
+import { CATEGORIES_OEUVRES, MAX_EN_AVANT, MAX_FRAGMENTS, placesRestantes, type Element, type Media, type RubriqueId } from '../data/types';
 import { creerMedia } from '../lib/fichiers';
 import { Icon } from './Icon';
 import { ChoixMedia, type MediaChoisi } from './Media';
@@ -11,10 +11,14 @@ import { ChoixMedia, type MediaChoisi } from './Media';
  * Un fragment est scellé dès qu'il est déposé : l'auteur le sait avant.
  */
 
-type Champ = 'titre' | 'quand' | 'lieu' | 'lien' | 'categorie' | 'sens';
+type Champ = 'titre' | 'quand' | 'lieu' | 'lien' | 'categorie';
 
 const CONFIG: Record<RubriqueId, { champs: Champ[]; titre?: string; texte: string; max: number }> = {
-  sens: { champs: ['sens'], texte: 'Ta réponse', max: 800 },
+  voir: { champs: [], texte: 'Ce que tu aimerais voir', max: 800 },
+  entendre: { champs: [], texte: 'Ce que tu aimerais entendre', max: 800 },
+  sentir: { champs: [], texte: 'Ce que tu aimerais sentir', max: 800 },
+  gouter: { champs: [], texte: 'Ce que tu aimerais goûter', max: 800 },
+  toucher: { champs: [], texte: 'Ce que tu aimerais toucher ou tenir', max: 800 },
   souvenirs: { champs: ['titre', 'quand', 'lieu'], titre: 'Titre du souvenir', texte: 'Raconte', max: 1200 },
   chapitres: { champs: ['titre', 'quand'], titre: 'Nom du chapitre', texte: 'Ce qu’il a été', max: 1200 },
   oeuvres: { champs: ['titre', 'categorie'], titre: 'L’œuvre', texte: 'Pourquoi cette œuvre t’a marqué ?', max: 1200 },
@@ -35,8 +39,6 @@ const TITRE_FACULTATIF: RubriqueId[] = ['paroleLibre'];
 export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: string; rubrique: RubriqueId; items: Element[]; onDone?: () => void }) {
   const cfg = CONFIG[rubrique];
   const uid = useId();
-  // les sens qui ont encore de la place (10 fragments par sens)
-  const sensLibres = (Object.keys(SENS_QUESTIONS) as Sens[]).filter((s) => placesRestantes(items, 'sens', s) > 0);
   const [f, setF] = useState({
     titre: '',
     texte: '',
@@ -44,10 +46,8 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
     lieu: '',
     lien: '',
     categorie: rubrique === 'oeuvres' ? 'Livre' : '',
-    sens: (sensLibres[0] ?? 'voir') as Sens,
   });
-  // 5 mis en avant par rubrique ; pour les 5 sens, 5 par sens
-  const pleinAvant = groupe(items, rubrique, f.sens).filter((e) => e.enAvant).length >= MAX_EN_AVANT;
+  const pleinAvant = items.filter((e) => e.enAvant).length >= MAX_EN_AVANT;
   const [media, setMedia] = useState<MediaChoisi>(null);
   const [enAvant, setEnAvant] = useState(true);
   const [confirmer, setConfirmer] = useState(false);
@@ -79,7 +79,6 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
         lieu: f.lieu.trim() || undefined,
         lien: f.lien.trim() || undefined,
         categorie: has('categorie') ? f.categorie : undefined,
-        sens: has('sens') ? f.sens : undefined,
         medias: medias.map((m) => m.id),
         enAvant: enAvant && !pleinAvant,
       };
@@ -101,15 +100,8 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
     onDone?.();
   };
 
-  const complet = rubrique === 'sens' ? sensLibres.length === 0 : placesRestantes(items, rubrique) === 0;
-  if (complet) {
-    return (
-      <p className="editeur-complet">
-        {rubrique === 'sens' ? `Chaque sens a ses ${MAX_FRAGMENTS} fragments.` : `Cette rubrique a ses ${MAX_FRAGMENTS} fragments.`}
-      </p>
-    );
-  }
-  const restant = rubrique === 'sens' ? placesRestantes(items, 'sens', f.sens) : placesRestantes(items, rubrique);
+  const restant = placesRestantes(items);
+  if (restant === 0) return <p className="editeur-complet">Cette rubrique a ses {MAX_FRAGMENTS} fragments.</p>;
 
   return (
     <form className="editeur" onSubmit={submit}>
@@ -117,21 +109,8 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
         <Icon name="plus" size={16} /> Ajouter un fragment
         <span className="editeur-places">
           {restant} place{restant > 1 ? 's' : ''} sur {MAX_FRAGMENTS}
-          {rubrique === 'sens' ? ' pour ce sens' : ''}
         </span>
       </p>
-      {has('sens') && (
-        <label className="field">
-          <span className="field-label">Le sens</span>
-          <select id={`${uid}-sens`} value={f.sens} onChange={(e) => setF({ ...f, sens: e.target.value as Sens })}>
-            {sensLibres.map((s) => (
-              <option key={s} value={s}>
-                {SENS_QUESTIONS[s].question}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
       {has('titre') && (
         <label className="field">
           <span className="field-label">{cfg.titre}</span>
@@ -186,7 +165,7 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
         <span>
           {pleinAvant
             ? `Les ${MAX_EN_AVANT} places mises en avant sont prises : ce fragment sera visible avec « Voir tout ».`
-            : `Mettre en avant sur mon profil (${MAX_EN_AVANT} ${rubrique === 'sens' ? 'par sens' : 'par rubrique'})`}
+            : `Mettre en avant sur mon profil (${MAX_EN_AVANT} par rubrique)`}
         </span>
       </label>
       {erreur && (

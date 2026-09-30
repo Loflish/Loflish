@@ -639,3 +639,102 @@
   background-size: 520px 520px;
   background-attachment: local;
 }
+
+/* ——— l'œuvre commune : un trait chacun, cousu dans le fil bordeaux du logo */
+
+.oeuvre {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+.oeuvre-toile {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+.oeuvre-dessus {
+  cursor: grab;
+}
+.oeuvre-dessus.peut-poser {
+  cursor: crosshair;
+}
+.oeuvre-haut {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding: 0 clamp(1rem, 2.6vw, 2.2rem);
+  pointer-events: none;
+}
+.oeuvre-haut a,
+.oeuvre-haut button {
+  pointer-events: auto;
+}
+.oeuvre-panneau {
+  position: absolute;
+  left: clamp(1rem, 2.6vw, 2.2rem);
+  bottom: 5.6rem;
+  z-index: 3;
+  width: min(23rem, calc(100vw - 2rem));
+  padding: 1rem 1.2rem 1.1rem;
+  background: var(--papier-dense);
+  background-image: var(--papier-chiffon);
+  background-size: 520px 520px;
+  border: 1px solid var(--filet);
+  border-radius: var(--rayon);
+  display: grid;
+  gap: 0.5rem;
+}
+.oeuvre-titre {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.5rem;
+  margin: 0;
+}
+.oeuvre-texte {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  line-height: 1.45;
+  color: var(--encre-2);
+}
+.oeuvre-consigne {
+  margin: 0.2rem 0 0;
+  font-size: var(--t-s);
+}
+.oeuvre-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+}
+.oeuvre-compte {
+  margin: 0.2rem 0 0;
+  font-size: var(--t-xs);
+  color: var(--encre-3);
+}
+.oeuvre-aide {
+  position: absolute;
+  right: clamp(1rem, 2.6vw, 2.2rem);
+  bottom: 1.9rem;
+  z-index: 3;
+  margin: 0;
+  font-size: var(--t-xs);
+  color: var(--encre-3);
+  pointer-events: none;
+}
+@media (max-width: 760px) {
+  .oeuvre-panneau {
+    bottom: 5rem;
+    padding: 0.8rem 0.9rem;
+  }
+  .oeuvre-texte {
+    display: none;
+  }
+  .oeuvre-aide {
+    display: none;
+  }
+}

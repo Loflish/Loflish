@@ -26,7 +26,7 @@ interface Draft {
   nom: string;
   pays: string;
   couleur: string;
-  /** matière de la bulle (0 = aquarelle cousue, 1 à 77 = taches), choisie dans le catalogue complet ; -1 tant qu'elle n'est pas tirée */
+  /** matière de la bulle (0 = aquarelle cousue, 1 à 92 = taches), choisie dans le catalogue complet ; -1 tant qu'elle n'est pas tirée */
   matiere: number;
   q: [string, string, string, string];
   relation: string;
@@ -55,7 +55,7 @@ const EMPTY: Draft = {
 
 const KEY = 'nmm:brouillon';
 
-/** Une matière au hasard dans tout le catalogue : l'aquarelle cousue (0) ou l'une des 77 taches. */
+/** Une matière au hasard dans tout le catalogue : l'aquarelle cousue (0) ou l'une des 92 taches. */
 function matiereAuHasard(): number {
   return Math.floor(Math.random() * (NB_MATIERES + 1));
 }
@@ -461,7 +461,7 @@ function BulleChoix({
   useEffect(() => {
     void loadCatalogue();
   }, []);
-  // l'aquarelle cousue d'abord, puis les 77 taches
+  // l'aquarelle cousue d'abord, puis les 92 taches
   const matieres = useMemo(() => Array.from({ length: NB_MATIERES + 1 }, (_, i) => i), []);
   return (
     <div className="bulle-choix">

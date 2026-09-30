@@ -25,11 +25,16 @@ function hote(url?: string): string {
 export function MediaThumb({ m, size = 'm' }: { m: Media; size?: 's' | 'm' | 'l' }) {
   const ouvrir = useContext(OuvrirMedia);
   const url = useMediaUrl(m);
+  // un fichier introuvable ne laisse jamais d'image cassée : la vignette garde sa teinte
+  const [casse, setCasse] = useState(false);
+  const vu = url && !casse ? url : null;
   const surface = (
     <div className="media-surface" style={{ ['--teinte' as string]: m.teinte ?? '#DDD8CE' }}>
-      {m.kind === 'image' && url && <img className="media-img" src={url} alt="" loading="lazy" />}
-      {m.kind === 'image' && !url && <span className="media-placeholder">photographie</span>}
-      {m.kind === 'video' && url && <video className="media-img" src={`${url}#t=0.5`} muted playsInline preload="metadata" aria-hidden="true" />}
+      {m.kind === 'image' && vu && <img className="media-img" src={vu} alt="" loading="lazy" onError={() => setCasse(true)} />}
+      {m.kind === 'image' && !vu && <span className="media-placeholder">photographie</span>}
+      {m.kind === 'video' && vu && (
+        <video className="media-img" src={`${vu}#t=0.5`} muted playsInline preload="metadata" aria-hidden="true" onError={() => setCasse(true)} />
+      )}
       {m.kind === 'video' && (
         <span className="media-play" aria-hidden="true">
           <Icon name="play" size={size === 's' ? 16 : 22} />
@@ -85,9 +90,14 @@ export function MediaVue({ m, onClose }: { m: Media; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     ref.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // Échap ferme la visionneuse seule, pas la salle ouverte derrière elle
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopImmediatePropagation();
+      onClose();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
   }, [onClose]);
   const lecteur = m.kind === 'lien' && m.url ? lecteurIntegre(m.url) : null;
   const pdf = m.kind === 'document' && (m.mime === 'application/pdf' || /\.pdf$/i.test(m.nom ?? ''));

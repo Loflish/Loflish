@@ -36,7 +36,9 @@ export interface Media {
   origine?: RubriqueId;
 }
 
+/** Les 5 sens : chacun est une rubrique à part entière, avec ses propres limites. */
 export type Sens = 'voir' | 'entendre' | 'sentir' | 'gouter' | 'toucher';
+export const SENS: Sens[] = ['voir', 'entendre', 'sentir', 'gouter', 'toucher'];
 
 export interface Element {
   id: string;
@@ -49,7 +51,7 @@ export interface Element {
   categorie?: string;
   /** Pour « Personnes qui ont compté » : le lien avec la personne. */
   lien?: string;
-  /** Pour les 5 sens. */
+  /** Ancien format (une seule rubrique « Les 5 sens ») : le sens du fragment, lu à la migration. */
   sens?: Sens;
   /** Un média ou document au plus par fragment. */
   medias?: string[];
@@ -60,7 +62,7 @@ export interface Element {
 }
 
 export type RubriqueId =
-  | 'sens'
+  | Sens
   | 'souvenirs'
   | 'chapitres'
   | 'oeuvres'
@@ -90,7 +92,7 @@ export interface Trace {
   pseudo?: string;
   type: TraceType;
   couleur: string; // id GRIS
-  /** matière d'aquarelle choisie (1 à 77) ; absente = tirée au hasard, fixe */
+  /** matière d'aquarelle choisie (0 = aquarelle cousue, 1 à 92 = taches) ; absente = tirée au hasard, fixe */
   matiere?: number;
   pays?: string;
   creeLe: string;
@@ -123,10 +125,20 @@ export interface Rubrique {
   titre: string;
   /** Icône dessinée associée. */
   icone: string;
+  /** La question posée à l'auteur, rappelée en tête de la salle. */
+  question?: string;
+  /** Les 5 sens se présentent ensemble sur le profil. */
+  famille?: 'sens';
+  /** Titre court, sous l'intertitre « Les 5 sens ». */
+  court?: string;
 }
 
 export const RUBRIQUES: Rubrique[] = [
-  { id: 'sens', titre: 'Les 5 sens', icone: 'oeil' },
+  { id: 'voir', titre: 'Voir une dernière fois', court: 'Voir', icone: 'oeil', famille: 'sens', question: 'Qu’aimerais-tu voir une dernière fois ?' },
+  { id: 'entendre', titre: 'Entendre une dernière fois', court: 'Entendre', icone: 'oreille', famille: 'sens', question: 'Qu’aimerais-tu entendre une dernière fois ?' },
+  { id: 'sentir', titre: 'Sentir une dernière fois', court: 'Sentir', icone: 'nez', famille: 'sens', question: 'Qu’aimerais-tu sentir une dernière fois ?' },
+  { id: 'gouter', titre: 'Goûter une dernière fois', court: 'Goûter', icone: 'tasse', famille: 'sens', question: 'Qu’aimerais-tu goûter ou manger une dernière fois ?' },
+  { id: 'toucher', titre: 'Toucher une dernière fois', court: 'Toucher', icone: 'main', famille: 'sens', question: 'Qu’aimerais-tu toucher ou tenir une dernière fois ?' },
   { id: 'souvenirs', titre: 'Souvenirs', icone: 'image' },
   { id: 'chapitres', titre: 'Chapitres de vie', icone: 'livre' },
   { id: 'oeuvres', titre: 'Œuvres / cultures qui m’ont marqué', icone: 'note' },
@@ -142,14 +154,6 @@ export const RUBRIQUES: Rubrique[] = [
   { id: 'petitesChoses', titre: 'Les petites choses qui me rendaient heureux·se', icone: 'fleur' },
 ];
 
-export const SENS_QUESTIONS: Record<Sens, { court: string; question: string }> = {
-  voir: { court: 'Voir', question: 'Qu’aimerais-tu voir une dernière fois ?' },
-  entendre: { court: 'Entendre', question: 'Qu’aimerais-tu entendre une dernière fois ?' },
-  sentir: { court: 'Sentir', question: 'Qu’aimerais-tu sentir une dernière fois ?' },
-  gouter: { court: 'Goûter', question: 'Qu’aimerais-tu goûter ou manger une dernière fois ?' },
-  toucher: { court: 'Toucher', question: 'Qu’aimerais-tu toucher ou tenir une dernière fois ?' },
-};
-
 export const QUESTIONS: [string, string, string, string] = [
   'Que dirais-tu à toi-même si ta vie s’arrêtait ?',
   'Que dirais-tu à la personne que tu aimes ?',
@@ -160,22 +164,17 @@ export const QUESTIONS: [string, string, string, string] = [
 export const LIMITES = { q: 1200, q4: 200, sens: 800 };
 
 /**
- * Au plus 10 fragments par rubrique (pour les 5 sens : 10 par sens), dont 5
- * posés en avant sur le profil ; « Voir tout » montre le reste.
+ * Au plus 10 fragments par rubrique (chacun des 5 sens est une rubrique), dont
+ * 5 posés en avant sur le profil ; « Voir tout » montre le reste.
  */
 export const MAX_FRAGMENTS = 10;
 export const MAX_EN_AVANT = 5;
 /** Médias & documents : 20 au plus (les médias joints aux fragments ne comptent pas). */
 export const MAX_MEDIAS = 20;
 
-/** Combien de fragments peut encore recevoir une rubrique (ou un sens). */
-export function placesRestantes(items: Element[], rubrique: RubriqueId, sens?: Sens): number {
-  return Math.max(0, MAX_FRAGMENTS - groupe(items, rubrique, sens).length);
-}
-
-/** Les fragments qui se partagent les mêmes limites : la rubrique entière, ou un seul sens (chaque sens compte comme une rubrique). */
-export function groupe(items: Element[], rubrique: RubriqueId, sens?: Sens): Element[] {
-  return rubrique === 'sens' ? items.filter((e) => e.sens === sens) : items;
+/** Combien de fragments peut encore recevoir une rubrique. */
+export function placesRestantes(items: Element[]): number {
+  return Math.max(0, MAX_FRAGMENTS - items.length);
 }
 
 /** Catégories proposées pour « Œuvres / cultures » (saisie libre possible avec « Autre »). */

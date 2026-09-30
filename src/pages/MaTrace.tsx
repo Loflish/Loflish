@@ -67,11 +67,7 @@ export function MaTrace() {
                         <Icon name={r.icone} size={22} />
                         <span className="ma-trace-rubrique-titre">{r.titre}</span>
                         <span className="ma-trace-rubrique-n">
-                          {r.id === 'sens'
-                            ? n === 0
-                              ? 'Ajouter'
-                              : `${n} · ajouter`
-                            : n >= MAX_FRAGMENTS
+                          {n >= MAX_FRAGMENTS
                               ? `${MAX_FRAGMENTS} sur ${MAX_FRAGMENTS}`
                               : n === 0
                                 ? 'Ajouter'

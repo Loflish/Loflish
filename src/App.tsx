@@ -4,6 +4,7 @@ import { Archives, Compte, Juridique, Projet, Ressources, Soutenir } from './pag
 import { Creer } from './pages/Creer';
 import { Explorer } from './pages/Explorer';
 import { MaTrace } from './pages/MaTrace';
+import { OeuvreCommune } from './pages/OeuvreCommune';
 import { SePerdre } from './pages/SePerdre';
 import { TracePage } from './pages/TracePage';
 
@@ -28,6 +29,7 @@ export function App() {
           <Route path="/soutenir" element={<Soutenir />} />
           <Route path="/juridique" element={<Juridique />} />
           <Route path="/archives" element={<Archives />} />
+          <Route path="/oeuvre-commune" element={<OeuvreCommune />} />
           <Route path="/archives/:edition" element={<Explorer />} />
           <Route path="/compte" element={<Compte />} />
           <Route path="*" element={<Explorer />} />

@@ -1,9 +1,10 @@
 import { GRIS_PALETTE } from '../lib/palette';
 import { hashString, pick, rng, shuffle } from '../lib/random';
 import { MEMOIRES, NOMS, PAYS, POOL, PRENOMS, PSEUDOS, Q1, Q2, Q3, Q4, SENS_POOL } from './pools';
+import { JEANNOT } from './jeannot';
 import { SAKINAH } from './sakinah';
 import { useSyncExternalStore } from 'react';
-import { MAX_EN_AVANT, MAX_MEDIAS, groupe, placesRestantes, type Element, type Media, type RubriqueId, type Trace } from './types';
+import { MAX_EN_AVANT, MAX_MEDIAS, placesRestantes, type Element, type Media, type RubriqueId, type Trace } from './types';
 
 /**
  * Registre des traces du prototype.
@@ -51,7 +52,8 @@ function generate(count: number): Trace[] {
     const who = nomAffiche(rr);
     const rubriques: Partial<Record<RubriqueId, Element[]>> = {};
     const keys = shuffle(rr, Object.keys(POOL) as (keyof typeof POOL)[]).slice(0, 2 + Math.floor(rr() * 6));
-    if (rr() < 0.7) rubriques.sens = items(rr, SENS_POOL, 's', 4);
+    if (rr() < 0.7)
+      for (const { sens, ...e } of items(rr, SENS_POOL, 's', 4)) (rubriques[sens!] ??= []).push(e);
     for (const k of keys) rubriques[k as RubriqueId] = items(rr, POOL[k] as Omit<Element, 'id'>[], k, 3);
     const cree = dateFr(rr, 2025, 2026);
     const trace: Trace = {
@@ -108,6 +110,16 @@ function migrer(t: Trace): Trace {
   type Ancien = Element & { nature?: string };
   const maintenant = new Date().toISOString();
   const r = { ...t.rubriques } as Record<string, Ancien[]>;
+  // l'ancienne rubrique « Les 5 sens » : chaque sens devient sa propre rubrique
+  let medias = t.medias;
+  if (r.sens) {
+    for (const { sens, ...e } of r.sens) {
+      const cible = sens ?? 'voir';
+      r[cible] = [...(r[cible] ?? []), e];
+      medias = medias.map((m) => (m.origine === ('sens' as RubriqueId) && e.medias?.includes(m.id) ? { ...m, origine: cible } : m));
+    }
+    delete r.sens;
+  }
   const anciens = (r.objets ?? []) as Ancien[];
   if (anciens.some((e) => e.nature)) {
     r.objets = anciens.filter((e) => !e.nature || e.nature === 'objet');
@@ -115,7 +127,7 @@ function migrer(t: Trace): Trace {
     r.accomplissements = [...(r.accomplissements ?? []), ...anciens.filter((e) => e.nature === 'accomplissement')];
   }
   for (const k of Object.keys(r)) r[k] = r[k].map(({ nature: _n, ...e }) => ({ ...e, scelleLe: e.scelleLe ?? maintenant }));
-  return { ...t, rubriques: r, scelleeLe: t.scelleeLe ?? maintenant };
+  return { ...t, rubriques: r, medias, scelleeLe: t.scelleeLe ?? maintenant };
 }
 
 function loadLocal(): Trace[] {
@@ -131,7 +143,7 @@ const generated = generate(420);
 let local = loadLocal();
 
 export function allTraces(): Trace[] {
-  return [SAKINAH, ...local, ...generated];
+  return [SAKINAH, JEANNOT, ...local, ...generated];
 }
 
 export function getTrace(id: string): Trace | undefined {
@@ -253,11 +265,11 @@ export function modifierReponses(id: string, questions: Trace['questions'], aper
  */
 export function addElement(id: string, rubrique: RubriqueId, e: Element, medias: Media[] = []): boolean {
   const t = local.find((x) => x.id === id);
-  if (!t || placesRestantes(t.rubriques[rubrique] ?? [], rubrique, e.sens) === 0) return false;
+  if (!t || placesRestantes(t.rubriques[rubrique] ?? []) === 0) return false;
   const maintenant = new Date().toISOString();
   updateLocal(id, (t) => {
     const list = t.rubriques[rubrique] ?? [];
-    const enAvant = !!e.enAvant && groupe(list, rubrique, e.sens).filter((x) => x.enAvant).length < MAX_EN_AVANT;
+    const enAvant = !!e.enAvant && list.filter((x) => x.enAvant).length < MAX_EN_AVANT;
     const el: Element = { ...e, enAvant, scelleLe: maintenant, medias: e.medias?.slice(0, 1) };
     const ms = medias.slice(0, 1).map((m) => ({ ...m, origine: rubrique, scelleLe: maintenant }));
     return { ...t, rubriques: { ...t.rubriques, [rubrique]: [...list, el] }, medias: [...t.medias, ...ms] };
@@ -290,14 +302,14 @@ function deplacer<T extends { id: string; enAvant?: boolean }>(list: T[], idEl: 
 
 /**
  * Poser en avant (ou non) un fragment : c'est un choix d'affichage, toujours
- * possible, même scellé ; 5 au plus par rubrique (par sens pour les 5 sens).
+ * possible, même scellé ; 5 au plus par rubrique.
  */
 export function basculerEnAvant(id: string, rubrique: RubriqueId, elementId: string): void {
   updateLocal(id, (t) => {
     const list = t.rubriques[rubrique] ?? [];
     const cible = list.find((e) => e.id === elementId);
     if (!cible) return t;
-    const n = groupe(list, rubrique, cible.sens).filter((e) => e.enAvant).length;
+    const n = list.filter((e) => e.enAvant).length;
     return {
       ...t,
       rubriques: {
@@ -314,8 +326,7 @@ export function deplacerEnAvant(id: string, rubrique: RubriqueId, elementId: str
     const list = t.rubriques[rubrique] ?? [];
     const cible = list.find((e) => e.id === elementId);
     if (!cible) return t;
-    const meme = (e: Element) => rubrique !== 'sens' || e.sens === cible.sens;
-    return { ...t, rubriques: { ...t.rubriques, [rubrique]: deplacer(list, elementId, sens, meme) } };
+    return { ...t, rubriques: { ...t.rubriques, [rubrique]: deplacer(list, elementId, sens, () => true) } };
   });
 }
 
