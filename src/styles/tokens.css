@@ -1,0 +1,49 @@
+/*
+ * Nos mots mémoriaux — jetons de design
+ *
+ * Fond : entre écru, lin, ivoire et beige très légèrement grisé.
+ * Encre : jamais un noir pur, un gris profond légèrement violacé.
+ * Le bordeaux n'existe pas ici : il appartient au seul logo brodé.
+ * Les couleurs des bulles viennent exclusivement de GRIS (src/lib/palette.ts).
+ */
+:root {
+  --lin: #ece9e2;
+  --lin-clair: #f3f1ec;
+  --lin-profond: #e3dfd6;
+  --papier: rgba(243, 241, 236, 0.78);
+  --papier-dense: rgba(243, 241, 236, 0.92);
+
+  --encre: #2f2c33;
+  --encre-2: #57535c;
+  --encre-3: #85808b;
+  --filet: rgba(47, 44, 51, 0.14);
+  --filet-fort: rgba(47, 44, 51, 0.28);
+
+  --focus: #2f2c33;
+
+  --serif: 'Newsreader Variable', 'Newsreader', 'Iowan Old Style', Georgia, serif;
+  --sans: 'Manrope Variable', 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* échelle typographique — respirante */
+  --t-xs: 0.78rem;
+  --t-s: 0.875rem;
+  --t-m: 1rem;
+  --t-l: 1.2rem;
+  --t-xl: clamp(1.45rem, 1.1rem + 1.2vw, 1.9rem);
+  --t-2xl: clamp(2.2rem, 1.4rem + 3vw, 3.6rem);
+
+  --gouttiere: clamp(1rem, 0.5rem + 3vw, 3.5rem);
+  --rayon: 3px;
+
+  /* mouvement : lent, jamais élastique */
+  --lent: 1200ms;
+  --moyen: 700ms;
+  --doux: cubic-bezier(0.33, 0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Le musée garde sa lumière de jour : une mémoire claire, jamais funéraire. */
+  :root {
+    color-scheme: light;
+  }
+}
