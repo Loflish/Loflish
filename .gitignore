@@ -4,3 +4,7 @@ dist
 .DS_Store
 tsconfig.tsbuildinfo
 captures-demo/
+server/node_modules/
+server/dist/
+server/donnees/
+server/.env
