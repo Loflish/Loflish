@@ -1,6 +1,7 @@
 /**
  * Matières HD — générées avec Higgsfield (Nano Banana, 4K) puis préparées
- * par design/hd/preparer.py : fond peint, lin, taches d'aquarelle.
+ * par design/hd/preparer.py : fonds peints, lin, taches d'aquarelle,
+ * aplats de gouache, motifs textiles et papiers faits main.
  *
  * Interrupteur unique : HD = false rend exactement le rendu précédent
  * (fond et bulles entièrement procéduraux). Si un fichier manque, le site
@@ -43,6 +44,37 @@ export const HD_FILES = {
   eau: `${base}carte-eau.webp`,
   taches: indices.map((n) => `${base}taches/tache-${String(n).padStart(2, '0')}.webp`),
 };
+
+/** Aplats de gouache (masques : on les remplit de n'importe quelle couleur). */
+export type FormeAplat = 'rectangle' | 'arche' | 'bande' | 'ovale';
+export const APLATS: Record<FormeAplat, string> = {
+  rectangle: `${base}aplats/rectangle.webp`,
+  arche: `${base}aplats/arche.webp`,
+  bande: `${base}aplats/bande.webp`,
+  ovale: `${base}aplats/ovale.webp`,
+};
+
+/** Motifs textiles nabis, raccordables (masques, comme les aplats). */
+export type Motif = 'fleurs' | 'carreaux' | 'feuillages';
+export const MOTIFS: Record<Motif, string> = {
+  fleurs: `${base}motifs/fleurs.webp`,
+  carreaux: `${base}motifs/carreaux.webp`,
+  feuillages: `${base}motifs/feuillages.webp`,
+};
+
+/**
+ * Surfaces HD des pages : les papiers faits main (calques translucides de
+ * fibres) sont exposés en variables CSS, et la classe `hd` les active.
+ */
+export function installSurfaces(): void {
+  if (!HD || typeof document === 'undefined') return;
+  const r = document.documentElement;
+  r.classList.add('hd');
+  // adresse absolue : une url() relative dans une variable se résoudrait depuis la feuille de style
+  const abs = (f: string) => `url("${new URL(`${base}${f}`, location.href).href}")`;
+  r.style.setProperty('--papier-chiffon', abs('papier-chiffon.webp'));
+  r.style.setProperty('--papier-washi', abs('papier-washi.webp'));
+}
 
 let taches: HTMLImageElement[] = [];
 let loading: Promise<HTMLImageElement[]> | null = null;

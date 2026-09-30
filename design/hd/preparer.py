@@ -4,6 +4,12 @@ Prépare les matières HD générées avec Higgsfield pour le site (public/hd/).
   python3 preparer.py fond   <image> <nom> <largeur>   → public/hd/<nom>.webp
   python3 preparer.py lin    <image>                   → public/hd/lin.webp (raccordable)
   python3 preparer.py taches <premier_numéro> <planche…> → public/hd/taches/tache-NN.webp
+  python3 preparer.py aplat  <image> <nom>             → public/hd/aplats/<nom>.webp (masque)
+  python3 preparer.py motif  <image> <nom>             → public/hd/motifs/<nom>.webp (masque raccordable)
+  python3 preparer.py papier <image> <nom> [force]     → public/hd/<nom>.webp (calque raccordable)
+
+Aplats et motifs deviennent des masques blancs (alpha = gouache) : le site les
+remplit de n'importe quelle couleur avec `mask-image`.
 
 Les taches (planches de 3 × 3) sont gardées monochromes : le site les teinte
 ensuite dans la couleur GRIS exacte de chaque personne (alpha = quantité de
@@ -16,7 +22,8 @@ from PIL import Image
 from scipy import ndimage as ndi
 
 OUT = Path(__file__).resolve().parents[2] / 'public' / 'hd'
-(OUT / 'taches').mkdir(parents=True, exist_ok=True)
+for d in ('taches', 'aplats', 'motifs'):
+    (OUT / d).mkdir(parents=True, exist_ok=True)
 
 
 def fond(src, nom, largeur):
@@ -38,6 +45,65 @@ def lin(src):
     tile = tile - tile.mean(axis=(0, 1)) + np.array([232, 227, 216])  # neutre, ton lin
     Image.fromarray(np.clip(tile, 0, 255).astype(np.uint8)).save(OUT / 'lin.webp', quality=86, method=6)
     print('lin')
+
+
+def raccord(a, n):
+    """Rend une image carrée n × n raccordable (fondu avec sa version décalée d'une demi-tuile)."""
+    shift = np.roll(np.roll(a, n // 2, 0), n // 2, 1)
+    y, x = np.mgrid[0:n, 0:n]
+    edge = np.minimum(np.minimum(x, n - 1 - x), np.minimum(y, n - 1 - y)) / (n / 2)
+    w = np.clip(edge * 2.2, 0, 1)
+    if a.ndim == 3:
+        w = w[..., None]
+    return a * w + shift * (1 - w)
+
+
+def masque(g):
+    """Gouache grise sur papier blanc → alpha (0 = papier, 1 = pleine gouache)."""
+    bg = np.percentile(g, 97)
+    plein = np.percentile(g[g < bg - 30], 20) if (g < bg - 30).any() else bg - 100
+    return np.clip((bg - 6 - g) / max(1, bg - 6 - plein), 0, 1)
+
+
+def aplat(src, nom):
+    g = np.asarray(Image.open(src).convert('L')).astype(float)
+    a = masque(g)
+    ys, xs = np.where(a > 0.08)
+    pad = 24
+    y0, y1 = max(0, ys.min() - pad), min(a.shape[0], ys.max() + pad)
+    x0, x1 = max(0, xs.min() - pad), min(a.shape[1], xs.max() + pad)
+    a = np.clip((a[y0:y1, x0:x1] - 0.06) / 0.94, 0, 1) ** 0.85  # le papier autour disparaît
+    im = Image.fromarray((a * 255).astype(np.uint8), 'L')
+    im.thumbnail((1000, 1000), Image.LANCZOS)
+    blanc = Image.new('L', im.size, 255)
+    Image.merge('RGBA', (blanc, blanc, blanc, im)).save(OUT / 'aplats' / f'{nom}.webp', quality=70, alpha_quality=55, method=6)
+    print('aplat', nom, im.size)
+
+
+def motif(src, nom, n=720):
+    img = Image.open(src).convert('L')
+    s = min(img.size)
+    g = np.asarray(img.crop((0, 0, s, s)).resize((n, n), Image.LANCZOS)).astype(float)
+    a = raccord(masque(g), n)
+    im = Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8), 'L')
+    blanc = Image.new('L', im.size, 255)
+    Image.merge('RGBA', (blanc, blanc, blanc, im)).save(OUT / 'motifs' / f'{nom}.webp', quality=70, alpha_quality=55, method=6)
+    print('motif', nom)
+
+
+def papier(src, nom, n=768, force=0.13):
+    """Papier fait main → calque translucide raccordable : seules les fibres et le
+    grain restent (leurs ombres, en brun chaud), posé sur la couleur du panneau."""
+    img = Image.open(src).convert('L')
+    s = min(img.size)
+    g = np.asarray(img.crop((0, 0, s, s)).resize((n, n), Image.LANCZOS)).astype(float)
+    t = raccord(g, n)
+    t = t - ndi.gaussian_filter(t, 60)  # retire les nuages de teinte, garde le relief
+    dev = np.clip(t / (np.percentile(np.abs(t), 99) + 1e-6), -1, 1)
+    a = np.clip(-dev, 0, 1) ** 1.1 * force  # seules les ombres des fibres, en brun chaud, à peine
+    rgba = np.dstack([np.full_like(a, 112), np.full_like(a, 96), np.full_like(a, 78), a * 255]).astype(np.uint8)
+    Image.fromarray(rgba, 'RGBA').save(OUT / f'{nom}.webp', quality=66, alpha_quality=50, method=6)
+    print('papier', nom)
 
 
 def taches(premier, planches):
@@ -86,3 +152,7 @@ if __name__ == '__main__':
         lin(args[0])
     elif cmd == 'taches':
         taches(int(args[0]), args[1:])
+    elif cmd == 'papier':
+        papier(args[0], args[1], force=float(args[2]) if len(args) > 2 else 0.13)
+    elif cmd in ('aplat', 'motif'):
+        globals()[cmd](args[0], args[1])

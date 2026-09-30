@@ -52,6 +52,7 @@ export function Projet() {
           <p className="vision">Lutter contre l’oubli.</p>
         </div>
         <figure className="objet-reel">
+          <Aplat color="#A9B79B" seed="projet" forme="arche" motif="fleurs" className="projet-aplat" />
           <img src={tableauUrl} alt="Tableau brodé à la main en fil bordeaux sur satin clair, encadré de bois doré : « Nos mots mémoriaux »." loading="lazy" />
           <figcaption>
             Le premier tableau. Fil bordeaux sur satin, cadre doré — brodé à la main. C’est de lui que vient le logo.
@@ -76,7 +77,7 @@ export function Ressources() {
     <Page className="ressources">
       <h1 className="page-titre">Ressources & aide</h1>
       <section className="aide-urgente" aria-labelledby="h-aide">
-        <Aplat color="#8DBEB2" seed="aide" className="aide-aplat" />
+        <Aplat color="#8DBEB2" seed="aide" forme="rectangle" motif="fleurs" className="aide-aplat" />
         <h2 id="h-aide" className="intertitre">Si tu penses au suicide, tu n’es pas seul·e.</h2>
         <p>
           Nos mots mémoriaux parle de la mémoire et de la vie, pas d’y mettre fin. Si tu traverses un moment très difficile, des personnes
@@ -125,12 +126,15 @@ export function Soutenir() {
       <h1 className="page-titre">Soutenir</h1>
       <p className="lead">Le musée est et restera gratuit. Les dons permettent de le faire vivre et de préserver les traces dans le temps.</p>
       <div className="trois-colonnes">
-        {[
-          ['Faire vivre le musée', 'Hébergement, sécurité, modération.'],
-          ['Préserver les traces', 'Sauvegardes et archives de très longue durée.'],
-          ['Broder les mots', 'Fil, toile, cadres, et un jour un lieu d’exposition.'],
-        ].map(([t, d]) => (
+        {(
+          [
+            ['Faire vivre le musée', 'Hébergement, sécurité, modération.', '#D8BC8E', undefined],
+            ['Préserver les traces', 'Sauvegardes et archives de très longue durée.', '#A8BBCB', 'carreaux'],
+            ['Broder les mots', 'Fil, toile, cadres, et un jour un lieu d’exposition.', '#D6B4A9', undefined],
+          ] as const
+        ).map(([t, d, teinte, motif]) => (
           <div key={t} className="colonne-texte">
+            <Aplat color={teinte} seed={`soutenir-${t}`} forme="bande" motif={motif} className="colonne-aplat" />
             <h2 className="intertitre">{t}</h2>
             <p>{d}</p>
           </div>
@@ -171,16 +175,19 @@ export function Archives() {
     <Page className="archives">
       <h1 className="page-titre">Archives</h1>
       <p className="lead">La croissance du musée fait partie de son histoire. Ce n’est pas une popularité : c’est la taille de la mémoire collective.</p>
-      <ol className="frise">
-        <li>
-          <span className="frise-date">2026</span>
-          <span className="frise-texte">Ouverture du musée — {n.toLocaleString('fr-FR')} présences (démonstration)</span>
-        </li>
-        <li>
-          <span className="frise-date">À venir</span>
-          <span className="frise-texte">Premier instantané daté du musée, confié à une archive de très longue durée.</span>
-        </li>
-      </ol>
+      <div className="frise-cadre">
+        <Aplat color="#D8BC8E" seed="archives" forme="bande" motif="feuillages" className="frise-aplat" />
+        <ol className="frise">
+          <li>
+            <span className="frise-date">2026</span>
+            <span className="frise-texte">Ouverture du musée — {n.toLocaleString('fr-FR')} présences (démonstration)</span>
+          </li>
+          <li>
+            <span className="frise-date">À venir</span>
+            <span className="frise-texte">Premier instantané daté du musée, confié à une archive de très longue durée.</span>
+          </li>
+        </ol>
+      </div>
     </Page>
   );
 }

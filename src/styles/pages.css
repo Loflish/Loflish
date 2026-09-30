@@ -582,3 +582,100 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ——— aplats nabis et motifs textiles (gouache réelle en HD, SVG sinon) */
+
+.aplat-peint {
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  pointer-events: none;
+}
+/* le motif est peint dans un ton plus clair, comme les tissus de Vuillard */
+.aplat-motif {
+  position: absolute;
+  inset: 0;
+  background: var(--lin-clair);
+  opacity: 0.42;
+  -webkit-mask-size: 340px 340px;
+  mask-size: 340px 340px;
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
+.objet-reel {
+  position: relative;
+  isolation: isolate;
+}
+/* l'objet est posé devant une arche peinte qui déborde en haut et à droite */
+.hd .objet-reel {
+  padding-top: 3.2rem;
+}
+.hd .objet-reel img {
+  width: 86%;
+}
+.projet-aplat {
+  position: absolute !important;
+  z-index: -1;
+  right: 0;
+  top: 0;
+  width: 66%;
+  height: 80%;
+  opacity: 0.6;
+}
+
+.colonne-texte {
+  position: relative;
+  isolation: isolate;
+}
+.colonne-aplat {
+  position: absolute !important;
+  z-index: -1;
+  left: -1.3rem;
+  top: -0.5rem;
+  width: min(96%, 17rem);
+  height: 5.6rem;
+  opacity: 0.4;
+}
+.hd .colonne-texte .intertitre {
+  border-top-color: transparent;
+}
+
+.frise-cadre {
+  position: relative;
+  isolation: isolate;
+  max-width: 900px;
+}
+.frise-aplat {
+  position: absolute !important;
+  z-index: -1;
+  left: -2rem;
+  right: 8%;
+  top: -1.6rem;
+  height: calc(100% + 3rem);
+  width: auto;
+  opacity: 0.28;
+}
+.frise-aplat .aplat-motif {
+  opacity: 0.5;
+  -webkit-mask-size: 260px 260px;
+  mask-size: 260px 260px;
+}
+
+/* ——— papier fait main : les panneaux qui s'ouvrent gardent leur transparence,
+   seules les fibres du papier s'y posent */
+
+.hd .apercu,
+.hd .menu-panel,
+.hd .search-panel,
+.hd .perdre-carte {
+  background-image: var(--papier-chiffon);
+  background-size: 520px 520px;
+  background-attachment: local;
+}
+.hd .salle {
+  background-image: var(--papier-washi);
+  background-size: 640px 640px;
+  background-attachment: local;
+}

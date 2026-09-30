@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { Media } from '../data/types';
+import { APLATS, HD, MOTIFS, type FormeAplat, type Motif } from '../lib/hd';
 import { hashString, rng } from '../lib/random';
 import { Icon } from './Icon';
 
@@ -53,8 +54,49 @@ function Waveform({ seed }: { seed: string }) {
 /**
  * Aplat — surface picturale d'inspiration nabie : une couleur plate,
  * un bord qui n'est pas tiré à la règle, un peu de pigment dans la fibre.
+ * En HD, la forme vient d'une vraie gouache (masque) remplie de la couleur,
+ * avec au besoin un motif textile discret dans un ton voisin.
  */
-export function Aplat({ color, seed, className = '' }: { color: string; seed: string; className?: string }) {
+export function Aplat({
+  color,
+  seed,
+  className = '',
+  forme,
+  motif,
+}: {
+  color: string;
+  seed: string;
+  className?: string;
+  forme?: FormeAplat;
+  motif?: Motif;
+}) {
+  if (HD) return <AplatPeint color={color} seed={seed} className={className} forme={forme} motif={motif} />;
+  return <AplatSvg color={color} seed={seed} className={className} />;
+}
+
+function AplatPeint({ color, seed, className, forme, motif }: { color: string; seed: string; className: string; forme?: FormeAplat; motif?: Motif }) {
+  const h = hashString(seed);
+  const f = forme ?? (['rectangle', 'bande', 'ovale'] as const)[h % 3];
+  // la même gouache ne se pose jamais tout à fait pareil : retournement selon la graine
+  const flip = forme === 'arche' ? '' : `scale(${h & 1 ? -1 : 1}, ${h & 2 ? -1 : 1})`;
+  const mask = `url("${APLATS[f]}")`;
+  return (
+    <div
+      className={`aplat aplat-peint ${className}`}
+      aria-hidden="true"
+      style={{ backgroundColor: color, WebkitMaskImage: mask, maskImage: mask, transform: flip || undefined }}
+    >
+      {motif && (
+        <span
+          className="aplat-motif"
+          style={{ WebkitMaskImage: `url("${MOTIFS[motif]}")`, maskImage: `url("${MOTIFS[motif]}")` }}
+        />
+      )}
+    </div>
+  );
+}
+
+function AplatSvg({ color, seed, className }: { color: string; seed: string; className: string }) {
   const { d, fid } = useMemo(() => {
     const r = rng(hashString(seed));
     const pts: [number, number][] = [];

@@ -155,7 +155,7 @@ export function TracePage() {
           <ol className="questions-grid">
             {trace.questions.map((answer, i) => (
               <li key={i} className={`question${i === 3 ? ' question-200' : ''}`}>
-                {i === 3 && <Aplat color={color.hex} seed={`${trace.id}-q4`} className="question-aplat" />}
+                {i === 3 && <Aplat color={color.hex} seed={`${trace.id}-q4`} forme="rectangle" className="question-aplat" />}
                 <h3 className="question-titre">
                   <Icon name={Q_ICONS[i]} size={24} />
                   <span>

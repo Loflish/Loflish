@@ -58,8 +58,15 @@ entièrement procédural). Si un fichier manque, le site revient seul au rendu p
 - **Entrer dans sa mémoire** : une vraie tache filmée (Kling), réduite à un masque
   (`design/hd/masque_encre.py`), s'ouvre depuis la bulle cliquée dans sa couleur GRIS exacte.
 - **Matière des bulles** : tirée au hasard pour chaque personne, jamais choisie, et fixe.
+- **Aplats nabis** : quatre vraies gouaches (rectangle, arche, bande, ovale) devenues des masques,
+  remplis de n'importe quelle couleur (question des 200 caractères dans la couleur de la personne,
+  Ressources, Le projet, Soutenir, Archives).
+- **Motifs textiles** (fleurettes à la Vuillard, carreaux à la Bonnard, feuillages à la Ranson),
+  raccordables, posés dans un ton clair à l'intérieur de certains aplats.
+- **Papier fait main** (chiffon de coton, washi) : seules les fibres, en calque translucide, sur les
+  panneaux qui s'ouvrent (aperçu, menu, recherche, Se perdre, salles des rubriques).
 
-Préparation des images : `python3 design/hd/preparer.py fond|lin|taches …` (voir l'en-tête du script).
+Préparation des images : `python3 design/hd/preparer.py fond|lin|taches|aplat|motif|papier …` (voir l'en-tête du script).
 
 ## Accessibilité & performance
 
