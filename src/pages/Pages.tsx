@@ -1,7 +1,8 @@
-import { useMemo, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { BubbleImage, Footer, PageTop } from '../components/Chrome';
+import { Footer, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
+import { CarteMonde } from '../components/CarteMonde';
 import { Aplat } from '../components/Media';
 import { allTraces } from '../data/store';
 import { useMuseumMode } from '../lib/museum';
@@ -185,28 +186,11 @@ export function Archives() {
 }
 
 export function Carte() {
-  const pays = useMemo(() => {
-    const m = new Map<string, { id: string; couleur: string }[]>();
-    for (const t of allTraces()) if (t.pays) m.set(t.pays, [...(m.get(t.pays) ?? []), { id: t.id, couleur: t.couleur }]);
-    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], 'fr'));
-  }, []);
   return (
     <Page className="carte">
       <h1 className="page-titre">Carte du monde</h1>
-      <p className="lead">Des présences venues de {pays.length} pays. Aucune compétition : seulement le monde, ensemble.</p>
-      <ul className="pays-liste">
-        {pays.map(([p, list]) => (
-          <li key={p}>
-            <span className="pays-bulles" aria-hidden="true">
-              {list.slice(0, 5).map((x) => (
-                <BubbleImage key={x.id} id={x.id} couleur={x.couleur} size={18} />
-              ))}
-            </span>
-            <span className="pays-nom">{p}</span>
-          </li>
-        ))}
-      </ul>
-      <p className="muted">La carte interactive viendra plus tard ; l’ordre ici est alphabétique.</p>
+      <p className="lead">Des présences venues du monde entier. Aucune compétition : seulement le monde, ensemble.</p>
+      <CarteMonde />
     </Page>
   );
 }

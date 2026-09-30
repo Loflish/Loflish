@@ -125,6 +125,8 @@ export class Constellation {
   private rows = 1;
   private spriteQueue: Bubble[] = [];
   events: EngineEvents = {};
+  /** Attend les matières HD avant de peindre les bulles (repli procédural sinon). */
+  spritesAllowed = true;
   /** Zones calmes à l'écran (logo…) : les bulles s'y effacent doucement. */
   private calmZones: { x: number; y: number; w: number; h: number }[] = [];
 
@@ -187,6 +189,12 @@ export class Constellation {
     this.cell = this.D * 2.8;
     this.cols = Math.max(1, Math.floor(this.worldW / this.cell));
     this.rows = Math.max(1, Math.floor(this.worldH / this.cell));
+  }
+
+  /** Regénère toutes les bulles (ex. quand les matières HD sont chargées). */
+  resetSprites(): void {
+    for (const b of this.bubbles) b.sprite = null;
+    this.spriteQueue = this.bubbles.slice();
   }
 
   /** Ajoute une nouvelle présence : elle apparaît fondue dans le décor puis devient comme les autres. */
@@ -698,7 +706,7 @@ export class Constellation {
 
     // génération progressive des sprites : budget de temps par image, jamais de saccade
     const t0 = performance.now();
-    while (this.spriteQueue.length && performance.now() - t0 < 7) {
+    while (this.spritesAllowed && this.spriteQueue.length && performance.now() - t0 < 7) {
       const b = this.spriteQueue.shift()!;
       b.sprite = bubbleSprite(b.p.id, b.p.hex);
     }

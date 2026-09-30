@@ -41,6 +41,14 @@ npm run build    # build statique dans dist/ (chemins relatifs, hébergeable par
   réservé au logo. Version sur une ligne recomposée lettre par lettre (`design/logo/logo_ligne.py`),
   version trois lignes d'origine conservée dans `design/logo/`. À refaire depuis le scan définitif.
 
+## Matières HD (Higgsfield)
+
+Couche optionnelle, activée par `HD` dans `src/lib/hd.ts` (mettre `false` pour revenir au rendu
+entièrement procédural) : fond peint 4K sous l'atmosphère vivante, texture de lin, et bulles dont
+la matière vient de vraies taches d'aquarelle teintées dans la couleur GRIS exacte de chaque personne.
+Les images générées se préparent avec `python3 design/hd/preparer.py <dossier>` (fichiers 0.png à
+4.png) et vont dans `public/hd/`. Si un fichier manque, le site revient seul au rendu procédural.
+
 ## Accessibilité & performance
 
 - Constellation et mouvement toujours présents (choix du projet) ; si le système demande de réduire

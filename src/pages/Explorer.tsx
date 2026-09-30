@@ -21,6 +21,24 @@ export function Explorer() {
   const [moved, setMoved] = useState(false);
   const [hint, setHint] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
+  // une seule phrase, à la toute première visite, puis elle s'efface
+  const [intro, setIntro] = useState(() => {
+    try {
+      return !localStorage.getItem('nmm:vu');
+    } catch {
+      return true;
+    }
+  });
+  useEffect(() => {
+    if (!intro) return;
+    try {
+      localStorage.setItem('nmm:vu', '1');
+    } catch {
+      /* ignore */
+    }
+    const t = window.setTimeout(() => setIntro(false), 7600);
+    return () => window.clearTimeout(t);
+  }, [intro]);
 
   // le fond autour du logo brodé reste calme et clair
   const logoRef = useRef<HTMLDivElement>(null);
@@ -96,6 +114,12 @@ export function Explorer() {
         <span className="hint-large">Glisser pour se promener · molette pour s’approcher · cliquer sur une bulle pour la rencontrer</span>
         <span className="hint-small">Glisser · pincer · toucher une bulle</span>
       </p>
+
+      {intro && (
+        <p className="intro-phrase" aria-live="polite">
+          Chaque bulle est une personne.
+        </p>
+      )}
 
       <p className="demo-note">Prototype — les présences affichées sont des données de démonstration.</p>
 

@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { bubbleDataUrl } from '../engine/bubbleSprite';
 import { colorById } from '../lib/palette';
 import { useMesTraces } from '../data/store';
+import { loadTaches } from '../lib/hd';
 import { Icon } from './Icon';
 
 // Logo sur une ligne, recomposé à partir des lettres brodées du tableau (design/logo/logo_ligne.py).
@@ -25,7 +26,12 @@ export function Logo({ size = 'normal' }: { size?: 'normal' | 'petit' }) {
 export function BubbleImage({ id, couleur, size = 160, className = '' }: { id: string; couleur: string; size?: number; className?: string }) {
   const [src, setSrc] = useState('');
   useEffect(() => {
-    setSrc(bubbleDataUrl(id, colorById(couleur).hex, Math.round(size * 2.2)));
+    let alive = true;
+    // attend les taches HD (si elles existent) pour être identique à la constellation
+    loadTaches().then(() => alive && setSrc(bubbleDataUrl(id, colorById(couleur).hex, Math.round(size * 2.2))));
+    return () => {
+      alive = false;
+    };
   }, [id, couleur, size]);
   return (
     <span className={`bubble-image ${className}`} style={{ width: size, height: size }} aria-hidden="true">

@@ -525,3 +525,60 @@
 .ma-trace-autre {
   margin: 1.6rem 0 0.6rem;
 }
+
+/* ——— carte du monde peinte */
+.carte-monde {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16rem;
+  gap: clamp(1.4rem, 3vw, 2.6rem);
+  align-items: start;
+}
+.carte-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.pays-actif {
+  cursor: pointer;
+  transition: filter 500ms var(--doux);
+}
+.pays-actif:hover,
+.pays-actif.is-on,
+.pays-actif:focus-visible {
+  filter: brightness(0.93) saturate(1.2);
+  outline: none;
+}
+.pays-actif.is-on {
+  stroke: rgba(47, 44, 51, 0.9);
+  stroke-width: 1;
+}
+.carte-panneau {
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--filet);
+}
+.carte-pays {
+  font-family: var(--serif);
+  font-size: var(--t-xl);
+  line-height: 1.2;
+  margin-bottom: 0.8rem;
+}
+.carte-noms {
+  display: grid;
+  gap: 0.2rem;
+  max-height: 22rem;
+  overflow: auto;
+}
+.carte-noms a {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  text-decoration: none;
+}
+.carte-noms a:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+}
+@media (max-width: 760px) {
+  .carte-monde {
+    grid-template-columns: 1fr;
+  }
+}

@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { allTraces, apercu, getTrace, TYPE_LABEL, useMesTraces } from '../data/store';
 import { Atmosphere, paperTexture } from '../engine/atmosphere';
+import { clearSpriteCache } from '../engine/bubbleSprite';
+import { HD, HD_FILES, loadTaches } from '../lib/hd';
 import { Constellation, MODES } from '../engine/constellation';
 import { colorById } from '../lib/palette';
 import { useMuseum } from '../lib/museum';
@@ -44,6 +46,20 @@ export function Backdrop() {
     const presences = allTraces().map((t) => ({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex }));
     const c = new Constellation(cvsRef.current!, presences);
     engine.current = c;
+    if (HD) {
+      // les bulles attendent leurs taches d'aquarelle HD (2 s au plus, sinon rendu procédural)
+      c.spritesAllowed = false;
+      const go = () => {
+        clearSpriteCache();
+        c.resetSprites();
+        c.spritesAllowed = true;
+      };
+      const fallback = window.setTimeout(go, 2000);
+      loadTaches().then(() => {
+        window.clearTimeout(fallback);
+        go();
+      });
+    }
     // accès pour les tests automatisés (captures, mesures de fluidité)
     (window as unknown as Record<string, unknown>).__nmmDebug = { atmo: a, engine: c };
     c.start();
@@ -140,7 +156,15 @@ export function Backdrop() {
 
   return (
     <div className={`backdrop mode-${mode}`} aria-hidden={!interactive}>
-      <canvas ref={atmoRef} className="backdrop-atmosphere" aria-hidden="true" />
+      {HD && (
+        <div className="fond-peint" aria-hidden="true">
+          <picture>
+            <source media="(max-aspect-ratio: 3/4)" srcSet={HD_FILES.fondHaut} />
+            <img src={HD_FILES.fondLarge} alt="" onError={(e) => ((e.currentTarget.closest('.fond-peint') as HTMLElement).hidden = true)} />
+          </picture>
+        </div>
+      )}
+      <canvas ref={atmoRef} className={`backdrop-atmosphere${HD ? ' sur-fond-peint' : ''}`} aria-hidden="true" />
       <canvas
         ref={cvsRef}
         className="backdrop-constellation"
@@ -150,6 +174,7 @@ export function Backdrop() {
         style={{ pointerEvents: interactive ? 'auto' : 'none' }}
       />
       <div className="paper" aria-hidden="true" style={{ backgroundImage: paper ? `url(${paper})` : undefined }} />
+      {HD && <div className="lin-hd" aria-hidden="true" style={{ backgroundImage: `url(${HD_FILES.lin})` }} />}
       <div className={`veil${entering ? ' is-on' : ''}`} aria-hidden="true" />
 
       <div className="names" aria-hidden="true">
