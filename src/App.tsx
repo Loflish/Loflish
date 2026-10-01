@@ -1,6 +1,6 @@
+import { lazy, Suspense } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { Backdrop } from './components/Backdrop';
-import { Admin } from './pages/Admin';
 import { Archives, Compte, Connexion, Juridique, Projet, Ressources, Soutenir } from './pages/Pages';
 import { Creer } from './pages/Creer';
 import { Explorer } from './pages/Explorer';
@@ -8,6 +8,9 @@ import { MaTrace } from './pages/MaTrace';
 import { OeuvreCommune } from './pages/OeuvreCommune';
 import { SePerdre } from './pages/SePerdre';
 import { TracePage } from './pages/TracePage';
+
+// l'espace de l'équipe n'est téléchargé que par celles et ceux qui l'ouvrent
+const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin })));
 
 export function App() {
   const location = useLocation();
@@ -34,7 +37,14 @@ export function App() {
           <Route path="/archives/:edition" element={<Explorer />} />
           <Route path="/compte" element={<Compte />} />
           <Route path="/connexion" element={<Connexion />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route
+            path="/admin"
+            element={
+              <Suspense fallback={null}>
+                <Admin />
+              </Suspense>
+            }
+          />
           <Route path="*" element={<Explorer />} />
         </Routes>
       </div>
