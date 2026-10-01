@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { bubbleDataUrl } from '../engine/bubbleSprite';
 import { colorById } from '../lib/palette';
-import { getTrace, useMesTraces } from '../data/store';
+import { getTrace } from '../data/store';
 import { loadMatieres } from '../lib/hd';
 import { Icon } from './Icon';
 
@@ -16,8 +16,8 @@ const logoUrl = `${import.meta.env.BASE_URL}brand/logo-ligne-petit.webp`;
  */
 export function Logo({ size = 'normal' }: { size?: 'normal' | 'petit' }) {
   return (
-    <Link to="/" className={`logo logo-${size}`} aria-label="Nos mots mémoriaux — retour à la constellation">
-      <img src={logoUrl} alt="Nos mots mémoriaux, brodé à la main en fil bordeaux" width={900} height={88} />
+    <Link to="/" className={`logo logo-${size}`} aria-label="Nos Mots Mémoriaux, retour à la constellation">
+      <img src={logoUrl} alt="Nos Mots Mémoriaux, brodé à la main en fil bordeaux" width={900} height={88} />
     </Link>
   );
 }
@@ -77,14 +77,22 @@ export function BubbleImage({
   );
 }
 
+// Deux colonnes égales ; le compte prend la place qu'avait l'œuvre commune (passée dans le dock).
 const MENU = [
   { to: '/projet', label: 'Le projet', icon: 'projet' },
-  { to: '/oeuvre-commune', label: 'L’œuvre commune', icon: 'aiguille' },
+  { to: '/compte', label: 'Compte', icon: 'compte' },
   { to: '/archives', label: 'Archives', icon: 'archive' },
   { to: '/ressources', label: 'Ressources & aide', icon: 'aide' },
   { to: '/soutenir', label: 'Soutenir', icon: 'soutenir' },
-  { to: '/juridique', label: 'Juridique & confidentialité', icon: 'juridique' },
-  { to: '/compte', label: 'Compte', icon: 'compte' },
+  { to: '/juridique', label: 'Juridique', icon: 'juridique' },
+];
+
+/** Les expériences du musée. Le dock ne montre jamais la page où l'on se trouve déjà. */
+const EXPERIENCES = [
+  { to: '/', label: 'Explorer' },
+  { to: '/se-perdre', label: 'Se perdre' },
+  { to: '/creer', label: 'Créer ma trace' },
+  { to: '/oeuvre-commune', label: 'L’œuvre commune' },
 ];
 
 /**
@@ -96,7 +104,6 @@ export function Dock() {
   const location = useLocation();
   const panelRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
-  const aTrace = useMesTraces().length > 0;
 
   useEffect(() => setOpen(false), [location.pathname]);
   useEffect(() => {
@@ -129,27 +136,14 @@ export function Dock() {
               ))}
             </ul>
           </nav>
-          <p className="menu-help">
-            Un moment difficile ? <Link to="/ressources">Des personnes peuvent t’écouter, maintenant.</Link>
-          </p>
         </div>
       )}
       <nav className="dock" aria-label="Navigation principale">
-        <NavLink to="/" end className="dock-item">
-          Explorer
-        </NavLink>
-        <NavLink to="/se-perdre" className="dock-item">
-          Se perdre
-        </NavLink>
-        {aTrace ? (
-          <NavLink to="/ma-trace" className="dock-item">
-            Ma trace
-          </NavLink>
-        ) : (
-          <NavLink to="/creer" className="dock-item">
-            Créer ma trace
-          </NavLink>
-        )}
+        {EXPERIENCES.filter((x) => x.to !== location.pathname).map((x) => (
+          <Link key={x.to} to={x.to} className="dock-item">
+            {x.label}
+          </Link>
+        ))}
         <button
           ref={btnRef}
           className="dock-item dock-menu"
@@ -171,7 +165,7 @@ export function Dock() {
 export function PageTop({ back = true }: { back?: boolean }) {
   return (
     <header className="page-top">
-      <Link to="/" className="page-top-logo" aria-label="Nos mots mémoriaux — retour au musée">
+      <Link to="/" className="page-top-logo" aria-label="Nos Mots Mémoriaux, retour au musée">
         <Logo size="petit" />
       </Link>
       {back && (
@@ -183,12 +177,21 @@ export function PageTop({ back = true }: { back?: boolean }) {
   );
 }
 
+/** Le pied de page ne propose jamais la page où l'on est déjà. */
 export function Footer() {
+  const { pathname } = useLocation();
+  const liens = [
+    { to: '/ressources', label: 'Ressources & aide' },
+    { to: '/juridique', label: 'Juridique & confidentialité' },
+  ].filter((l) => l.to !== pathname);
   return (
     <footer className="site-footer">
       <nav aria-label="Liens de bas de page">
-        <Link to="/ressources">Ressources & aide</Link>
-        <Link to="/juridique">Juridique & confidentialité</Link>
+        {liens.map((l) => (
+          <Link key={l.to} to={l.to}>
+            {l.label}
+          </Link>
+        ))}
       </nav>
     </footer>
   );

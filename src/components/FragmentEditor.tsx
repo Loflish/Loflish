@@ -1,13 +1,14 @@
 import { useId, useState } from 'react';
-import { deposerFragment } from '../data/store';
-import { CATEGORIES_OEUVRES, MAX_EN_AVANT, limiteDe, placesRestantes, type Element, type RubriqueId } from '../data/types';
+import { deposerFragment, modifierFragment } from '../data/store';
+import { CATEGORIES_OEUVRES, limiteDe, placesRestantes, type Element, type RubriqueId } from '../data/types';
 import { Icon } from './Icon';
 import { ChoixMedia, type MediaChoisi } from './Media';
 
 /**
- * Déposer un fragment d'existence sur sa trace, avec au plus un média
- * (photo, vidéo, enregistrement, document ou lien), montré tel quel.
+ * Déposer un fragment d'existence sur sa trace, avec au plus un fichier
+ * (photo, vidéo, enregistrement, document) ou un lien, montré tel quel.
  * Un fragment est scellé dès qu'il est déposé : l'auteur le sait avant.
+ * Cinq ans plus tard, il se modifie ici aussi (et il est scellé de nouveau).
  */
 
 type Champ = 'titre' | 'quand' | 'lieu' | 'lien' | 'categorie';
@@ -28,27 +29,60 @@ const CONFIG: Record<RubriqueId, { champs: Champ[]; titre?: string; texte: strin
   convictions: { champs: ['titre'], titre: 'Ta conviction', texte: 'Ce en quoi tu crois', max: 1200 },
   objets: { champs: ['titre'], titre: 'L’objet', texte: 'Son histoire', max: 1200 },
   creations: { champs: ['titre', 'quand'], titre: 'Ta création', texte: 'Ce qu’elle raconte de toi', max: 1200 },
-  accomplissements: { champs: ['titre', 'quand'], titre: 'Ton accomplissement', texte: 'Pourquoi tu en es fier·ère', max: 1200 },
+  accomplissements: { champs: ['titre', 'quand'], titre: 'Ton accomplissement', texte: 'Pourquoi il compte pour toi', max: 1200 },
   aimeVivre: { champs: [], texte: 'Ce que tu aurais encore aimé vivre', max: 800 },
-  petitesChoses: { champs: [], texte: 'Une petite chose qui te rendait heureux·se', max: 800 },
+  petitesChoses: { champs: [], texte: 'Une petite chose qui faisait ton bonheur', max: 800 },
+};
+
+/** Pour une mémoire, les mêmes champs, dits à propos de la personne. */
+const CONFIG_MEMOIRE: Partial<Record<RubriqueId, { titre?: string; texte: string }>> = {
+  voir: { texte: 'Ce qu’elle aimait voir' },
+  entendre: { texte: 'Ce qu’elle aimait entendre' },
+  sentir: { texte: 'Ce qu’elle aimait sentir' },
+  gouter: { texte: 'Ce qu’elle aimait manger' },
+  toucher: { texte: 'Ce qu’elle aimait toucher ou tenir' },
+  chapitres: { titre: 'Nom du chapitre', texte: 'Ce qu’il a été pour elle' },
+  oeuvres: { titre: 'L’œuvre', texte: 'Pourquoi cette œuvre l’a marquée' },
+  jamaisDit: { texte: 'Ce que tu ne lui as jamais dit' },
+  personnes: { titre: 'Son nom ou surnom', texte: 'Ce que cette personne a représenté pour elle' },
+  lieux: { titre: 'Le lieu', texte: 'Pourquoi il a compté pour elle' },
+  convictions: { titre: 'Sa conviction', texte: 'Ce en quoi elle croyait' },
+  objets: { titre: 'L’objet', texte: 'Son histoire' },
+  creations: { titre: 'Sa création', texte: 'Ce qu’elle raconte d’elle' },
+  accomplissements: { titre: 'Son accomplissement', texte: 'Pourquoi il comptait' },
+  aimeVivre: { texte: 'Ce qu’elle aurait encore aimé vivre' },
+  petitesChoses: { texte: 'Une petite chose qui faisait son bonheur' },
 };
 
 const TITRE_FACULTATIF: RubriqueId[] = ['paroleLibre'];
 
-export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: string; rubrique: RubriqueId; items: Element[]; onDone?: () => void }) {
-  const cfg = CONFIG[rubrique];
+export function FragmentEditor({
+  traceId,
+  rubrique,
+  items,
+  onDone,
+  memoire = false,
+  modifier,
+}: {
+  traceId: string;
+  rubrique: RubriqueId;
+  items: Element[];
+  onDone?: () => void;
+  memoire?: boolean;
+  /** un fragment déjà déposé, dont les cinq ans sont passés */
+  modifier?: Element;
+}) {
+  const cfg = { ...CONFIG[rubrique], ...(memoire ? CONFIG_MEMOIRE[rubrique] : {}) };
   const uid = useId();
   const [f, setF] = useState({
-    titre: '',
-    texte: '',
-    quand: '',
-    lieu: '',
-    lien: '',
-    categorie: rubrique === 'oeuvres' ? 'Livre' : '',
+    titre: modifier?.titre ?? '',
+    texte: modifier?.texte ?? '',
+    quand: modifier?.quand ?? '',
+    lieu: modifier?.lieu ?? '',
+    lien: modifier?.lien ?? '',
+    categorie: modifier?.categorie ?? (rubrique === 'oeuvres' ? 'Livre' : ''),
   });
-  const pleinAvant = items.filter((e) => e.enAvant).length >= MAX_EN_AVANT;
   const [media, setMedia] = useState<MediaChoisi>(null);
-  const [enAvant, setEnAvant] = useState(true);
   const [confirmer, setConfirmer] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState('');
@@ -67,23 +101,18 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
     }
     setEnvoi(true);
     setErreur('');
+    const champs = {
+      texte: f.texte.trim(),
+      titre: f.titre.trim() || undefined,
+      quand: f.quand.trim() || undefined,
+      lieu: f.lieu.trim() || undefined,
+      lien: f.lien.trim() || undefined,
+      categorie: has('categorie') ? f.categorie : undefined,
+    };
     try {
-      // prototype : gardé dans ce navigateur ; en ligne : envoyé au musée, qui vérifie chaque règle
-      await deposerFragment(
-        traceId,
-        rubrique,
-        {
-          texte: f.texte.trim(),
-          titre: f.titre.trim() || undefined,
-          quand: f.quand.trim() || undefined,
-          lieu: f.lieu.trim() || undefined,
-          lien: f.lien.trim() || undefined,
-          categorie: has('categorie') ? f.categorie : undefined,
-          enAvant: enAvant && !pleinAvant,
-        },
-        media,
-        f.titre.trim(),
-      );
+      // aperçu autonome : gardé dans ce navigateur ; en ligne : envoyé au musée, qui vérifie chaque règle
+      if (modifier) await modifierFragment(traceId, rubrique, modifier.id, champs);
+      else await deposerFragment(traceId, rubrique, champs, media, f.titre.trim());
     } catch (err) {
       setErreur(err instanceof Error && err.message ? err.message : 'Le fragment n’a pas pu être déposé. Essaie avec un fichier plus léger.');
       return;
@@ -99,15 +128,21 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
   };
 
   const restant = placesRestantes(items, rubrique);
-  if (restant === 0) return <p className="editeur-complet">Cette rubrique a ses {limiteDe(rubrique)} fragments.</p>;
+  if (!modifier && restant === 0) return <p className="editeur-complet">Cette rubrique a ses {limiteDe(rubrique)} fragments.</p>;
 
   return (
     <form className="editeur" onSubmit={submit}>
       <p className="editeur-titre">
-        <Icon name="plus" size={16} /> Ajouter un fragment
-        <span className="editeur-places">
-          {restant} place{restant > 1 ? 's' : ''} sur {limiteDe(rubrique)}
-        </span>
+        {modifier ? (
+          'Modifier ce fragment'
+        ) : (
+          <>
+            <Icon name="plus" size={16} /> Ajouter un fragment
+            <span className="editeur-places">
+              {restant} place{restant > 1 ? 's' : ''} sur {limiteDe(rubrique)}
+            </span>
+          </>
+        )}
       </p>
       {has('titre') && (
         <label className="field">
@@ -127,7 +162,7 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
       )}
       {has('lien') && (
         <label className="field">
-          <span className="field-label">Votre lien (facultatif)</span>
+          <span className="field-label">{memoire ? 'Son lien avec elle (facultatif)' : 'Ton lien avec cette personne (facultatif)'}</span>
           <input id={`${uid}-lien`} value={f.lien} maxLength={60} placeholder="ma sœur, un ami, une professeure…" onChange={(e) => setF({ ...f, lien: e.target.value })} />
         </label>
       )}
@@ -136,7 +171,7 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
           {has('quand') && (
             <label className="field">
               <span className="field-label">Quand (facultatif)</span>
-              <input id={`${uid}-quand`} value={f.quand} maxLength={40} placeholder="été 2009, 1994 — 2005…" onChange={(e) => setF({ ...f, quand: e.target.value })} />
+              <input id={`${uid}-quand`} value={f.quand} maxLength={40} placeholder="été 2009, de 1994 à 2005…" onChange={(e) => setF({ ...f, quand: e.target.value })} />
             </label>
           )}
           {has('lieu') && (
@@ -154,18 +189,12 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
           {f.texte.length} / {cfg.max}
         </span>
       </label>
-      <div className="field">
-        <span className="field-label">Un média ou un document (facultatif, un seul)</span>
-        <ChoixMedia value={media} onChange={setMedia} id={`${uid}-media`} />
-      </div>
-      <label className="check">
-        <input type="checkbox" checked={enAvant && !pleinAvant} disabled={pleinAvant} onChange={(e) => setEnAvant(e.target.checked)} />
-        <span>
-          {pleinAvant
-            ? `Les ${MAX_EN_AVANT} places mises en avant sont prises : ce fragment sera visible avec « Voir tout ».`
-            : `Mettre en avant sur mon profil (${MAX_EN_AVANT} par rubrique)`}
-        </span>
-      </label>
+      {!modifier && (
+        <div className="field">
+          <span className="field-label">Une photo, une vidéo, un son, un document ou un lien (facultatif, un seul)</span>
+          <ChoixMedia value={media} onChange={setMedia} id={`${uid}-media`} />
+        </div>
+      )}
       {erreur && (
         <p className="editeur-erreur" role="alert">
           {erreur}
@@ -173,17 +202,24 @@ export function FragmentEditor({ traceId, rubrique, items, onDone }: { traceId: 
       )}
       {confirmer && (
         <p className="editeur-scelle" role="alert">
-          <Icon name="cadenas" size={16} /> Une fois déposé, ce fragment sera scellé : tu ne pourras plus le modifier ni le retirer pendant
-          cinq ans.
+          <Icon name="cadenas" size={16} />{' '}
+          {modifier
+            ? 'Une fois enregistré, ce fragment sera de nouveau scellé pour cinq ans.'
+            : 'Une fois déposé, ce fragment sera scellé : tu ne pourras plus le modifier ni le retirer pendant cinq ans.'}
         </p>
       )}
       <div className="editeur-actions">
         <button className="bouton" type="submit" disabled={!valide || envoi}>
-          {envoi ? 'Dépôt…' : confirmer ? 'Déposer et sceller' : 'Ajouter à ma trace'}
+          {envoi ? 'Dépôt…' : confirmer ? (modifier ? 'Enregistrer et sceller' : 'Déposer et sceller') : modifier ? 'Enregistrer' : 'Ajouter'}
         </button>
         {confirmer && !envoi && (
           <button type="button" className="lien-discret" onClick={() => setConfirmer(false)}>
             Relire encore
+          </button>
+        )}
+        {modifier && !confirmer && (
+          <button type="button" className="lien-discret" onClick={() => onDone?.()}>
+            Annuler
           </button>
         )}
         <span className={`editeur-ok${ok ? ' is-on' : ''}`} aria-live="polite">

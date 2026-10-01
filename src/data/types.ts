@@ -26,7 +26,7 @@ export interface Media {
   taille?: number;
   /** Adresse d'un lien (http ou https). */
   url?: string;
-  /** Posé en avant sur le profil (5 au plus parmi les médias & documents). */
+  /** Ancien marquage « mis en avant » (l'ordre choisi par l'auteur décide désormais). */
   enAvant?: boolean;
   /** Date (ISO) du dépôt : un média déposé est scellé. */
   scelleLe?: string;
@@ -55,7 +55,7 @@ export interface Element {
   sens?: Sens;
   /** Un média ou document au plus par fragment. */
   medias?: string[];
-  /** Posé en avant sur le profil (5 au plus par rubrique). */
+  /** Ancien marquage « mis en avant » (l'ordre choisi par l'auteur décide désormais). */
   enAvant?: boolean;
   /** Date (ISO) du dépôt : un fragment est scellé dès qu'il est déposé. */
   scelleLe?: string;
@@ -101,11 +101,13 @@ export interface Trace {
   questions?: [string, string, string, string];
   /** Précision facultative de Q2 : à qui la personne pensait. */
   q2Destinataire?: string;
-  /** Pour une mémoire déposée par un tiers. */
+  /** Pour une mémoire déposée par un proche. */
   memoire?: {
     deposeePar: string;
     relation?: string;
+    /** ancien champ « D'où viennent ces souvenirs ? » (n'est plus demandé) */
     origine?: string;
+    /** « Que peux-tu me dire sur cette personne ? » : 500 caractères, aussi l'aperçu de sa bulle */
     aperçu: string;
   };
   rubriques: Partial<Record<RubriqueId, Element[]>>;
@@ -118,9 +120,9 @@ export interface Trace {
   parametres?: Parametres;
   /** Présence légère (constellation) : le profil complet se charge à la demande. */
   leger?: boolean;
-  /** Vu par l'auteur ou l'équipe : une trace peut être masquée par la modération. */
-  statut?: 'publiee' | 'masquee';
-  masqueeRaison?: string;
+  /** Vu par l'auteur ou le fondateur : une bulle peut être retirée du musée. */
+  statut?: 'publiee' | 'retiree';
+  retireeRaison?: string;
   /** Données de démonstration. */
   demo?: boolean;
 }
@@ -136,44 +138,64 @@ export interface Rubrique {
   famille?: 'sens';
   /** Titre court, sous l'intertitre « Les 5 sens ». */
   court?: string;
+  /** Pour une mémoire : la même rubrique, dite à propos de la personne (« elle » : la personne). */
+  memoire?: { titre: string; question?: string };
 }
 
 export const RUBRIQUES: Rubrique[] = [
-  { id: 'voir', titre: 'Voir une dernière fois', court: 'Voir', icone: 'oeil', famille: 'sens', question: 'Qu’aimerais-tu voir une dernière fois ?' },
-  { id: 'entendre', titre: 'Entendre une dernière fois', court: 'Entendre', icone: 'oreille', famille: 'sens', question: 'Qu’aimerais-tu entendre une dernière fois ?' },
-  { id: 'sentir', titre: 'Sentir une dernière fois', court: 'Sentir', icone: 'nez', famille: 'sens', question: 'Qu’aimerais-tu sentir une dernière fois ?' },
-  { id: 'gouter', titre: 'Manger une dernière fois', court: 'Manger', icone: 'tasse', famille: 'sens', question: 'Qu’aimerais-tu manger une dernière fois ?' },
-  { id: 'toucher', titre: 'Toucher une dernière fois', court: 'Toucher', icone: 'main', famille: 'sens', question: 'Qu’aimerais-tu toucher ou tenir une dernière fois ?' },
+  { id: 'voir', titre: 'Voir une dernière fois', court: 'Voir', icone: 'oeil', famille: 'sens', question: 'Qu’aimerais-tu voir une dernière fois ?', memoire: { titre: 'Ce qu’elle aimait voir', question: 'Qu’aimait-elle voir ?' } },
+  { id: 'entendre', titre: 'Entendre une dernière fois', court: 'Entendre', icone: 'oreille', famille: 'sens', question: 'Qu’aimerais-tu entendre une dernière fois ?', memoire: { titre: 'Ce qu’elle aimait entendre', question: 'Qu’aimait-elle entendre ?' } },
+  { id: 'sentir', titre: 'Sentir une dernière fois', court: 'Sentir', icone: 'nez', famille: 'sens', question: 'Qu’aimerais-tu sentir une dernière fois ?', memoire: { titre: 'Ce qu’elle aimait sentir', question: 'Qu’aimait-elle sentir ?' } },
+  { id: 'gouter', titre: 'Manger une dernière fois', court: 'Manger', icone: 'tasse', famille: 'sens', question: 'Qu’aimerais-tu manger une dernière fois ?', memoire: { titre: 'Ce qu’elle aimait manger', question: 'Qu’aimait-elle manger ?' } },
+  { id: 'toucher', titre: 'Toucher une dernière fois', court: 'Toucher', icone: 'main', famille: 'sens', question: 'Qu’aimerais-tu toucher ou tenir une dernière fois ?', memoire: { titre: 'Ce qu’elle aimait toucher', question: 'Qu’aimait-elle toucher ou tenir ?' } },
   { id: 'souvenirs', titre: 'Souvenirs', icone: 'image' },
-  { id: 'chapitres', titre: 'Chapitres de vie', icone: 'livre' },
-  { id: 'oeuvres', titre: 'Œuvres / cultures qui m’ont marqué', icone: 'note' },
-  { id: 'jamaisDit', titre: 'Ce que je n’ai jamais dit', icone: 'bulle' },
+  { id: 'chapitres', titre: 'Chapitres de vie', icone: 'livre', memoire: { titre: 'Chapitres de sa vie' } },
+  { id: 'oeuvres', titre: 'Œuvres / cultures qui m’ont marqué', icone: 'note', memoire: { titre: 'Œuvres / cultures qui l’ont marquée' } },
+  { id: 'jamaisDit', titre: 'Ce que je n’ai jamais dit', icone: 'bulle', memoire: { titre: 'Ce que je ne lui ai jamais dit' } },
   { id: 'paroleLibre', titre: 'Parole libre', icone: 'plume' },
-  { id: 'personnes', titre: 'Personnes qui ont compté', icone: 'personnes' },
-  { id: 'lieux', titre: 'Lieux qui ont compté', icone: 'lieu' },
-  { id: 'convictions', titre: 'Convictions / ce en quoi je croyais', icone: 'feuille' },
-  { id: 'objets', titre: 'Objets importants', icone: 'objet' },
-  { id: 'creations', titre: 'Mes créations', icone: 'creation' },
-  { id: 'accomplissements', titre: 'Mes accomplissements', icone: 'accomplissement' },
-  { id: 'aimeVivre', titre: 'Ce que j’aurais encore aimé vivre', icone: 'horizon' },
-  { id: 'petitesChoses', titre: 'Les petites choses qui me rendaient heureux·se', icone: 'fleur' },
+  { id: 'personnes', titre: 'Personnes qui ont compté', icone: 'personnes', memoire: { titre: 'Personnes qui ont compté pour elle' } },
+  { id: 'lieux', titre: 'Lieux qui ont compté', icone: 'lieu', memoire: { titre: 'Lieux qui ont compté pour elle' } },
+  { id: 'convictions', titre: 'Convictions / ce en quoi je croyais', icone: 'feuille', memoire: { titre: 'Ce en quoi elle croyait' } },
+  { id: 'objets', titre: 'Objets importants', icone: 'objet', memoire: { titre: 'Ses objets importants' } },
+  { id: 'creations', titre: 'Mes créations', icone: 'creation', memoire: { titre: 'Ses créations' } },
+  { id: 'accomplissements', titre: 'Mes accomplissements', icone: 'accomplissement', memoire: { titre: 'Ses accomplissements' } },
+  { id: 'aimeVivre', titre: 'Ce que j’aurais encore aimé vivre', icone: 'horizon', memoire: { titre: 'Ce qu’elle aurait encore aimé vivre' } },
+  { id: 'petitesChoses', titre: 'Les petites choses qui faisaient mon bonheur', icone: 'fleur', memoire: { titre: 'Les petites choses qui faisaient son bonheur' } },
 ];
+
+/** Le titre d'une rubrique, selon qu'il s'agit de sa propre trace ou de la mémoire d'une personne. */
+export function titreRubrique(r: Rubrique, type: TraceType = 'personnelle'): string {
+  return type === 'memoire' && r.memoire ? r.memoire.titre : r.titre;
+}
+export function questionRubrique(r: Rubrique, type: TraceType = 'personnelle'): string | undefined {
+  return type === 'memoire' && r.memoire?.question ? r.memoire.question : r.question;
+}
+
+/** La question qui ouvre une mémoire ; la réponse (500 caractères) est aussi l'aperçu de sa bulle. */
+export const QUESTION_MEMOIRE = 'Que peux-tu me dire sur cette personne ?';
 
 export const QUESTIONS: [string, string, string, string] = [
-  'Que dirais-tu à toi-même si ta vie s’arrêtait ?',
-  'Que dirais-tu à la personne que tu aimes ?',
-  'Que dirais-tu au monde entier ?',
-  'En 200 caractères maximum, comment résumerais-tu tes trois réponses ?',
+  'Que dirais-tu à toi-même si ta vie s’arrêtait ?',
+  'Que dirais-tu à la personne que tu aimes ?',
+  'Que dirais-tu au monde entier ?',
+  'En 200 caractères maximum, comment résumerais-tu tes trois réponses ?',
 ];
 
-export const LIMITES = { q: 1200, q4: 200, sens: 800 };
+/**
+ * Les limites des réponses : 1200 caractères pour chacune des trois premières
+ * questions, 200 pour la quatrième (l'aperçu de la bulle). Une mémoire commence
+ * par ce que l'on peut dire de la personne : 500 caractères, qui servent aussi
+ * d'aperçu (on parle pour quelqu'un d'autre : un peu plus de place qu'en 200).
+ */
+export const LIMITES = { q: 1200, q4: 200, sens: 800, memoire: 500 };
 
 /**
  * Combien de fragments une rubrique peut recevoir : cela dépend de ce qu'on y
  * dépose. Les réponses brèves (les 5 sens, les petites choses…) : 10. Les
  * textes longs (souvenirs, ce que je n'ai jamais dit, parole libre) : 7, plus
- * rares et plus forts. Les personnes et les lieux : 15. Dans tous les cas, 5
- * sont posés en avant sur le profil ; « Voir tout » montre le reste.
+ * rares et plus forts. Les personnes et les lieux : 15. Tout est scellé au
+ * dépôt ; l'auteur range ses fragments, et les trois premiers se montrent sur
+ * la vue d'ensemble du profil ; un clic sur la rubrique ouvre tout le reste.
  */
 export const MAX_FRAGMENTS = 10;
 const LIMITE_PAR_RUBRIQUE: Partial<Record<RubriqueId, number>> = {
@@ -186,7 +208,8 @@ const LIMITE_PAR_RUBRIQUE: Partial<Record<RubriqueId, number>> = {
 export function limiteDe(rubrique: RubriqueId): number {
   return LIMITE_PAR_RUBRIQUE[rubrique] ?? MAX_FRAGMENTS;
 }
-export const MAX_EN_AVANT = 5;
+/** Combien de fragments (ou de médias) se montrent sur la vue d'ensemble du profil : les trois premiers. */
+export const MAX_EN_AVANT = 3;
 /** Médias & documents : 20 au plus (les médias joints aux fragments ne comptent pas). */
 export const MAX_MEDIAS = 20;
 

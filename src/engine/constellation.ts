@@ -547,9 +547,6 @@ export class Constellation {
       this.zoomAt(this.w / 2, this.h / 2, this.cam.zoom * 1.15);
     } else if (k === '-') {
       this.zoomAt(this.w / 2, this.h / 2, this.cam.zoom / 1.15);
-    } else if (k === 'enter' || k === ' ') {
-      e.preventDefault();
-      if (this.focusId) this.select(this.focusId);
     } else if (k === 'escape') {
       this.select(null);
     }
@@ -689,36 +686,12 @@ export class Constellation {
       b.y = ((b.y % this.worldH) + this.worldH) % this.worldH;
     }
 
-    // focus clavier : la présence la plus proche du centre de l'écran
-    if (this.keyboardFocus && this.interactive) {
-      let best: Bubble | null = null;
-      let bd = Infinity;
-      for (const b of this.bubbles) {
-        const d = Math.hypot(this.wrapD(b.x - this.cam.x, this.worldW), this.wrapD(b.y - this.cam.y, this.worldH));
-        if (d < bd && b.alpha > 0.5) {
-          bd = d;
-          best = b;
-        }
-      }
-      this.focusId = best?.p.id ?? null;
-    } else {
-      this.focusId = null;
-    }
+    // pas de sélection au clavier (choix du créateur) : aucune bulle n'est mise en évidence
+    this.focusId = null;
 
-    // noms qui émergent autour du curseur (3 au plus, très discrets)
+    // un seul nom à la fois : celui de la bulle survolée (les noms voisins, qui
+    // apparaissaient et disparaissaient au gré du curseur, faisaient mécanique)
     this.nearIds = [];
-    if (this.interactive && this.pointer.inside && !this.drag) {
-      const cand: [number, string][] = [];
-      for (const b of this.bubbles) {
-        if (b.p.id === this.hoverId || b.alpha < 0.5) continue;
-        const x = this.wrapD(b.x - this.cam.x, this.worldW) * this.cam.zoom + this.w / 2;
-        const y = this.wrapD(b.y - this.cam.y, this.worldH) * this.cam.zoom + this.h / 2;
-        const d = Math.hypot(x - this.pointer.x, y - this.pointer.y);
-        if (d < 120) cand.push([d, b.p.id]);
-      }
-      cand.sort((a, b) => a[0] - b[0]);
-      this.nearIds = cand.slice(0, 3).map((c) => c[1]);
-    }
   }
 
   // ————————————————————————————————— rendu

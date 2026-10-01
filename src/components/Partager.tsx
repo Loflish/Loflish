@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { EN_LIGNE } from '../lib/api';
 import { Icon } from './Icon';
 
 /**
@@ -8,9 +9,15 @@ import { Icon } from './Icon';
  * être copié à la main. Il se passe toujours quelque chose de visible.
  */
 
-/** Adresse publique d'une trace (le musée utilise des adresses en #/…). */
+/**
+ * Le lien à partager : il ouvre le musée sur la bulle de la personne, avec son
+ * aperçu ; de là, chacun peut entrer dans sa mémoire.
+ * En ligne, l'adresse courte /b/… donne aussi un aperçu propre dans les
+ * messageries (nom et premiers mots), puis ouvre le musée sur la bulle.
+ */
 export function lienTrace(id: string): string {
-  return `${window.location.origin}${window.location.pathname}#/trace/${id}`;
+  if (EN_LIGNE) return `${window.location.origin}/b/${encodeURIComponent(id)}`;
+  return `${window.location.origin}${window.location.pathname}#/bulle/${encodeURIComponent(id)}`;
 }
 
 async function copier(texte: string): Promise<boolean> {
@@ -50,7 +57,7 @@ export function BoutonPartager({ titre, url }: { titre: string; url: string }) {
     // sur téléphone, la feuille de partage du système
     if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
       try {
-        await navigator.share({ title: `${titre} — Nos mots mémoriaux`, url });
+        await navigator.share({ title: `${titre}, sur Nos Mots Mémoriaux`, url });
         return;
       } catch (e) {
         if ((e as DOMException).name === 'AbortError') return;

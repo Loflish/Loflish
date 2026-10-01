@@ -4,12 +4,14 @@ import { BubbleImage, Dock } from '../components/Chrome';
 import { TexteBrode } from '../components/TexteBrode';
 import { BoutonPartager, lienTrace } from '../components/Partager';
 import { Icon } from '../components/Icon';
+import { Panneau } from '../components/Panneau';
+import { Signaler } from '../components/Signaler';
 import { allTraces, apercu, TYPE_LABEL } from '../data/store';
 import { shuffle } from '../lib/random';
 import { useMuseumMode } from '../lib/museum';
 
 /**
- * Se perdre — accepter de ne pas savoir qui l'on va rencontrer.
+ * Se perdre : accepter de ne pas savoir qui l'on va rencontrer.
  * Hasard équitable : ordre mélangé sans répétition dans la session, aucune
  * personnalisation, aucun signal de popularité, aucun autoplay.
  */
@@ -20,6 +22,7 @@ export function SePerdre() {
   const [dir, setDir] = useState<1 | -1>(1);
   const [drag, setDrag] = useState(0);
   const start = useRef<number | null>(null);
+  const [signaler, setSignaler] = useState(false);
   const t = order[i % order.length];
 
   const go = useCallback((d: 1 | -1) => {
@@ -30,7 +33,7 @@ export function SePerdre() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).closest('input, textarea, select')) return;
+      if ((e.target as HTMLElement).closest('input, textarea, select, .salle')) return;
       if (e.key === 'ArrowRight') go(1);
       if (e.key === 'ArrowLeft' && i > 0) go(-1);
     };
@@ -56,12 +59,12 @@ export function SePerdre() {
 
   return (
     <div className="perdre">
-      <h1 className="sr-only">Se perdre — rencontrer une présence au hasard</h1>
+      <h1 className="sr-only">Se perdre : rencontrer une présence au hasard</h1>
 
       <div className="perdre-scene">
         <article
           key={t.id}
-          className={`perdre-carte entre-${dir > 0 ? 'droite' : 'gauche'}`}
+          className={`perdre-carte entre-${dir > 0 ? 'droite' : 'gauche'}${t.type === 'memoire' ? ' perdre-memoire' : ''}`}
           style={{ transform: drag ? `translateX(${drag * 0.6}px) rotate(${drag * 0.01}deg)` : undefined, opacity: drag ? 1 - Math.min(0.5, Math.abs(drag) / 500) : undefined }}
           onPointerDown={onDown}
           onPointerMove={onMove}
@@ -73,7 +76,7 @@ export function SePerdre() {
           <h2 className="perdre-nom">{t.nom}</h2>
           <p className="apercu-type">
             {TYPE_LABEL[t.type]}
-            {t.pays ? ` · ${t.pays}` : ''}
+            {t.pays ? `, ${t.pays}` : ''}
           </p>
           <p className="perdre-texte">
             <TexteBrode texte={apercu(t)} />
@@ -81,6 +84,10 @@ export function SePerdre() {
           <Link to={`/trace/${t.id}`} className="lien-entrer">
             Ouvrir la trace <Icon name="fleche" size={16} />
           </Link>
+          {/* discret, dans le coin de chaque carte, comme sur le profil */}
+          <button className="lien-discret petit perdre-signaler" onClick={() => setSignaler(true)}>
+            <Icon name="drapeau" size={14} /> Signaler
+          </button>
         </article>
       </div>
 
@@ -93,6 +100,11 @@ export function SePerdre() {
           Suivant <Icon name="fleche" size={16} />
         </button>
       </div>
+      {signaler && (
+        <Panneau titre="Signaler cette trace" onClose={() => setSignaler(false)}>
+          <Signaler trace={t} onDone={() => setSignaler(false)} />
+        </Panneau>
+      )}
       <Dock />
     </div>
   );

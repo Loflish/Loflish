@@ -7,7 +7,7 @@ import { RUBRIQUES, type RubriqueId, type Trace } from '../data/types';
 import { Dock, Logo } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { useMuseum, useMuseumMode } from '../lib/museum';
-import { appel, DEMO, EN_LIGNE } from '../lib/api';
+import { appel, EN_LIGNE } from '../lib/api';
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
@@ -21,7 +21,8 @@ export function Explorer() {
   useMuseumMode('explore');
   const { engine } = useMuseum();
   // une édition des archives : la même constellation, avec les présences de cette édition seulement
-  const edition = editionParId(useParams().edition);
+  const params = useParams();
+  const edition = editionParId(params.edition);
   const traces = useMemo(() => (edition ? tracesDeLEdition(allTraces(), edition) : allTraces()), [edition]);
   useEffect(() => {
     const c = engine.current;
@@ -48,7 +49,7 @@ export function Explorer() {
     } catch {
       /* ignore */
     }
-    const t = window.setTimeout(() => setIntro(false), 7600);
+    const t = window.setTimeout(() => setIntro(false), 9400);
     return () => window.clearTimeout(t);
   }, [intro]);
 
@@ -88,6 +89,24 @@ export function Explorer() {
     return () => window.clearTimeout(t);
   }, [location.state, engine]);
 
+  // un lien partagé (#/bulle/…) : la vue glisse jusqu'à la bulle et son aperçu s'ouvre
+  const navigate = useNavigate();
+  useEffect(() => {
+    const id = params.bulle;
+    if (!id) return;
+    setIntro(false);
+    let essais = 0;
+    let t = 0;
+    const viser = () => {
+      const c = engine.current;
+      if (c?.has(id)) c.focusOn(id);
+      else if (essais++ < 20) t = window.setTimeout(viser, 250);
+      else navigate(`/trace/${id}`, { replace: true });
+    };
+    t = window.setTimeout(viser, 600);
+    return () => window.clearTimeout(t);
+  }, [params.bulle, engine, navigate]);
+
   useEffect(() => {
     const t = window.setTimeout(() => setHint(false), 9000);
     return () => window.clearTimeout(t);
@@ -95,15 +114,15 @@ export function Explorer() {
 
   return (
     <div className="explorer">
-      <h1 className="sr-only">Nos mots mémoriaux — {edition ? `archives, édition ${edition.titre}` : 'la constellation des présences'}</h1>
+      <h1 className="sr-only">Nos Mots Mémoriaux, {edition ? `archives, édition ${edition.titre}` : 'la constellation des présences'}</h1>
       <div className="explorer-logo" ref={logoRef}>
         <Logo />
         {edition && (
           <p className="explorer-edition">
             <Link to="/archives" className="lien-discret petit">
-              <Icon name="archive" size={14} /> Archives · édition {edition.titre}
+              <Icon name="archive" size={14} /> Archives, édition {edition.titre}
             </Link>
-            <span>— {traces.length.toLocaleString('fr-FR')} présences</span>
+            <span>{traces.length.toLocaleString('fr-FR')} présences</span>
           </p>
         )}
       </div>
@@ -120,8 +139,8 @@ export function Explorer() {
       </div>
 
       <p className={`explorer-hint${hint ? '' : ' is-hidden'}`} aria-hidden={!hint}>
-        <span className="hint-large">Glisser pour se promener · molette pour s’approcher · cliquer sur une bulle pour la rencontrer</span>
-        <span className="hint-small">Glisser · pincer · toucher une bulle</span>
+        <span className="hint-large">Glisse pour te promener, approche-toi avec la molette, clique sur une bulle pour la rencontrer.</span>
+        <span className="hint-small">Glisse pour te promener, touche une bulle pour la rencontrer.</span>
       </p>
 
       {intro && (
@@ -130,7 +149,6 @@ export function Explorer() {
         </p>
       )}
 
-      {DEMO && <p className="demo-note">{EN_LIGNE ? 'Des présences de démonstration sont mêlées aux vraies.' : 'Prototype — les présences affichées sont des données de démonstration.'}</p>}
       {traces.length === 0 && (
         <p className="explorer-vide">
           {edition ? 'Cette édition ne garde encore aucune présence.' : 'Le musée attend sa première présence.'}{' '}
@@ -203,8 +221,19 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
   }, [results, active, engine]);
   useEffect(() => () => engine.current?.setMatch(null), [engine]);
 
-  // Pas de classement : pertinence brute puis hasard (jamais la popularité).
-  const shown = useMemo(() => results.slice().sort(() => Math.random() - 0.5).slice(0, 12), [results]);
+  // Pas de classement : les présences trouvées sont mélangées au hasard (jamais la popularité),
+  // puis montrées par séries ; la liste défile dans le panneau.
+  const melange = useMemo(() => {
+    const m = results.slice();
+    for (let i = m.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [m[i], m[j]] = [m[j]!, m[i]!];
+    }
+    return m;
+  }, [results]);
+  const [combien, setCombien] = useState(30);
+  useEffect(() => setCombien(30), [results]);
+  const shown = melange.slice(0, combien);
 
   return (
     <aside className="search-panel" aria-label="Rechercher et filtrer" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
@@ -280,6 +309,11 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
               </li>
             ))}
           </ul>
+          {melange.length > combien && (
+            <button className="lien-discret search-plus" onClick={() => setCombien((n) => n + 30)}>
+              Voir d’autres présences ({(melange.length - combien).toLocaleString('fr-FR')})
+            </button>
+          )}
         </div>
       )}
     </aside>

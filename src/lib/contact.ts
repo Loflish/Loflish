@@ -1,5 +1,6 @@
 /**
- * L'adresse où écrire au créateur du musée (demandes privées, suppression de données au titre du RGPD).
- * À confirmer : elle peut être changée sans toucher au code, avec VITE_CONTACT au moment de construire le site.
+ * L'adresse où écrire au fondateur du musée (questions, signalements, protection des données :
+ * consulter, modifier ou supprimer ses données). Elle peut être changée sans toucher au code,
+ * avec VITE_CONTACT au moment de construire le site.
  */
-export const CONTACT: string = (import.meta.env.VITE_CONTACT as string | undefined) || 'bonjour@nosmotsmemoriaux.org';
+export const CONTACT: string = (import.meta.env.VITE_CONTACT as string | undefined) || 'nosmots@memoriaux.org';

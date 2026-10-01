@@ -3,7 +3,8 @@ import type { Trace } from './types';
 /**
  * Seconde trace de référence, remplie : une mémoire déposée par une
  * petite-fille pour son grand-père. Les quatre questions n'appartiennent qu'aux
- * traces personnelles ; une mémoire porte ses 200 caractères et ses fragments.
+ * traces personnelles ; une mémoire commence par ce que l'on peut dire de la
+ * personne (500 caractères), puis ses fragments.
  * Personne fictive, données de démonstration.
  */
 
@@ -22,8 +23,8 @@ export const JEANNOT: Trace = {
   memoire: {
     deposeePar: 'Léa',
     relation: 'Sa petite-fille',
-    origine: 'Ce que je sais de lui, ce qu’il racontait au jardin, et ce que ses mains m’ont appris sans un mot.',
-    aperçu: 'Il semait des radis avec moi chaque printemps et disait qu’un jardin, c’est une lettre qu’on écrit à ceux qui viendront après.',
+    aperçu:
+      'Mon grand-père était ébéniste à Amboise. Il parlait peu, mais ses mains disaient tout : elles redressaient les chaises bancales des voisins et semaient des radis avec moi chaque printemps. Il sifflait la même valse en travaillant, coupait la tarte en parts inégales pour que la plus grande soit pour moi, et disait qu’un jardin, c’est une lettre qu’on écrit à ceux qui viendront après.',
   },
   rubriques: {
     voir: [
@@ -41,14 +42,14 @@ export const JEANNOT: Trace = {
     ],
     toucher: [{ id: 'jt1', texte: 'Ses mains, rugueuses et chaudes, qui tenaient les graines comme des trésors.', medias: ['jm4'] }],
     souvenirs: [
-      { id: 'jso1', titre: 'Les radis', quand: 'Chaque printemps, 1998 — 2012', lieu: 'Amboise', texte: 'Il me laissait faire les trous avec mon doigt, puis il repassait derrière sans rien dire pour les remettre droits.', medias: ['jm1'] },
+      { id: 'jso1', titre: 'Les radis', quand: 'Chaque printemps, 1998 à 2012', lieu: 'Amboise', texte: 'Il me laissait faire les trous avec mon doigt, puis il repassait derrière sans rien dire pour les remettre droits.', medias: ['jm1'] },
       { id: 'jso2', titre: 'La cabane', quand: 'Été 2004', texte: 'Il a construit une cabane dans le pommier en trois jours. Elle tient encore.' },
       { id: 'jso3', titre: 'Le dernier été', quand: '2023', texte: 'Il ne pouvait plus bêcher. Il m’a dicté le jardin depuis sa chaise, rang par rang.' },
     ],
     chapitres: [
-      { id: 'jc1', titre: 'L’apprenti', quand: '1946 — 1952', texte: 'Entré à quatorze ans chez un ébéniste de Tours.' },
-      { id: 'jc2', titre: 'L’atelier', quand: '1953 — 1994', texte: 'Quarante ans de meubles, dont la moitié des buffets du village.' },
-      { id: 'jc3', titre: 'Le jardin', quand: '1994 — 2024', texte: 'La retraite, qu’il appelait « mon deuxième métier ».' },
+      { id: 'jc1', titre: 'L’apprenti', quand: '1946 à 1952', texte: 'Entré à quatorze ans chez un ébéniste de Tours.' },
+      { id: 'jc2', titre: 'L’atelier', quand: '1953 à 1994', texte: 'Quarante ans de meubles, dont la moitié des buffets du village.' },
+      { id: 'jc3', titre: 'Le jardin', quand: '1994 à 2024', texte: 'La retraite, qu’il appelait « mon deuxième métier ».' },
     ],
     oeuvres: [{ id: 'jo1', titre: 'Sous le ciel de Paris', categorie: 'Chanson', texte: 'La valse qu’il sifflait. Il l’avait entendue au bal où il a rencontré Odette.' }],
     personnes: [
@@ -63,7 +64,7 @@ export const JEANNOT: Trace = {
     objets: [{ id: 'job1', titre: 'Son rabot', texte: 'Le manche est usé à la forme de sa main. Je le garde sur mon bureau.', medias: ['jm2'] }],
     creations: [
       { id: 'jcr1', titre: 'Le buffet de la cuisine', quand: '1961', texte: 'En merisier. Il l’a fait pour Odette la première année.' },
-      { id: 'jcr2', titre: 'Le carnet de semis', quand: '1994 — 2023', texte: 'Trente ans de semis notés à la main, avec la météo et parfois un dessin.', medias: ['jm5'] },
+      { id: 'jcr2', titre: 'Le carnet de semis', quand: '1994 à 2023', texte: 'Trente ans de semis notés à la main, avec la météo et parfois un dessin.', medias: ['jm5'] },
     ],
     accomplissements: [{ id: 'jac1', titre: 'Meilleur ouvrier du canton', quand: '1978', texte: 'Il n’en parlait jamais. On a trouvé le diplôme dans un tiroir.' }],
     aimeVivre: [{ id: 'ja1', texte: 'Voir son arrière-petit-enfant planter ses premiers radis.' }],

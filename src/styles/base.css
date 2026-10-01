@@ -95,20 +95,6 @@ ul {
   border: 0;
 }
 
-.skip-link {
-  position: fixed;
-  left: 1rem;
-  top: -4rem;
-  z-index: 100;
-  background: var(--lin-clair);
-  padding: 0.6rem 1rem;
-  border: 1px solid var(--filet-fort);
-  transition: top 200ms;
-}
-.skip-link:focus {
-  top: 1rem;
-}
-
 .muted {
   color: var(--encre-2);
 }
@@ -303,14 +289,7 @@ textarea {
   flex: none;
 }
 
-/* les souvenirs émergent */
-.emerge {
-  animation: emerge var(--lent) var(--doux) both;
-}
-.emerge:nth-child(2) { animation-delay: 120ms; }
-.emerge:nth-child(3) { animation-delay: 260ms; }
-.emerge:nth-child(4) { animation-delay: 400ms; }
-.emerge:nth-child(5) { animation-delay: 540ms; }
+/* les pages arrivent posées, sans fondu (choix du créateur) ; seules les bulles apparaissent */
 
 @keyframes emerge {
   from {
@@ -408,27 +387,12 @@ textarea {
   background-repeat: no-repeat;
   mix-blend-mode: multiply;
 }
-/* ce qui n'a pas sa broderie : IBM Plex Sans, le même dessin de lettre, dans la couleur du fil */
+/* les 200 caractères : la même typographie que toutes les autres réponses */
 .brode-repli,
 .texte-plex {
-  font-family: var(--sans);
-  font-style: normal;
-  font-weight: 400;
-  font-size: 0.9em;
-  /* un gris de fil : les lettres brodées, cousues en contour, paraissent plus légères qu'un texte plein */
-  color: #56525b;
+  font: inherit;
+  color: inherit;
   unicode-bidi: isolate;
-}
-.texte-plex {
-  font-size: 0.94em;
-  line-height: 1.6;
-}
-.apercu-texte .texte-plex,
-.perdre-texte .texte-plex {
-  font-size: 1.06em;
-}
-.question-200 .texte-plex {
-  font-size: 0.92em;
 }
 
 /* partager : quand le navigateur refuse la copie, le lien s'affiche */

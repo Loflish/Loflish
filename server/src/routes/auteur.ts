@@ -10,7 +10,7 @@ import type pg from 'pg';
 import { z } from 'zod';
 import { exigerCompte, publicCompte, Refus, type Compte } from '../auth';
 import { journaliser, pool, requete, transaction, une, type Client } from '../db';
-import { LIMITES, MAX_EN_AVANT, MAX_MEDIAS, TAILLES_MAX, couleurValide, estRubrique, lienValide, limiteDe, natureDe, reouverture, scelleEncore } from '../regles';
+import { LIMITES, MAX_MEDIAS, TAILLES_MAX, couleurValide, estRubrique, lienValide, limiteDe, natureDe, reouverture, scelleEncore } from '../regles';
 import { trace as serialiserTrace, type LigneFragment, type LigneMedia, type LigneTrace } from '../serialiser';
 import { idTrace } from '../securite';
 import { stockage } from '../stockage';
@@ -18,7 +18,8 @@ import { stockage } from '../stockage';
 /**
  * Ce que fait l'auteur d'une trace. Chaque règle du musée est vérifiée ici :
  * deux bulles au plus, réponses scellées cinq ans, chaque dépôt scellé,
- * limites de chaque rubrique, cinq mis en avant, vingt médias.
+ * limites de chaque rubrique, vingt médias ; l'ordre choisi par l'auteur
+ * décide des trois premiers montrés sur son profil.
  */
 
 const texte = (max: number) => z.string().trim().min(1).max(max);
@@ -42,7 +43,7 @@ const schemaCreation = z.discriminatedUnion('type', [
     couleur: z.string().refine(couleurValide, 'couleur inconnue'),
     matiere: z.number().int().min(0).max(999).optional(),
     pays: facultatif(80),
-    memoire: z.object({ deposeePar: texte(80), relation: facultatif(80), origine: facultatif(1200), aperçu: texte(LIMITES.q4) }),
+    memoire: z.object({ deposeePar: texte(80), relation: facultatif(80), origine: facultatif(1200), aperçu: texte(LIMITES.memoire) }),
     parametres: z.record(z.string(), z.unknown()).optional(),
   }),
 ]);
@@ -55,7 +56,6 @@ const schemaFragment = z.object({
   lieu: facultatif(160),
   lien: facultatif(120),
   categorie: facultatif(60),
-  enAvant: z.boolean().optional(),
   /** un lien joint au fragment (sinon, un fichier dans le formulaire) */
   mediaLien: z.object({ url: z.string().max(2000), titre: facultatif(200) }).optional(),
   mediaTitre: facultatif(200),
@@ -172,12 +172,12 @@ export async function routesAuteur(app: FastifyInstance) {
   app.put('/api/traces/:id/reponses', async (req) => {
     const c = exigerCompte(req);
     const { id } = z.object({ id: z.string() }).parse(req.params);
-    const d = z.object({ questions: z.tuple([texte(LIMITES.q), texte(LIMITES.q), texte(LIMITES.q), texte(LIMITES.q4)]).optional(), apercu: texte(LIMITES.q4).optional() }).parse(req.body);
+    const d = z.object({ questions: z.tuple([texte(LIMITES.q), texte(LIMITES.q), texte(LIMITES.q), texte(LIMITES.q4)]).optional(), q2Destinataire: facultatif(120), apercu: texte(LIMITES.memoire).optional() }).parse(req.body);
     await transaction(async (tx) => {
       const t = await maTrace(tx, c, id);
       if (scelleEncore(t.scellee_le)) throw new Refus(403, `Tes réponses sont scellées jusqu’au ${reouverture(t.scellee_le).toLocaleDateString('fr-FR')}.`, 'scelle');
       if (t.type === 'personnelle' && d.questions)
-        await requete('update traces set q1=$2, q2=$3, q3=$4, q4=$5, scellee_le = now(), maj_le = now() where id = $1', [id, ...d.questions], tx);
+        await requete('update traces set q1=$2, q2=$3, q3=$4, q4=$5, q2_destinataire = $6, scellee_le = now(), maj_le = now() where id = $1', [id, ...d.questions, d.q2Destinataire ?? null], tx);
       if (t.type === 'memoire' && d.apercu) await requete('update traces set memoire_apercu = $2, scellee_le = now(), maj_le = now() where id = $1', [id, d.apercu], tx);
       await journaliser(c.id, 'trace.reponses', id, {}, tx);
     });
@@ -207,17 +207,17 @@ export async function routesAuteur(app: FastifyInstance) {
       const range = fichier ? await rangerFichier(id, fichier) : null;
       const r = await transaction(async (tx) => {
         await maTrace(tx, c, id);
-        const n = await une<{ n: string; avant: string; ordre: number | null }>(
-          'select count(*) n, count(*) filter (where en_avant) avant, max(ordre) ordre from fragments where trace_id = $1 and rubrique = $2',
+        const n = await une<{ n: string; ordre: number | null }>(
+          'select count(*) n, max(ordre) ordre from fragments where trace_id = $1 and rubrique = $2',
           [id, d.rubrique],
           tx,
         );
         if (Number(n!.n) >= limiteDe(d.rubrique)) throw new Refus(409, `Cette rubrique a déjà ses ${limiteDe(d.rubrique)} fragments.`, 'plein');
-        const enAvant = !!d.enAvant && Number(n!.avant) < MAX_EN_AVANT;
+        // un nouveau fragment se range à la fin : l'auteur le monte s'il veut le montrer sur son profil
         const f = (await une<{ id: string }>(
-          `insert into fragments (trace_id, rubrique, titre, texte, quand, lieu, lien, categorie, en_avant, ordre)
-           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning id`,
-          [id, d.rubrique, d.titre ?? null, d.texte, d.quand ?? null, d.lieu ?? null, d.lien ?? null, d.categorie ?? null, enAvant, (n!.ordre ?? -1) + 1],
+          `insert into fragments (trace_id, rubrique, titre, texte, quand, lieu, lien, categorie, ordre)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id`,
+          [id, d.rubrique, d.titre ?? null, d.texte, d.quand ?? null, d.lieu ?? null, d.lien ?? null, d.categorie ?? null, (n!.ordre ?? -1) + 1],
           tx,
         ))!;
         if (range)
@@ -262,25 +262,29 @@ export async function routesAuteur(app: FastifyInstance) {
     return { ok: true };
   });
 
-  // poser en avant, ou non (5 au plus par rubrique) : un choix d'affichage, toujours possible
-  app.post('/api/fragments/:fid/en-avant', async (req) => {
+  // modifier un fragment : seulement une fois ses cinq ans passés (il est alors scellé de nouveau)
+  app.put('/api/fragments/:fid', async (req) => {
     const c = exigerCompte(req);
     const { fid } = z.object({ fid: z.string().uuid() }).parse(req.params);
-    const { enAvant } = z.object({ enAvant: z.boolean() }).parse(req.body);
-    await transaction(async (tx) => {
-      const f = await une<{ trace_id: string; rubrique: string }>('select trace_id, rubrique from fragments where id = $1', [fid], tx);
+    const d = schemaFragment.pick({ texte: true, titre: true, quand: true, lieu: true, lien: true, categorie: true }).parse(req.body);
+    const traceId = await transaction(async (tx) => {
+      const f = await une<{ trace_id: string; scelle_le: Date }>('select trace_id, scelle_le from fragments where id = $1', [fid], tx);
       if (!f) throw new Refus(404, 'Ce fragment n’existe pas.', 'introuvable');
       await maTrace(tx, c, f.trace_id);
-      if (enAvant) {
-        const n = await une<{ n: string }>('select count(*) n from fragments where trace_id = $1 and rubrique = $2 and en_avant and id <> $3', [f.trace_id, f.rubrique, fid], tx);
-        if (Number(n!.n) >= MAX_EN_AVANT) throw new Refus(409, `${MAX_EN_AVANT} fragments sont déjà mis en avant dans cette rubrique.`, 'plein');
-      }
-      await requete('update fragments set en_avant = $2 where id = $1', [fid, enAvant], tx);
+      if (scelleEncore(f.scelle_le)) throw new Refus(403, `Ce fragment est scellé jusqu’au ${reouverture(f.scelle_le).toLocaleDateString('fr-FR')}.`, 'scelle');
+      await requete(
+        'update fragments set texte = $2, titre = $3, quand = $4, lieu = $5, lien = $6, categorie = $7, scelle_le = now() where id = $1',
+        [fid, d.texte, d.titre ?? null, d.quand ?? null, d.lieu ?? null, d.lien ?? null, d.categorie ?? null],
+        tx,
+      );
+      await requete('update traces set maj_le = now() where id = $1', [f.trace_id], tx);
+      await journaliser(c.id, 'fragment.modifie', fid, { trace: f.trace_id }, tx);
+      return f.trace_id;
     });
-    return { ok: true };
+    return { trace: await traceComplete(traceId) };
   });
 
-  // trier ses mis en avant : monter (-1) ou descendre (+1) d'un cran
+  // ranger ses fragments : monter (-1) ou descendre (+1) d'un cran ; les trois premiers se montrent sur le profil
   app.post('/api/fragments/:fid/deplacer', async (req) => {
     const c = exigerCompte(req);
     const { fid } = z.object({ fid: z.string().uuid() }).parse(req.params);
@@ -289,7 +293,7 @@ export async function routesAuteur(app: FastifyInstance) {
       const f = await une<{ trace_id: string; rubrique: string }>('select trace_id, rubrique from fragments where id = $1', [fid], tx);
       if (!f) throw new Refus(404, 'Ce fragment n’existe pas.', 'introuvable');
       await maTrace(tx, c, f.trace_id);
-      const liste = await requete<{ id: string; ordre: number; en_avant: boolean }>('select id, ordre, en_avant from fragments where trace_id = $1 and rubrique = $2 order by ordre, cree_le', [f.trace_id, f.rubrique], tx);
+      const liste = await requete<{ id: string; ordre: number }>('select id, ordre from fragments where trace_id = $1 and rubrique = $2 order by ordre, cree_le', [f.trace_id, f.rubrique], tx);
       await echanger(tx, 'fragments', liste, fid, sens);
     });
     return { ok: true };
@@ -307,24 +311,23 @@ export async function routesAuteur(app: FastifyInstance) {
       const range = fichier ? await rangerFichier(id, fichier) : null;
       await transaction(async (tx) => {
         await maTrace(tx, c, id);
-        const n = await une<{ n: string; avant: string; ordre: number | null }>(
-          'select count(*) n, count(*) filter (where en_avant) avant, max(ordre) ordre from medias where trace_id = $1 and fragment_id is null',
+        const n = await une<{ n: string; ordre: number | null }>(
+          'select count(*) n, max(ordre) ordre from medias where trace_id = $1 and fragment_id is null',
           [id],
           tx,
         );
-        if (Number(n!.n) >= MAX_MEDIAS) throw new Refus(409, `Tu as déjà déposé ${MAX_MEDIAS} médias.`, 'plein');
-        const enAvant = Number(n!.avant) < MAX_EN_AVANT;
+        if (Number(n!.n) >= MAX_MEDIAS) throw new Refus(409, `Tu as déjà déposé ${MAX_MEDIAS} photos, vidéos, sons ou documents.`, 'plein');
         const ordre = (n!.ordre ?? -1) + 1;
         if (range) {
           await requete(
-            'insert into medias (trace_id, kind, titre, legende, duree, cle, mime, nom_fichier, taille, en_avant, ordre) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',
-            [id, range.nature, d.titre ?? fichier!.nom.replace(/\.[^.]+$/, '').slice(0, 200), d.legende ?? null, d.duree ?? null, range.cle, range.mime, fichier!.nom.slice(0, 200), range.taille, enAvant, ordre],
+            'insert into medias (trace_id, kind, titre, legende, duree, cle, mime, nom_fichier, taille, ordre) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
+            [id, range.nature, d.titre ?? fichier!.nom.replace(/\.[^.]+$/, '').slice(0, 200), d.legende ?? null, d.duree ?? null, range.cle, range.mime, fichier!.nom.slice(0, 200), range.taille, ordre],
             tx,
           );
         } else {
           const url = lienValide(d.lien!);
           if (!url) throw new Refus(400, 'Ce lien ne mène pas à une page web.', 'lien');
-          await requete('insert into medias (trace_id, kind, titre, legende, url, en_avant, ordre) values ($1,$2,$3,$4,$5,$6,$7)', [id, 'lien', d.titre ?? new URL(url).hostname, d.legende ?? null, url, enAvant, ordre], tx);
+          await requete('insert into medias (trace_id, kind, titre, legende, url, ordre) values ($1,$2,$3,$4,$5,$6)', [id, 'lien', d.titre ?? new URL(url).hostname, d.legende ?? null, url, ordre], tx);
         }
         await requete('update traces set maj_le = now() where id = $1', [id], tx);
         await journaliser(c.id, 'media.depose', id, { kind: range?.nature ?? 'lien' }, tx);
@@ -338,32 +341,15 @@ export async function routesAuteur(app: FastifyInstance) {
     }
   });
 
-  app.post('/api/medias/:mid/en-avant', async (req) => {
-    const c = exigerCompte(req);
-    const { mid } = z.object({ mid: z.string().uuid() }).parse(req.params);
-    const { enAvant } = z.object({ enAvant: z.boolean() }).parse(req.body);
-    await transaction(async (tx) => {
-      const m = await une<{ trace_id: string; fragment_id: string | null }>('select trace_id, fragment_id from medias where id = $1', [mid], tx);
-      if (!m || m.fragment_id) throw new Refus(404, 'Ce média n’existe pas.', 'introuvable');
-      await maTrace(tx, c, m.trace_id);
-      if (enAvant) {
-        const n = await une<{ n: string }>('select count(*) n from medias where trace_id = $1 and fragment_id is null and en_avant and id <> $2', [m.trace_id, mid], tx);
-        if (Number(n!.n) >= MAX_EN_AVANT) throw new Refus(409, `${MAX_EN_AVANT} médias sont déjà mis en avant.`, 'plein');
-      }
-      await requete('update medias set en_avant = $2 where id = $1', [mid, enAvant], tx);
-    });
-    return { ok: true };
-  });
-
   app.post('/api/medias/:mid/deplacer', async (req) => {
     const c = exigerCompte(req);
     const { mid } = z.object({ mid: z.string().uuid() }).parse(req.params);
     const { sens } = z.object({ sens: z.union([z.literal(-1), z.literal(1)]) }).parse(req.body);
     await transaction(async (tx) => {
       const m = await une<{ trace_id: string }>('select trace_id from medias where id = $1 and fragment_id is null', [mid], tx);
-      if (!m) throw new Refus(404, 'Ce média n’existe pas.', 'introuvable');
+      if (!m) throw new Refus(404, 'Ce fichier n’existe pas.', 'introuvable');
       await maTrace(tx, c, m.trace_id);
-      const liste = await requete<{ id: string; ordre: number; en_avant: boolean }>('select id, ordre, en_avant from medias where trace_id = $1 and fragment_id is null order by ordre, cree_le', [m.trace_id], tx);
+      const liste = await requete<{ id: string; ordre: number }>('select id, ordre from medias where trace_id = $1 and fragment_id is null order by ordre, cree_le', [m.trace_id], tx);
       await echanger(tx, 'medias', liste, mid, sens);
     });
     return { ok: true };
@@ -374,9 +360,9 @@ export async function routesAuteur(app: FastifyInstance) {
     const { mid } = z.object({ mid: z.string().uuid() }).parse(req.params);
     const cle = await transaction(async (tx) => {
       const m = await une<{ trace_id: string; scelle_le: Date; cle: string | null }>('select trace_id, scelle_le, cle from medias where id = $1', [mid], tx);
-      if (!m) throw new Refus(404, 'Ce média n’existe pas.', 'introuvable');
+      if (!m) throw new Refus(404, 'Ce fichier n’existe pas.', 'introuvable');
       await maTrace(tx, c, m.trace_id);
-      if (scelleEncore(m.scelle_le)) throw new Refus(403, `Ce média est scellé jusqu’au ${reouverture(m.scelle_le).toLocaleDateString('fr-FR')}.`, 'scelle');
+      if (scelleEncore(m.scelle_le)) throw new Refus(403, `Ce fichier est scellé jusqu’au ${reouverture(m.scelle_le).toLocaleDateString('fr-FR')}.`, 'scelle');
       await requete('delete from medias where id = $1', [mid], tx);
       await journaliser(c.id, 'media.retire', mid, { trace: m.trace_id }, tx);
       return m.cle;
@@ -411,15 +397,13 @@ export async function routesAuteur(app: FastifyInstance) {
   });
 }
 
-/** Échange un élément mis en avant avec son voisin mis en avant (même liste). */
-async function echanger(tx: pg.PoolClient, table: 'fragments' | 'medias', liste: { id: string; ordre: number; en_avant: boolean }[], id: string, sens: -1 | 1) {
+/** Échange un élément avec son voisin (même liste) : l'ordre est celui que l'auteur choisit. */
+async function echanger(tx: pg.PoolClient, table: 'fragments' | 'medias', liste: { id: string; ordre: number }[], id: string, sens: -1 | 1) {
   // on renumérote d'abord, pour que l'ordre soit toujours net
   for (let i = 0; i < liste.length; i++) if (liste[i]!.ordre !== i) await requete(`update ${table} set ordre = $2 where id = $1`, [liste[i]!.id, i], tx);
   const i = liste.findIndex((x) => x.id === id);
-  if (i < 0 || !liste[i]!.en_avant) return;
-  let j = i + sens;
-  while (j >= 0 && j < liste.length && !liste[j]!.en_avant) j += sens;
-  if (j < 0 || j >= liste.length) return;
+  const j = i + sens;
+  if (i < 0 || j < 0 || j >= liste.length) return;
   await requete(`update ${table} set ordre = $2 where id = $1`, [liste[i]!.id, j], tx);
   await requete(`update ${table} set ordre = $2 where id = $1`, [liste[j]!.id, i], tx);
 }

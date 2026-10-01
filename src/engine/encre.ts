@@ -16,13 +16,16 @@ void main(){ uv = p * 0.5 + 0.5; uv.y = 1.0 - uv.y; gl_Position = vec4(p, 0.0, 1
 const FRAG = `
 precision mediump float;
 varying vec2 uv;
-uniform sampler2D tex;
+uniform sampler2D avant;
+uniform sampler2D apres;
+uniform float melange;
 uniform vec3 couleur;
 uniform float fondu;
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 void main(){
-  // la vidéo est un masque : blanc = encre (tache filmée, trame du tissu retirée)
-  float m = texture2D(tex, uv).r;
+  // la vidéo est un masque : blanc = encre (tache filmée, trame du tissu retirée) ;
+  // deux images successives fondues l'une dans l'autre : l'encre coule sans à-coups
+  float m = mix(texture2D(avant, uv).r, texture2D(apres, uv).r, melange);
   float a = smoothstep(0.04, 0.7, m);
   vec2 d = abs(uv - 0.5) * 2.0;
   a *= 1.0 - smoothstep(0.86, 1.0, max(d.x, d.y));
@@ -41,7 +44,9 @@ const TAILLE = 1024;
 
 export class Encre {
   private gl: WebGLRenderingContext | null;
-  private tex: WebGLTexture | null = null;
+  /** deux textures : l'image précédente de la vidéo et la nouvelle, fondues à chaque affichage */
+  private tex: [WebGLTexture | null, WebGLTexture | null] = [null, null];
+  private courante = 0;
   private u: Record<string, WebGLUniformLocation | null> = {};
   private video: HTMLVideoElement;
   private raf = 0;
@@ -79,21 +84,30 @@ export class Encre {
     const loc = gl.getAttribLocation(prog, 'p');
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    this.tex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, this.tex);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    for (const n of ['couleur', 'fondu', 'tex']) this.u[n] = gl.getUniformLocation(prog, n);
+    for (let i = 0; i < 2; i++) {
+      const t = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE0 + i);
+      gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 1, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, new Uint8Array(3));
+      this.tex[i] = t;
+    }
+    for (const n of ['couleur', 'fondu', 'avant', 'apres', 'melange']) this.u[n] = gl.getUniformLocation(prog, n);
   }
 
   /**
    * Joue l'encre centrée sur (x, y) : elle part de la taille de la bulle et
    * s'étend jusqu'à couvrir l'écran. Résout quand l'encre a recouvert la vue.
    *
-   * Tout reste léger pendant l'animation : le canvas garde une taille fixe
-   * (jamais réalloué), il grandit par une simple transformation CSS, et la
-   * vidéo n'est envoyée à la carte graphique que lorsqu'elle a une image neuve.
+   * Pour que l'encre coule sans à-coups, même pendant que le profil se prépare :
+   * - la croissance est confiée au compositeur du navigateur (une animation
+   *   CSS de transformation), elle ne dépend pas du travail de la page ;
+   * - la vidéo n'a que 24 images par seconde : à chaque affichage, les deux
+   *   dernières images sont fondues l'une dans l'autre, selon le temps écoulé ;
+   * - le canvas garde une taille fixe (jamais réalloué).
    */
   play(x: number, y: number, r: number, hex: string, couverture = 1500): Promise<void> {
     const gl = this.gl;
@@ -111,45 +125,69 @@ export class Encre {
     c.style.opacity = '1';
     c.hidden = false;
     gl.uniform3f(this.u.couleur, cr, cg, cb);
+    gl.uniform1i(this.u.avant, 0);
+    gl.uniform1i(this.u.apres, 1);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    const v = this.video as HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number };
+
+    // la croissance, de la bulle à tout l'écran, sur le compositeur
+    const place = (size: number) => `translate(${x - size / 2}px, ${y - size / 2}px) scale(${size / cote})`;
+    const depart = r * 6;
+    c.style.transform = place(diag);
+    c.getAnimations().forEach((a) => a.cancel());
+    c.animate([{ transform: place(depart) }, { transform: place(diag) }], {
+      duration: 2400,
+      easing: 'cubic-bezier(0.25, 0.9, 0.35, 1)',
+    });
+
+    const v = this.video as HTMLVideoElement & { requestVideoFrameCallback?: (cb: (t: number, m: { mediaTime: number }) => void) => number };
     v.currentTime = 0;
     void v.play().catch(() => undefined);
     const t0 = performance.now();
     this.jouant = true;
+    let imageLe = t0;
+    let intervalle = 1000 / 24;
+    let images = 0;
 
-    const dessiner = () => {
+    const envoyer = () => {
       if (v.readyState < 2) return;
-      gl.bindTexture(gl.TEXTURE_2D, this.tex);
+      // l'image la plus récente devient « avant », la nouvelle prend l'autre texture
+      this.courante = 1 - this.courante;
+      gl.activeTexture(gl.TEXTURE0 + this.courante);
+      gl.bindTexture(gl.TEXTURE_2D, this.tex[this.courante]);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, v);
-      gl.uniform1f(this.u.fondu, Math.min(1, ((performance.now() - t0) / 1000) * 3));
+      // les unités de texture suivent : 0 = avant, 1 = après
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, this.tex[1 - this.courante]);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, this.tex[this.courante]);
+      const maintenant = performance.now();
+      if (images > 0) intervalle = intervalle * 0.7 + Math.min(80, Math.max(16, maintenant - imageLe)) * 0.3;
+      imageLe = maintenant;
+      images++;
+    };
+    const dessiner = (now: number) => {
+      // la première image n'a pas de précédente : on la montre telle quelle
+      const k = images < 2 || !v.requestVideoFrameCallback ? 1 : Math.min(1, (now - imageLe) / intervalle);
+      gl.uniform1f(this.u.melange, k);
+      gl.uniform1f(this.u.fondu, Math.min(1, ((now - t0) / 1000) * 3));
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
-    // une image neuve de la vidéo (24 par seconde) → un envoi, pas davantage
+    // une image neuve de la vidéo → un seul envoi à la carte graphique
     const surImage = () => {
       if (!this.jouant) return;
-      dessiner();
+      envoyer();
       v.requestVideoFrameCallback?.(surImage);
     };
     if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(surImage);
 
     return new Promise((resolve) => {
-      let done = false;
+      window.setTimeout(resolve, couverture);
       const frame = (now: number) => {
-        const t = (now - t0) / 1000;
-        // la vignette grandit doucement : de la bulle à tout l'écran
-        const k = Math.min(1, t / 2.2);
-        const ease = 1 - Math.pow(1 - k, 3);
-        const size = Math.max(r * 6, r * 6 + (diag - r * 6) * ease);
-        c.style.transform = `translate(${x - size / 2}px, ${y - size / 2}px) scale(${size / cote})`;
-        if (!v.requestVideoFrameCallback) dessiner();
-        if (!done && now - t0 > couverture) {
-          done = true;
-          resolve();
-        }
-        if (t < 4.5 && this.jouant) this.raf = requestAnimationFrame(frame);
+        if (!v.requestVideoFrameCallback) envoyer();
+        if (images > 0) dessiner(now);
+        if (now - t0 < 4500 && this.jouant) this.raf = requestAnimationFrame(frame);
       };
       this.raf = requestAnimationFrame(frame);
     });

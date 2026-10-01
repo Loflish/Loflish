@@ -8,6 +8,7 @@ import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import { ZodError } from 'zod';
 import { chargerCompte, Refus, routesAuth } from './auth';
+import { empreinteIp, refuserBannis } from './bannis';
 import { changement } from './cache';
 import { config } from './config';
 import { pool, requete } from './db';
@@ -35,7 +36,11 @@ export async function creerApp(): Promise<FastifyInstance> {
   // en-têtes de sécurité, sur toutes les réponses ; et toute écriture réussie renouvelle les
   // réponses gardées en mémoire (constellation, œuvre commune), avant même d'être envoyée
   app.addHook('onSend', async (req, rep) => {
-    if (req.method !== 'GET' && req.method !== 'HEAD' && rep.statusCode < 400) changement();
+    if (req.method !== 'GET' && req.method !== 'HEAD' && rep.statusCode < 400) {
+      changement();
+      // l'adresse (son empreinte) de qui écrit dans le musée : c'est elle que le fondateur peut bannir
+      if (req.compte) void requete('update comptes set derniere_ip = $2 where id = $1 and derniere_ip is distinct from $2', [req.compte.id, empreinteIp(req.ip)]).catch(() => undefined);
+    }
     rep.header('x-content-type-options', 'nosniff');
     rep.header('referrer-policy', 'strict-origin-when-cross-origin');
     rep.header('x-frame-options', 'SAMEORIGIN');
@@ -59,6 +64,8 @@ export async function creerApp(): Promise<FastifyInstance> {
   });
 
   app.decorateRequest('compte', null);
+  // une adresse bannie ne va pas plus loin
+  app.addHook('onRequest', refuserBannis);
   app.addHook('onRequest', chargerCompte);
   await app.register(routesAuth);
   await app.register(routesPubliques);

@@ -38,10 +38,11 @@
 }
 .intertitre {
   font-family: var(--serif);
-  font-weight: 460;
-  font-size: var(--t-l);
-  line-height: 1.3;
-  margin: 2rem 0 0.8rem;
+  font-weight: 450;
+  font-size: clamp(1.35rem, 1.2rem + 0.5vw, 1.6rem);
+  line-height: 1.25;
+  font-variation-settings: 'opsz' 36;
+  margin: 2rem 0 0.9rem;
 }
 .texte-courant p {
   font-family: var(--serif);
@@ -307,11 +308,10 @@
   margin-top: 0.7rem;
 }
 .mot-fondateur-titre {
-  font-family: var(--sans);
-  font-size: var(--t-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--encre-2);
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.08rem;
+  color: var(--encre);
 }
 .mot-fondateur-signature {
   font-style: italic;
@@ -428,9 +428,6 @@
 }
 .brouillon.is-saved {
   opacity: 1;
-}
-.etape {
-  animation: emerge 900ms var(--doux) both;
 }
 .etape-titre {
   font-family: var(--serif);
@@ -580,17 +577,6 @@
 @keyframes bulle-change {
   from { opacity: 0.2; transform: scale(0.96); }
   to { opacity: 1; transform: none; }
-}
-.matieres {
-  margin-top: 1.8rem;
-}
-.matieres-feuille {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
-  justify-items: center;
-  gap: 0.15rem 0.1rem;
-  margin-top: 0.4rem;
-  max-width: 34rem;
 }
 .bulle-fleches {
   display: flex;
@@ -878,7 +864,7 @@
 .oeuvre-aide {
   position: absolute;
   right: clamp(1rem, 2.6vw, 2.2rem);
-  bottom: 1.9rem;
+  top: 4.6rem;
   z-index: 3;
   margin: 0;
   font-size: var(--t-xs);
@@ -1136,4 +1122,305 @@
   font-family: var(--sans);
   font-size: var(--t-xs);
   color: var(--encre-2);
+}
+
+/* ——— le projet : un récit simple */
+.projet-paragraphe {
+  max-width: 46rem;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  line-height: 1.7;
+  color: var(--encre);
+}
+.projet-etapes-simples {
+  display: grid;
+  gap: 1.1rem;
+  max-width: 46rem;
+  margin: 0.4rem 0 1.4rem;
+  padding: 0;
+  list-style: none;
+}
+.projet-etapes-simples li {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.projet-numero {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.7rem;
+  line-height: 1;
+  color: var(--encre-2);
+}
+.projet-etapes-simples p {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  line-height: 1.6;
+}
+.projet-sous-titre {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.15rem;
+  margin-bottom: 0.6rem;
+}
+.projet-regles {
+  margin-top: 0.4rem;
+}
+.objet-reel.fondateur img {
+  transform: none;
+  border-radius: 2px;
+}
+
+/* ——— juridique : l'essentiel en clair */
+.juridique-liste {
+  list-style: none;
+  padding: 0;
+  margin: 1.4rem 0 2rem;
+  display: grid;
+  gap: 1.6rem;
+  max-width: 46rem;
+}
+.juridique-liste .intertitre {
+  margin-bottom: 0.4rem;
+}
+.juridique-liste p {
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  line-height: 1.65;
+  color: var(--encre-2);
+}
+
+/* ——— archives : deux chemins par édition */
+.frise-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.6rem;
+  margin-top: 0.5rem;
+}
+.frise-liens .frise-ouvrir {
+  margin-top: 0;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 400ms var(--doux);
+}
+.frise-liens .frise-ouvrir:hover {
+  border-bottom-color: var(--filet-fort);
+}
+
+/* ——— entrer avec un code */
+.compte-entrer {
+  max-width: 34rem;
+}
+.formulaire-code {
+  max-width: 28rem;
+}
+.formulaire-code > p {
+  margin-bottom: 0.4rem;
+}
+.champ-code {
+  font-family: var(--serif);
+  font-size: 1.7rem !important;
+  letter-spacing: 0.4em;
+  max-width: 12rem;
+  text-align: center;
+}
+
+/* ——— mes traces, dans la page Compte */
+.mes-traces {
+  margin-bottom: 2.6rem;
+}
+.mes-traces > .intertitre {
+  margin-bottom: 0.6rem;
+}
+.ma-trace-sous-titre {
+  font-family: var(--serif);
+  font-weight: 450;
+  font-size: 1.1rem;
+  margin: 1.4rem 0 0.6rem;
+}
+
+/* ——— les choix de confidentialité : un interrupteur par choix */
+.choix-liste {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+}
+.choix-liste li + li {
+  border-top: 1px solid var(--filet);
+}
+.choix-ligne {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.75rem 0;
+  cursor: pointer;
+}
+.choix-ligne > .icon,
+.choix-ligne > .icon-brodee {
+  color: var(--encre-2);
+}
+.choix-texte-bloc {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.choix-nom {
+  font-weight: 500;
+}
+.choix-detail {
+  font-size: var(--t-xs);
+  color: var(--encre-2);
+  line-height: 1.45;
+}
+.interrupteur {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.interrupteur input {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 2.3rem;
+  height: 1.3rem;
+  margin: 0;
+  border: 1px solid var(--filet-fort);
+  border-radius: 1rem;
+  background: rgba(243, 241, 236, 0.8);
+  cursor: pointer;
+  transition: background 300ms var(--doux), border-color 300ms var(--doux);
+}
+.interrupteur input::after {
+  content: '';
+  position: absolute;
+  top: 0.14rem;
+  left: 0.16rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: var(--encre-2);
+  transition: transform 300ms var(--doux), background 300ms var(--doux);
+}
+.interrupteur input:checked {
+  background: var(--encre);
+  border-color: var(--encre);
+}
+.interrupteur input:checked::after {
+  transform: translateX(0.98rem);
+  background: var(--lin-clair);
+}
+.interrupteur-etat {
+  min-width: 2rem;
+  font-size: var(--t-xs);
+  color: var(--encre-2);
+}
+.compte-choix {
+  border: 0;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+.compte-choix legend {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  padding: 0;
+}
+
+/* ——— créer : « qui ? » sous la question 2 */
+.question-qui {
+  display: block;
+  margin-top: 0.9rem;
+  max-width: 24rem;
+}
+.question-qui input {
+  width: 100%;
+  background: rgba(243, 241, 236, 0.7);
+  border: 0;
+  border-bottom: 1px solid var(--filet-fort);
+  padding: 0.55rem 0.2rem;
+}
+.question-qui input:focus {
+  outline: none;
+  border-color: var(--encre);
+}
+
+/* ——— l'aperçu d'une mémoire : 500 caractères, une carte un peu plus large */
+.apercu.apercu-memoire {
+  width: min(400px, calc(100vw - 2rem));
+}
+.apercu.apercu-memoire .apercu-texte {
+  font-size: 1.02rem;
+  line-height: 1.5;
+  max-height: 46vh;
+  overflow: auto;
+}
+.apercu-demo.apercu-memoire .apercu-texte {
+  font-size: 1.04rem;
+}
+.perdre-carte.perdre-memoire .perdre-texte {
+  font-size: 1.05rem;
+  max-height: 40vh;
+  overflow: auto;
+}
+
+/* ——— se perdre : signaler, dans le coin de chaque carte */
+.perdre-carte {
+  position: relative;
+}
+.perdre-signaler {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.9rem;
+  color: var(--encre-3);
+}
+
+/* ——— profil introuvable : centré */
+.page-centree {
+  min-height: 80dvh;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.introuvable {
+  display: grid;
+  justify-items: center;
+  gap: 1.2rem;
+}
+.introuvable-texte {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.4rem, 1.1rem + 1.4vw, 2.2rem);
+}
+
+/* ——— admin : la raison s'écrit dans un vrai champ, assez large ; les choix de chacun */
+.admin-raison {
+  width: 100%;
+}
+.admin-raison textarea {
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: 40rem;
+  border: 1px solid var(--filet-fort);
+  border-radius: var(--rayon);
+  background: rgba(243, 241, 236, 0.8);
+  padding: 0.6rem 0.7rem;
+  font-family: var(--serif);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.admin-choix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1rem;
+  font-size: var(--t-xs);
+}
+.admin-choix .oui {
+  color: var(--encre);
+}
+.admin-choix .non {
+  color: var(--encre-3);
+}
+.admin-traits line {
+  stroke-width: 0.012;
 }

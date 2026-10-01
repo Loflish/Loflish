@@ -12,7 +12,7 @@ import { Icon } from './Icon';
  * visionneuse où il se lit vraiment.
  */
 
-const LABEL = { image: 'Photographie', video: 'Vidéo', audio: 'Enregistrement', document: 'Document', lien: 'Lien' } as const;
+const LABEL = { image: 'Photo', video: 'Vidéo', audio: 'Son', document: 'Document', lien: 'Lien' } as const;
 
 /** Ouvrir un média dans la visionneuse (fourni par la page qui l'affiche). */
 export const OuvrirMedia = createContext<((m: Media) => void) | null>(null);
@@ -49,7 +49,7 @@ export function MediaThumb({ m, size = 'm' }: { m: Media; size?: 's' | 'm' | 'l'
   const legende =
     size !== 's' ? (
       <figcaption>
-        <span className="media-kind">{LABEL[m.kind]}</span> {m.titre}
+        {m.titre} <span className="media-kind">({LABEL[m.kind].toLowerCase()})</span>
         {m.kind === 'lien' && hote(m.url) && <span className="media-hote">{hote(m.url)}</span>}
         {m.legende && size === 'l' && <span className="media-legende">{m.legende}</span>}
       </figcaption>
@@ -100,7 +100,6 @@ export function MediaVue({ m, onClose }: { m: Media; onClose: () => void }) {
     return () => window.removeEventListener('keydown', onKey, true);
   }, [onClose]);
   const lecteur = m.kind === 'lien' && m.url ? lecteurIntegre(m.url) : null;
-  const pdf = m.kind === 'document' && (m.mime === 'application/pdf' || /\.pdf$/i.test(m.nom ?? ''));
   const demo = !url && m.kind !== 'lien';
 
   return createPortal(
@@ -108,14 +107,14 @@ export function MediaVue({ m, onClose }: { m: Media; onClose: () => void }) {
       <div className="media-vue" role="dialog" aria-modal="true" aria-label={`${LABEL[m.kind]} : ${m.titre}`} tabIndex={-1} ref={ref} onClick={(e) => e.stopPropagation()}>
         <div className="media-vue-entete">
           <p className="media-vue-titre">
-            <span className="media-kind">{LABEL[m.kind]}</span> {m.titre}
+            {m.titre} <span className="media-kind">({LABEL[m.kind].toLowerCase()})</span>
           </p>
           <button className="icon-btn" onClick={onClose} aria-label="Fermer">
             <Icon name="fermer" size={20} />
           </button>
         </div>
         <div className="media-vue-corps">
-          {demo && <p className="muted">Exemple de démonstration : aucun fichier n’a été déposé ici.</p>}
+          {demo && <p className="muted">Aucun fichier n’a été déposé ici.</p>}
           {m.kind === 'image' && url && <img src={url} alt={m.legende || m.titre} />}
           {m.kind === 'video' && url && <video src={url} controls playsInline autoPlay />}
           {m.kind === 'audio' && url && (
@@ -125,13 +124,14 @@ export function MediaVue({ m, onClose }: { m: Media; onClose: () => void }) {
             </div>
           )}
           {m.kind === 'document' && url && (
+            // un document ne s'affiche pas : il se télécharge, simplement
             <div className="media-vue-doc">
-              {pdf && <iframe src={url} title={m.titre} />}
-              <p>
-                <Icon name="document" size={20} /> {m.nom ?? m.titre} {m.taille ? `· ${tailleLisible(m.taille)}` : ''}
+              <p className="media-vue-url">
+                <Icon name="document" size={20} /> {m.nom ?? m.titre}
+                {m.taille ? `, ${tailleLisible(m.taille)}` : ''}
               </p>
-              <a className="lien-entrer" href={url} download={m.nom ?? m.titre} target="_blank" rel="noopener noreferrer">
-                {pdf ? 'Ouvrir en plein écran' : 'Télécharger le document'} <Icon name="fleche" size={16} />
+              <a className="lien-entrer" href={url} download={m.nom ?? m.titre}>
+                Télécharger le document <Icon name="fleche" size={16} />
               </a>
             </div>
           )}
@@ -165,7 +165,7 @@ export function ChoixMedia({ value, onChange, id }: { value: MediaChoisi; onChan
 
   return (
     <div className="choix-media">
-      <div className="segmented segmented-petit" role="radiogroup" aria-label="Type de média">
+      <div className="segmented segmented-petit" role="radiogroup" aria-label="Fichier ou lien">
         <button type="button" role="radio" aria-checked={mode === 'fichier'} onClick={() => (setMode('fichier'), onChange(null), setErreur(''))}>
           Un fichier
         </button>
@@ -178,7 +178,7 @@ export function ChoixMedia({ value, onChange, id }: { value: MediaChoisi; onChan
           <div className="choix-media-fichier">
             {apercu ? <img src={apercu} alt="" /> : <Icon name={natureDe(value.file) === 'document' ? 'document' : 'play'} size={20} />}
             <span>
-              {value.file.name} · {tailleLisible(value.file.size)}
+              {value.file.name}, {tailleLisible(value.file.size)}
             </span>
             <button type="button" className="lien-discret petit" onClick={() => onChange(null)}>
               Retirer

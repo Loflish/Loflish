@@ -1,8 +1,7 @@
 /**
- * Les 200 caractères. Ils étaient brodés lettre à lettre ; ils s'écrivent
- * désormais simplement en IBM Plex Sans, dans un gris de fil (choix du créateur :
- * plus lisible, plus sobre). Le monde entier peut écrire ici, dans sa langue :
- * le sens de lecture suit le texte (dir="auto").
+ * Les mots d'une personne (les 200 caractères, ce qu'on dit d'un proche) :
+ * la même typographie que toutes les autres réponses. Le monde entier peut
+ * écrire ici, dans sa langue : le sens de lecture suit le texte (dir="auto").
  *
  * L'ancien alphabet brodé reste dans le dépôt (public/hd/alphabet.webp,
  * src/data/alphabet.json, design/hd/alphabet.py) si l'on veut y revenir.

@@ -3,8 +3,9 @@ import { z } from 'zod';
 import { exigerCompte, Refus } from '../auth';
 import { dejaAJour, etiquette, memoire } from '../cache';
 import { config } from '../config';
+import { envoyerSignalement } from '../courriel';
 import { journaliser, requete, une } from '../db';
-import { LONGUEUR_MAX_TRAIT, MONDE, RUBRIQUE_IDS } from '../regles';
+import { dansLOeuvre, LONGUEUR_TRAIT, RUBRIQUE_IDS } from '../regles';
 import { presence, trace, type LigneFragment, type LigneMedia, type LigneTrace } from '../serialiser';
 import { empreinte, jeton } from '../securite';
 import { stockage, type Plage } from '../stockage';
@@ -154,11 +155,11 @@ export async function routesPubliques(app: FastifyInstance) {
         traceId: z.string().max(40),
         fragmentId: z.string().uuid().optional(),
         mediaId: z.string().uuid().optional(),
-        motif: z.enum(['danger', 'haine', 'intime', 'usurpation', 'autre']),
+        motif: z.enum(['danger', 'haine', 'autre']),
         message: z.string().trim().max(2000).optional(),
       })
       .parse(req.body);
-    const t = await une('select id from traces where id = $1', [s.traceId]);
+    const t = await une<{ nom: string }>('select nom from traces where id = $1', [s.traceId]);
     if (!t) throw new Refus(404, 'Cette trace n’existe pas.', 'introuvable');
     await requete('insert into signalements (trace_id, fragment_id, media_id, motif, message, compte_id) values ($1, $2, $3, $4, $5, $6)', [
       s.traceId,
@@ -168,7 +169,34 @@ export async function routesPubliques(app: FastifyInstance) {
       s.message ?? null,
       req.compte?.id ?? null,
     ]);
+    // le fondateur le reçoit aussitôt par e-mail (sans faire attendre la personne qui signale)
+    void envoyerSignalement({ motif: s.motif, message: s.message, traceId: s.traceId, traceNom: t.nom });
     return { ok: true };
+  });
+
+  // le lien partagé : une page minuscule qui donne un aperçu propre dans les messageries
+  // (le nom, les premiers mots), puis ouvre le musée sur la bulle de la personne
+  app.get('/b/:id', async (req, rep) => {
+    const { id } = z.object({ id: z.string().max(40) }).parse(req.params);
+    const t = await une<LigneTrace>(`select id, nom, type, q4, memoire_apercu from traces where id = $1 and statut = 'publiee'`, [id]);
+    const cible = `${config.siteUrl}/#/bulle/${encodeURIComponent(id)}`;
+    const e = (x: string) => x.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+    const titre = t ? `${t.nom}, sur Nos Mots Mémoriaux` : 'Nos Mots Mémoriaux';
+    const texte = t ? (t.type === 'personnelle' ? t.q4 : t.memoire_apercu) ?? '' : 'Un musée vivant des dernières volontés.';
+    const resume = texte.length > 200 ? texte.slice(0, 197).replace(/\s+\S*$/, '') + '…' : texte;
+    rep.header('cache-control', 'public, max-age=300');
+    return rep.type('text/html; charset=utf-8').send(`<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<title>${e(titre)}</title>
+<meta name="description" content="${e(resume)}">
+<meta property="og:title" content="${e(titre)}">
+<meta property="og:description" content="${e(resume)}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Nos Mots Mémoriaux">
+<meta property="og:image" content="${config.siteUrl}/brand/apercu-partage.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta http-equiv="refresh" content="0; url=${e(cible)}">
+<link rel="canonical" href="${e(cible)}">
+</head><body><p><a href="${e(cible)}">${e(titre)}</a></p><script>location.replace(${JSON.stringify(cible)})</script></body></html>`);
   });
 
   // ——— l'œuvre commune : un seul trait par personne et par appareil
@@ -192,9 +220,9 @@ export async function routesPubliques(app: FastifyInstance) {
   app.post('/api/traits', { config: { rateLimit: { max: 5, timeWindow: '1 hour' } } }, async (req, rep) => {
     const c = exigerCompte(req);
     const p = z.object({ x1: z.number(), y1: z.number(), x2: z.number(), y2: z.number() }).parse(req.body);
-    const dansLOeuvre = (x: number, y: number) => x >= 0 && y >= 0 && x <= MONDE.l && y <= MONDE.h;
     if (!dansLOeuvre(p.x1, p.y1) || !dansLOeuvre(p.x2, p.y2)) throw new Refus(400, 'Le trait doit rester dans l’œuvre.', 'hors');
-    if (Math.hypot(p.x2 - p.x1, p.y2 - p.y1) > LONGUEUR_MAX_TRAIT + 1e-6) throw new Refus(400, 'Ce trait est trop long.', 'long');
+    // tous les fils ont la même longueur
+    if (Math.abs(Math.hypot(p.x2 - p.x1, p.y2 - p.y1) - LONGUEUR_TRAIT) > LONGUEUR_TRAIT * 0.02) throw new Refus(400, 'Chaque fil a la même longueur.', 'longueur');
     let brut = req.cookies[APPAREIL];
     if (!brut) {
       brut = jeton(18);

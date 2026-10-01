@@ -29,7 +29,7 @@ export const PAYS = [
   'France', 'Belgique', 'Suisse', 'Canada', 'Maroc', 'Algérie', 'Tunisie', 'Sénégal', 'Côte d’Ivoire',
   'Cameroun', 'Italie', 'Espagne', 'Portugal', 'Allemagne', 'Pologne', 'Royaume-Uni', 'Irlande',
   'Japon', 'Corée du Sud', 'Viêt Nam', 'Inde', 'Brésil', 'Mexique', 'Argentine', 'Chili',
-  'États-Unis', 'Liban', 'Turquie', 'Grèce', 'Suède', 'Norvège', 'Madagascar', 'Haïti', 'Québec — Canada',
+  'États-Unis', 'Liban', 'Turquie', 'Grèce', 'Suède', 'Norvège', 'Madagascar', 'Haïti', 'Canada',
 ];
 
 export const Q1 = [
@@ -160,7 +160,7 @@ export const POOL = {
   oeuvres: [
     { titre: 'Cent ans de solitude', categorie: 'Livre', texte: 'Parce qu’il ressemblait à ma famille.' },
     { titre: 'Le Voyage de Chihiro', categorie: 'Film', texte: 'Il m’a appris à ne pas oublier mon nom.' },
-    { titre: 'Nina Simone — Feeling Good', categorie: 'Musique', texte: 'Ma chanson des nouveaux départs.' },
+    { titre: 'Nina Simone, Feeling Good', categorie: 'Musique', texte: 'Ma chanson des nouveaux départs.' },
     { titre: 'La Nuit étoilée', categorie: 'Peinture', texte: 'Je l’avais en poster au-dessus de mon lit.' },
     { titre: 'One Piece', categorie: 'Manga', texte: 'Pour l’amitié, toujours.' },
     { titre: 'Journey', categorie: 'Jeu vidéo', texte: 'J’ai pleuré à la fin avec un inconnu à l’autre bout du monde.' },

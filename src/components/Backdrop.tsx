@@ -85,7 +85,6 @@ export function Backdrop() {
   const cvsRef = useRef<HTMLCanvasElement>(null);
   const atmo = useRef<Atmosphere | null>(null);
   const hoverLabel = useRef<HTMLDivElement>(null);
-  const nearLabels = useRef<(HTMLDivElement | null)[]>([]);
   const cardRef = useRef<HTMLDivElement>(null);
   const encreRef = useRef<HTMLCanvasElement>(null);
   const encre = useRef<Encre | null>(null);
@@ -161,20 +160,13 @@ export function Backdrop() {
       if (hl) {
         const pos = show ? c.screenPos(show) : null;
         if (pos) {
-          hl.style.transform = `translate(${pos.x}px, ${pos.y + pos.r + 8}px) translateX(-50%)`;
+          // le nom se pose à côté de la bulle, comme le cartel d'une œuvre (à gauche près du bord droit)
+          const gauche = pos.x + pos.r + 12 + hl.offsetWidth > window.innerWidth - 12;
+          const x = gauche ? pos.x - pos.r - 12 - hl.offsetWidth : pos.x + pos.r + 12;
+          hl.style.transform = `translate(${x}px, ${pos.y}px) translateY(-55%)`;
           hl.dataset.visible = 'true';
         } else hl.dataset.visible = 'false';
       }
-      nearLabels.current.forEach((el, i) => {
-        if (!el) return;
-        const id = c.nearIds[i];
-        const pos = id ? c.screenPos(id) : null;
-        if (pos && id) {
-          el.textContent = c.presence(id)?.nom ?? '';
-          el.style.transform = `translate(${pos.x}px, ${pos.y + pos.r + 6}px) translateX(-50%)`;
-          el.dataset.visible = 'true';
-        } else el.dataset.visible = 'false';
-      });
       const card = cardRef.current;
       if (card && c.selectedId && window.innerWidth >= 700) {
         const pos = c.screenPos(c.selectedId);
@@ -210,7 +202,7 @@ export function Backdrop() {
     engine.current?.setReducedMotion(reducedMotion);
   }, [reducedMotion, engine]);
 
-  // ta bulle se distingue — uniquement sur ton appareil, pour toi seul·e
+  // ta bulle se distingue, uniquement sur ton appareil
   useEffect(() => {
     engine.current?.setOwn(new Set(mesTraces.map((t) => t.id)));
   }, [mesTraces, engine]);
@@ -247,7 +239,7 @@ export function Backdrop() {
         className="backdrop-constellation"
         tabIndex={interactive ? 0 : -1}
         role="application"
-        aria-label="Constellation des présences. Flèches pour se déplacer, plus et moins pour s’approcher, Entrée pour rencontrer la présence la plus proche du centre."
+        aria-label="Constellation des présences. Chaque bulle est une personne."
         style={{ pointerEvents: interactive ? 'auto' : 'none' }}
       />
       {HD ? (
@@ -265,9 +257,6 @@ export function Backdrop() {
       {createPortal(<canvas ref={encreRef} className="encre" aria-hidden="true" hidden />, document.body)}
 
       <div className="names" aria-hidden="true">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="name-label is-near" ref={(el) => (nearLabels.current[i] = el)} data-visible="false" />
-        ))}
         <div ref={hoverLabel} className="name-label" data-visible="false">
           {hovered ? getTrace(hovered)?.nom : ''}
         </div>
@@ -278,7 +267,7 @@ export function Backdrop() {
         createPortal(
         <div
           ref={cardRef}
-          className={`apercu${entering ? ' is-leaving' : ''}`}
+          className={`apercu${entering ? ' is-leaving' : ''}${trace.type === 'memoire' ? ' apercu-memoire' : ''}`}
           role="dialog"
           aria-label={`Aperçu de ${trace.nom}`}
           onKeyDown={(e) => e.key === 'Escape' && engine.current?.select(null)}
@@ -289,7 +278,7 @@ export function Backdrop() {
           <p className="apercu-nom">{trace.nom}</p>
           <p className="apercu-type">
             {TYPE_LABEL[trace.type]}
-            {trace.pays ? ` · ${trace.pays}` : ''}
+            {trace.pays ? `, ${trace.pays}` : ''}
           </p>
           <p className="apercu-texte">
             <TexteBrode texte={apercu(trace)} />

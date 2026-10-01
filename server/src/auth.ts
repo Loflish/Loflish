@@ -1,14 +1,18 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { config } from './config';
-import { envoyerLienChangement, envoyerLienConnexion } from './courriel';
+import { randomInt, timingSafeEqual } from 'node:crypto';
+import { envoyerCodeChangement, envoyerCodeConnexion } from './courriel';
 import { journaliser, requete, transaction, une } from './db';
+import { empreinteIp } from './bannis';
 import { empreinte, jeton } from './securite';
 
 /**
- * Entrer dans le musée : sans mot de passe. La personne donne son e-mail, reçoit
- * un lien valable 20 minutes et à usage unique ; le lien ouvre une session de
- * 90 jours dans un cookie protégé (inaccessible au JavaScript de la page).
+ * Entrer dans le musée : sans mot de passe. La personne donne son e-mail et
+ * reçoit un code à six chiffres, valable 15 minutes, qui ne sert qu'une fois
+ * (cinq essais au plus). Le code ouvre une session de 90 jours dans un cookie
+ * protégé (inaccessible au JavaScript de la page) : sur cet appareil, la
+ * personne reste connectée.
  */
 
 export interface Compte {
@@ -27,7 +31,8 @@ declare module 'fastify' {
 
 export const COOKIE = 'nmm_session';
 const DUREE_SESSION_JOURS = 90;
-const DUREE_LIEN_MIN = 20;
+const DUREE_CODE_MIN = 15;
+const ESSAIS_MAX = 5;
 
 export class Refus extends Error {
   constructor(
@@ -41,13 +46,13 @@ export class Refus extends Error {
 
 export function exigerCompte(req: FastifyRequest): Compte {
   if (!req.compte) throw new Refus(401, 'Connecte-toi pour continuer.', 'connexion');
-  if (req.compte.suspendu) throw new Refus(403, 'Ce compte est suspendu. Écris-nous si tu penses que c’est une erreur.', 'suspendu');
+  if (req.compte.suspendu) throw new Refus(403, 'Ce compte est suspendu. Écris au fondateur si tu penses que c’est une erreur.', 'suspendu');
   return req.compte;
 }
 
 export function exigerRole(req: FastifyRequest, ...roles: Compte['role'][]): Compte {
   const c = exigerCompte(req);
-  if (!roles.includes(c.role)) throw new Refus(403, 'Cette partie est réservée à l’équipe du musée.', 'role');
+  if (!roles.includes(c.role)) throw new Refus(403, 'Cette partie est réservée au fondateur du musée.', 'role');
   return c;
 }
 
@@ -75,56 +80,90 @@ export async function chargerCompte(req: FastifyRequest) {
   }
 }
 
+/** Un code à six chiffres, et son empreinte (liée à l'adresse : un code ne vaut que pour elle). */
+function nouveauCode(email: string): { code: string; empreinte: string } {
+  const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
+  return { code, empreinte: empreinte(`code:${email}:${code}`) };
+}
+
+/** Garde un code en attente pour cette adresse (et, pour un changement d'adresse, pour ce compte). */
+async function garderCode(email: string, compteId: string | null): Promise<string> {
+  const { code, empreinte: e } = nouveauCode(email);
+  // un nouveau code remplace les précédents
+  await requete('update liens_connexion set utilise_le = now() where email = $1 and utilise_le is null and compte_id is not distinct from $2', [email, compteId]);
+  await requete(
+    `insert into liens_connexion (empreinte, email, code_empreinte, compte_id, expire_le) values ($1, $2, $3, $4, now() + interval '${DUREE_CODE_MIN} minutes')`,
+    [empreinte(jeton()), email, e, compteId],
+  );
+  return code;
+}
+
+/**
+ * Vérifie le code de cette adresse ; il ne sert qu'une fois, et cinq erreurs l'annulent.
+ * Hors transaction : un essai manqué est compté même si la suite échoue.
+ */
+async function verifierCode(email: string, code: string, compteId: string | null): Promise<void> {
+  const ligne = await une<{ empreinte: string; code_empreinte: string; essais: number }>(
+    `select empreinte, code_empreinte, essais from liens_connexion
+      where email = $1 and compte_id is not distinct from $2 and code_empreinte is not null
+        and utilise_le is null and expire_le > now()
+      order by cree_le desc limit 1`,
+    [email, compteId],
+  );
+  if (!ligne) throw new Refus(400, 'Ce code a expiré. Demande-en un nouveau.', 'code-expire');
+  const attendu = Buffer.from(ligne.code_empreinte);
+  const donne = Buffer.from(empreinte(`code:${email}:${code}`));
+  if (attendu.length !== donne.length || !timingSafeEqual(attendu, donne)) {
+    const r = await une<{ essais: number }>(
+      `update liens_connexion set essais = essais + 1,
+              utilise_le = case when essais + 1 >= ${ESSAIS_MAX} then now() else utilise_le end
+        where empreinte = $1 returning essais`,
+      [ligne.empreinte],
+    );
+    if ((r?.essais ?? ESSAIS_MAX) >= ESSAIS_MAX) throw new Refus(400, 'Trop d’essais. Demande un nouveau code.', 'code-essais');
+    throw new Refus(400, 'Ce code ne correspond pas. Vérifie les six chiffres reçus.', 'code-faux');
+  }
+  const utilise = await une('update liens_connexion set utilise_le = now() where empreinte = $1 and utilise_le is null returning empreinte', [ligne.empreinte]);
+  if (!utilise) throw new Refus(400, 'Ce code a déjà servi. Demande-en un nouveau.', 'code-expire');
+}
+
+const schemaEmail = z.string().trim().toLowerCase().email().max(200);
+const schemaCode = z.string().trim().regex(/^\d{6}$/, 'six chiffres');
+
 export async function routesAuth(app: FastifyInstance) {
 
-  // 1. demander un lien
-  app.post('/api/auth/lien', { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } }, async (req) => {
-    const { email } = z.object({ email: z.string().trim().toLowerCase().email().max(200) }).parse(req.body);
-    const j = jeton();
-    await requete(`insert into liens_connexion (empreinte, email, expire_le) values ($1, $2, now() + interval '${DUREE_LIEN_MIN} minutes')`, [empreinte(j), email]);
-    const lien = `${config.siteUrl}/#/connexion?jeton=${j}`;
-    await envoyerLienConnexion(email, lien);
-    // en développement, le lien est aussi renvoyé (pour tester sans boîte mail)
-    return config.production ? { envoye: true } : { envoye: true, lien };
+  // 1. recevoir un code par e-mail
+  app.post('/api/auth/code', { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } }, async (req) => {
+    const { email } = z.object({ email: schemaEmail }).parse(req.body);
+    const code = await garderCode(email, null);
+    await envoyerCodeConnexion(email, code);
+    // en développement, le code est aussi renvoyé (pour essayer sans boîte mail)
+    return config.production ? { envoye: true } : { envoye: true, code };
   });
 
-  // 2. ouvrir la session avec le lien reçu
+  // 2. entrer avec le code reçu : la session s'ouvre sur cet appareil
   app.post('/api/auth/verifier', { config: { rateLimit: { max: 20, timeWindow: '15 minutes' } } }, async (req, rep) => {
-    const { jeton: j } = z.object({ jeton: z.string().min(20).max(200) }).parse(req.body);
-    const compte = await transaction(async (c) => {
-      const lien = await une<{ email: string; compte_id: string | null }>(
-        `update liens_connexion set utilise_le = now()
-          where empreinte = $1 and utilise_le is null and expire_le > now()
-          returning email, compte_id`,
-        [empreinte(j)],
-        c,
-      );
-      if (!lien) throw new Refus(400, 'Ce lien a expiré ou a déjà servi. Demande-en un nouveau.', 'lien');
-      // un lien de changement d'adresse : le compte prend la nouvelle adresse
-      if (lien.compte_id) {
-        const deja = await une('select 1 from comptes where email = $1 and id <> $2', [lien.email, lien.compte_id], c);
-        if (deja) throw new Refus(409, 'Cette adresse est déjà utilisée par un autre compte.', 'pris');
-        const ancien = await une<{ email: string }>('select email from comptes where id = $1', [lien.compte_id], c);
-        if (!ancien) throw new Refus(400, 'Ce compte n’existe plus.', 'lien');
-        await requete('update comptes set email = $2 where id = $1', [lien.compte_id, lien.email], c);
-        await journaliser(lien.compte_id, 'compte.email_change', lien.compte_id, {}, c);
-      }
-      const role = config.admins.includes(lien.email) ? 'admin' : null;
+    const { email, code } = z.object({ email: schemaEmail, code: schemaCode }).parse(req.body);
+    const ip = empreinteIp(req.ip);
+    await verifierCode(email, code, null);
+    const r = await transaction(async (c) => {
+      const role = config.admins.includes(email) ? 'admin' : null;
       const compte = (await une<Compte>(
-        `insert into comptes (email, role) values ($1, coalesce($2, 'membre'))
-         on conflict (email) do update set derniere_connexion = now(),
+        `insert into comptes (email, role, derniere_connexion, derniere_ip) values ($1, coalesce($2, 'membre'), now(), $3)
+         on conflict (email) do update set derniere_connexion = now(), derniere_ip = $3,
            role = case when $2::text is not null then $2::text else comptes.role end
          returning id, email, role, majeur_le, suspendu`,
-        [lien.email, role],
+        [email, role, ip],
         c,
       ))!;
+      if (compte.suspendu) throw new Refus(403, 'Ce compte est suspendu.', 'suspendu');
       const s = jeton();
-      await requete(`insert into sessions (empreinte, compte_id, expire_le) values ($1, $2, now() + interval '${DUREE_SESSION_JOURS} days')`, [empreinte(s), compte.id], c);
+      await requete(`insert into sessions (empreinte, compte_id, expire_le, ip) values ($1, $2, now() + interval '${DUREE_SESSION_JOURS} days', $3)`, [empreinte(s), compte.id, ip], c);
       await journaliser(compte.id, 'connexion', null, {}, c);
-      return { compte, s, changement: !!lien.compte_id };
+      return { compte, s };
     });
-    rep.setCookie(COOKIE, compte.s, optionsCookie());
-    return { compte: publicCompte(compte.compte), changement: compte.changement };
+    rep.setCookie(COOKIE, r.s, optionsCookie());
+    return { compte: publicCompte(r.compte) };
   });
 
   app.post('/api/auth/deconnexion', async (req, rep) => {
@@ -136,20 +175,28 @@ export async function routesAuth(app: FastifyInstance) {
 
   app.get('/api/moi', async (req) => ({ compte: req.compte ? publicCompte(req.compte) : null }));
 
-  // changer d'adresse e-mail : rien ne change tant que le lien envoyé à la nouvelle adresse n'est pas ouvert
+  // changer d'adresse e-mail : un code part vers la nouvelle adresse ; rien ne change avant qu'il soit donné
   app.post('/api/moi/email', { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } }, async (req) => {
     const c = exigerCompte(req);
-    const { email } = z.object({ email: z.string().trim().toLowerCase().email().max(200) }).parse(req.body);
+    const { email } = z.object({ email: schemaEmail }).parse(req.body);
     if (email === c.email) throw new Refus(400, 'C’est déjà ton adresse.', 'meme');
     if (await une('select 1 from comptes where email = $1', [email])) throw new Refus(409, 'Cette adresse est déjà utilisée par un autre compte.', 'pris');
-    const j = jeton();
-    await requete(
-      `insert into liens_connexion (empreinte, email, expire_le, compte_id) values ($1, $2, now() + interval '${DUREE_LIEN_MIN} minutes', $3)`,
-      [empreinte(j), email, c.id],
-    );
-    const lien = `${config.siteUrl}/#/connexion?jeton=${j}`;
-    await envoyerLienChangement(email, lien);
-    return config.production ? { envoye: true } : { envoye: true, lien };
+    const code = await garderCode(email, c.id);
+    await envoyerCodeChangement(email, code);
+    return config.production ? { envoye: true } : { envoye: true, code };
+  });
+
+  app.post('/api/moi/email/confirmer', { config: { rateLimit: { max: 20, timeWindow: '15 minutes' } } }, async (req) => {
+    const c = exigerCompte(req);
+    const { email, code } = z.object({ email: schemaEmail, code: schemaCode }).parse(req.body);
+    await verifierCode(email, code, c.id);
+    await transaction(async (tx) => {
+      if (await une('select 1 from comptes where email = $1 and id <> $2', [email, c.id], tx))
+        throw new Refus(409, 'Cette adresse est déjà utilisée par un autre compte.', 'pris');
+      await requete('update comptes set email = $2 where id = $1', [c.id, email], tx);
+      await journaliser(c.id, 'compte.email_change', c.id, {}, tx);
+    });
+    return { compte: publicCompte({ ...c, email }) };
   });
 
   // déclarer avoir 18 ans ou plus (demandé avant de créer une trace)

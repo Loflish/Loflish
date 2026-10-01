@@ -1,5 +1,6 @@
 import { appel, EN_LIGNE, ErreurApi } from './api';
 import { rng } from './random';
+import { COEUR, dansLOeuvre, LONGUEUR } from '../data/oeuvre-regles';
 
 /**
  * L'œuvre commune : chaque personne coud un seul trait, et tous les traits
@@ -12,12 +13,13 @@ import { rng } from './random';
  * - partout ailleurs (prototype), le trait reste sur cet appareil.
  * Dans les deux cas, un seul trait par personne et par appareil.
  *
- * Le monde mesure 1,6 × 1 : les coordonnées ne dépendent pas de l'écran.
+ * La toile est immense (16 × 10, centrée sur le cœur de l'œuvre, là où elle a
+ * commencé) : on s'y promène comme dans la constellation. Les coordonnées ne
+ * dépendent pas de l'écran. Tous les fils ont la même longueur, comme toutes
+ * les bulles ont la même taille.
  */
 
-export const MONDE = { l: 1.6, h: 1 };
-/** Un trait ne traverse pas toute l'œuvre : il laisse de la place aux autres. */
-export const LONGUEUR_MAX = 0.3;
+export { arrivee, COEUR, dansLOeuvre, LONGUEUR, MONDE } from '../data/oeuvre-regles';
 
 export interface Trait {
   id: string;
@@ -25,7 +27,7 @@ export interface Trait {
   y1: number;
   x2: number;
   y2: number;
-  /** trait d'exemple du prototype, montré en pâle */
+  /** trait d'exemple (aperçu seulement), montré en pâle */
   demo?: boolean;
   /** le trait de la personne qui regarde */
   moi?: boolean;
@@ -54,14 +56,17 @@ function lireLocal(): Trait | null {
 function valide(d: Record<string, unknown> | undefined): d is { x1: number; y1: number; x2: number; y2: number } {
   if (!d) return false;
   const n = [d.x1, d.y1, d.x2, d.y2];
-  return n.every((v) => typeof v === 'number' && Number.isFinite(v) && v >= -0.05 && v <= 1.7);
+  if (!n.every((v) => typeof v === 'number' && Number.isFinite(v))) return false;
+  return dansLOeuvre(d.x1 as number, d.y1 as number) && dansLOeuvre(d.x2 as number, d.y2 as number);
 }
 
-/** Traits d'exemple : des chemins qui se prolongent les uns les autres, comme une broderie qui pousse. */
+/** Traits d'exemple (aperçu seulement) : des chemins qui se prolongent les uns les autres, comme une broderie qui pousse. */
 export function traitsExemple(n = 420): Trait[] {
   const r = rng(20261001);
   const out: Trait[] = [];
   const bouts: [number, number, number][] = [];
+  // ils naissent au cœur de l'œuvre et débordent un peu autour
+  const zone = { x0: COEUR.x - 0.6, y0: COEUR.y - 0.4, x1: COEUR.x + COEUR.l + 0.6, y1: COEUR.y + COEUR.h + 0.4 };
   for (let i = 0; i < n; i++) {
     let x: number, y: number, a: number;
     const u = r();
@@ -76,19 +81,17 @@ export function traitsExemple(n = 420): Trait[] {
       y = b[1] + (r() - 0.5) * 0.08;
       a = r() * Math.PI * 2;
     } else {
-      x = 0.12 + r() * (MONDE.l - 0.24);
-      y = 0.12 + r() * (MONDE.h - 0.24);
+      x = zone.x0 + r() * (zone.x1 - zone.x0);
+      y = zone.y0 + r() * (zone.y1 - zone.y0);
       a = r() * Math.PI * 2;
     }
-    const l = 0.025 + r() ** 2.2 * (LONGUEUR_MAX - 0.04);
-    // près d'un bord, le fil fait demi-tour au lieu de s'y écraser
-    const m = 0.06;
-    if (x + Math.cos(a) * l < m || x + Math.cos(a) * l > MONDE.l - m) a = Math.PI - a;
-    if (y + Math.sin(a) * l < m || y + Math.sin(a) * l > MONDE.h - m) a = -a;
-    const x2 = Math.min(MONDE.l - m, Math.max(m, x + Math.cos(a) * l));
-    const y2 = Math.min(MONDE.h - m, Math.max(m, y + Math.sin(a) * l));
+    // près du bord de la zone, le fil fait demi-tour
+    if (x + Math.cos(a) * LONGUEUR < zone.x0 || x + Math.cos(a) * LONGUEUR > zone.x1) a = Math.PI - a;
+    if (y + Math.sin(a) * LONGUEUR < zone.y0 || y + Math.sin(a) * LONGUEUR > zone.y1) a = -a;
+    const x2 = x + Math.cos(a) * LONGUEUR;
+    const y2 = y + Math.sin(a) * LONGUEUR;
     out.push({ id: `ex${i}`, x1: x, y1: y, x2, y2, demo: true });
-    bouts.push([x2, y2, Math.atan2(y2 - y, x2 - x)]);
+    bouts.push([x2, y2, a]);
   }
   return out;
 }
@@ -156,7 +159,7 @@ export function ecouterOeuvre(cb: (o: Oeuvre) => void): { coudre: (t: Omit<Trait
       db = d;
       stop = d
         .collection('traits')
-        .limit(1000)
+        .limit(5000)
         .onSnapshot(
           (s) => {
             const traits: Trait[] = [];

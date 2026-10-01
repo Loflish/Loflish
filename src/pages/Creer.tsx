@@ -1,20 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BubbleImage, PageTop } from '../components/Chrome';
 import { TexteBrode } from '../components/TexteBrode';
 import { Icon } from '../components/Icon';
-import { demanderLien, deposerFragment, peutCreer, publier, publishLocal, retenirEmailLocal, useCompte, useMesTraces } from '../data/store';
+import { dateLongue, peutCreer, publier, publishLocal, retenirEmailLocal, useCompte, useMesTraces } from '../data/store';
 import { EN_LIGNE } from '../lib/api';
 import { CONTACT } from '../lib/contact';
-import { LienDeveloppement } from './Pages';
-import { LIMITES, QUESTIONS, type Trace } from '../data/types';
+import { FormulaireCode } from './Pages';
+import { LIMITES, QUESTION_MEMOIRE, QUESTIONS, type Trace } from '../data/types';
 import { MATIERE_COUSUE, NB_MATIERES, loadCatalogue } from '../lib/hd';
 import { GRIS_PALETTE, colorById } from '../lib/palette';
-import { hashString } from '../lib/random';
+import { listePays, PAYS_AUTRE } from '../lib/pays';
 import { useMuseum, useMuseumMode } from '../lib/museum';
 
 /**
- * Créer ma trace — parcours court pour publier, profond ensuite.
+ * Créer ma trace : un parcours court pour publier, profond ensuite.
  * Créer → Compte → Identité publique → 4 questions → Aperçu → Enrichir → Vérifier → Publier.
  * Le brouillon est privé et enregistré automatiquement.
  */
@@ -32,8 +32,12 @@ interface Draft {
   /** matière de la bulle (0 = aquarelle cousue, 1 à 92 = taches), choisie dans le catalogue complet ; -1 tant qu'elle n'est pas tirée */
   matiere: number;
   q: [string, string, string, string];
+  /** facultatif : à qui pense la personne en répondant à la question 2 */
+  q2Dest: string;
+  /** mémoire : le prénom de qui la dépose (facultatif) et son lien avec la personne */
+  deposant: string;
   relation: string;
-  origine: string;
+  /** mémoire : « Que peux-tu me dire sur cette personne ? » (500 caractères, aussi l'aperçu de sa bulle) */
   souvenir: string;
   opts: { archives: boolean; musee: boolean; broderie: boolean; reseaux: boolean };
   droits: boolean;
@@ -49,16 +53,15 @@ const EMPTY: Draft = {
   couleur: '',
   matiere: -1,
   q: ['', '', '', ''],
+  q2Dest: '',
+  deposant: '',
   relation: '',
-  origine: '',
   souvenir: '',
   opts: { archives: false, musee: false, broderie: false, reseaux: false },
   droits: false,
 };
 
 const KEY = 'nmm:brouillon';
-/** en ligne : publier le brouillon dès le retour du lien de connexion */
-export const APRES_CONNEXION = 'nmm:publier-apres-connexion';
 
 /** Une matière au hasard dans tout le catalogue : l'aquarelle cousue (0) ou l'une des 92 taches. */
 function matiereAuHasard(): number {
@@ -114,22 +117,22 @@ export function Creer() {
     setD((x) => ({ ...x, ...p }));
   };
 
-  const steps = d.kind === 'memoire' ? ['Choisir', 'Compte', 'La personne', 'Un premier souvenir', 'Aperçu', 'Vérifier'] : ['Choisir', 'Compte', 'Identité', 'Les 4 questions', 'Aperçu', 'Enrichir', 'Vérifier'];
+  const steps = d.kind === 'memoire' ? ['Choisir', 'Compte', 'La personne', 'Ce que tu sais d’elle', 'Aperçu', 'Vérifier'] : ['Choisir', 'Compte', 'Identité', 'Les 4 questions', 'Aperçu', 'Enrichir', 'Vérifier'];
   const last = steps.length - 1;
   const displayName = d.identite === 'anonyme' ? 'Anonyme' : d.nom.trim() || (d.kind === 'memoire' ? 'La personne' : 'Ton nom');
   const draftId = useMemo(() => `moi-${Math.random().toString(36).slice(2, 8)}`, []);
 
+  const { compte } = useCompte();
   const canNext = (() => {
     if (step === 0) return !!d.kind;
-    if (step === 1) return /.+@.+\..+/.test(d.email) && d.majeur;
+    if (step === 1) return (EN_LIGNE ? !!compte : /.+@.+\..+/.test(d.email)) && d.majeur;
     if (step === 2) return (d.identite === 'anonyme' || d.nom.trim().length > 0) && !!d.couleur;
     if (step === 3) return d.kind === 'memoire' ? d.souvenir.trim().length > 0 : d.q.every((x) => x.trim().length > 0);
     if (step === last) return d.droits;
     return true;
   })();
 
-  const [attente, setAttente] = useState<'' | 'lien' | 'erreur'>('');
-  const [lienDev, setLienDev] = useState<string | undefined>();
+  const [attente, setAttente] = useState<'' | 'erreur'>('');
   const [messageServeur, setMessageServeur] = useState('');
 
   /** La bulle rejoint les autres : la constellation l'accueille, puis son profil s'ouvre. */
@@ -137,7 +140,6 @@ export function Creer() {
     setPublishing(true);
     try {
       localStorage.removeItem(KEY);
-      localStorage.removeItem(APRES_CONNEXION);
     } catch {
       /* ignore */
     }
@@ -154,19 +156,14 @@ export function Creer() {
       retenirEmailLocal(d.email);
       return terminer(t);
     }
-    // en ligne : il faut être connecté ; sinon le lien part vers l'adresse donnée, et la trace
-    // sera scellée et publiée dès que la personne l'aura ouvert
     try {
       setAttente('');
       const r = await publier(t, d.majeur);
+      // la session a pu se fermer entre-temps : on revient à l'étape du compte
       if (r.connexion) {
-        localStorage.setItem(APRES_CONNEXION, '1');
-        setLienDev((await demanderLien(d.email.trim())).lien);
-        setAttente('lien');
+        setStep(1);
         return;
       }
-      if (d.kind === 'memoire' && d.souvenir.trim())
-        await deposerFragment(r.trace!.id, 'souvenirs', { texte: d.souvenir.trim().slice(0, 1200) }, null).catch(() => undefined);
       terminer(r.trace!);
     } catch (e) {
       setMessageServeur(e instanceof Error ? e.message : 'La trace n’a pas pu être publiée.');
@@ -174,19 +171,8 @@ export function Creer() {
     }
   };
 
-  // retour depuis le lien reçu par e-mail : on publie aussitôt
-  const [params] = useSearchParams();
-  const { compte } = useCompte();
-  const dejaLance = useRef(false);
-  useEffect(() => {
-    if (!EN_LIGNE || dejaLance.current || params.get('publier') !== '1' || !compte || !d.kind) return;
-    dejaLance.current = true;
-    void publish();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [compte, params]);
-
   function construire(): Trace {
-    const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const today = dateLongue(new Date());
     const t: Trace = {
       id: draftId,
       nom: displayName,
@@ -196,15 +182,13 @@ export function Creer() {
       pays: d.pays || undefined,
       creeLe: today,
       majLe: today,
-      questions: d.kind === 'memoire' ? undefined : d.q,
-      memoire:
-        d.kind === 'memoire'
-          ? { deposeePar: 'Toi', relation: d.relation || undefined, origine: d.origine || undefined, aperçu: d.souvenir.slice(0, 200) }
-          : undefined,
-      rubriques: d.kind === 'memoire' ? { souvenirs: [{ id: 'm0', texte: d.souvenir }] } : {},
+      questions: d.kind === 'memoire' ? undefined : (d.q.map((x) => x.trim()) as Draft['q']),
+      q2Destinataire: d.kind === 'memoire' ? undefined : d.q2Dest.trim() || undefined,
+      memoire: d.kind === 'memoire' ? deposant() : undefined,
+      rubriques: {},
       medias: [],
       parametres: {
-        droitsReutilisation: d.opts.broderie || d.opts.musee,
+        droitsReutilisation: d.opts.broderie,
         archivageLongueDuree: d.opts.archives,
         choixApresDeces: 'Laisser ma trace telle quelle',
         reseauxSociaux: d.opts.reseaux,
@@ -214,6 +198,18 @@ export function Creer() {
     return t;
   }
 
+  /** Qui dépose la mémoire : « Léa, sa petite-fille », « sa petite-fille », ou « un proche ». */
+  function deposant(): NonNullable<Trace['memoire']> {
+    const prenom = d.deposant.trim();
+    const lien = d.relation.trim();
+    const minuscule = (x: string) => x.charAt(0).toLowerCase() + x.slice(1);
+    return {
+      deposeePar: prenom || (lien ? minuscule(lien) : 'un proche'),
+      relation: prenom && lien ? lien : undefined,
+      aperçu: d.souvenir.trim().slice(0, LIMITES.memoire),
+    };
+  }
+
   useMesTraces(); // se met à jour si une bulle est publiée ailleurs
   const libre = { personnelle: peutCreer('personnelle'), memoire: peutCreer('memoire') };
 
@@ -221,14 +217,14 @@ export function Creer() {
     return (
       <main className="page page-texte creer">
         <PageTop />
-        <div className="page-corps emerge">
-          <h1 className="page-titre">Tu as tes deux bulles</h1>
+        <div className="page-corps">
+          <h1 className="page-titre">Tu as déjà tes deux bulles</h1>
           <p className="lead">
-            Chaque personne peut émettre deux bulles au plus : sa propre trace, et une mémoire pour une personne décédée. Les tiennes
-            sont déjà dans le musée.
+            Il n’est pas possible d’en créer une autre : chaque personne peut avoir deux bulles au plus, sa propre trace et une mémoire pour
+            une personne décédée. Les tiennes sont déjà dans le musée.
           </p>
-          <Link to="/ma-trace" className="lien-entrer">
-            Retrouver ma trace <Icon name="fleche" size={16} />
+          <Link to="/compte" className="lien-entrer">
+            Retrouver mes traces <Icon name="fleche" size={16} />
           </Link>
         </div>
       </main>
@@ -251,7 +247,7 @@ export function Creer() {
       <PageTop />
       <div className="creer-colonne" ref={colonne}>
         <p className="etape-compteur" tabIndex={-1}>
-          Étape {step + 1} sur {steps.length} — {steps[step]}
+          Étape {step + 1} sur {steps.length}
           <span className={`brouillon${saved ? ' is-saved' : ''}`}>{saved ? 'Brouillon privé enregistré' : 'Enregistrement…'}</span>
         </p>
 
@@ -280,7 +276,7 @@ export function Creer() {
               </button>
             </div>
             <p className="muted petit">
-              Chaque personne peut émettre deux bulles au plus : sa propre trace, et une mémoire pour une personne décédée.
+              Chaque personne peut avoir deux bulles au plus : sa propre trace, et une mémoire pour une personne décédée.
             </p>
           </section>
         )}
@@ -289,13 +285,23 @@ export function Creer() {
           <section className="etape">
             <h1 className="etape-titre">Ton compte</h1>
             <p className="etape-texte">
-              Ton adresse e-mail te permet de revenir : tu reçois un lien pour entrer, sans mot de passe, et retrouver ta trace pour la
-              compléter quand tu le souhaites. Elle n’apparaîtra jamais sur ta trace.
+              Ton adresse e-mail te permet de retrouver tes bulles : tu reçois un code à six chiffres pour entrer, sans mot de passe. Elle
+              n’apparaîtra jamais sur ta trace.
             </p>
-            <label className="field">
-              <span className="field-label">Adresse e-mail</span>
-              <input type="email" autoComplete="email" value={d.email} onChange={(e) => up({ email: e.target.value })} />
-            </label>
+            {EN_LIGNE ? (
+              compte ? (
+                <p className="compte-ok">
+                  Tu es connecté avec <strong>{compte.email}</strong>.
+                </p>
+              ) : (
+                <FormulaireCode onEntre={() => undefined} emailInitial={d.email} />
+              )
+            ) : (
+              <label className="field">
+                <span className="field-label">Adresse e-mail</span>
+                <input type="email" autoComplete="email" value={d.email} onChange={(e) => up({ email: e.target.value })} />
+              </label>
+            )}
             <label className="check">
               <input type="checkbox" checked={d.majeur} onChange={(e) => up({ majeur: e.target.checked })} />
               <span>J’ai 18 ans ou plus.</span>
@@ -314,11 +320,10 @@ export function Creer() {
                 . En cas de danger immédiat, appelle les services d’urgence.
               </p>
               <p>
-                J’ai créé Nos mots mémoriaux pour lutter contre l’oubli. Je refuse de porter sur ma conscience la mort de qui que ce soit :
+                J’ai créé Nos Mots Mémoriaux pour lutter contre l’oubli. Je refuse de porter sur ma conscience la mort de qui que ce soit :
                 ta vie compte infiniment plus que ta trace.
               </p>
             </aside>
-            <p className="muted petit">Prototype : aucun compte n’est réellement créé, rien n’est envoyé.</p>
           </section>
         )}
 
@@ -348,22 +353,28 @@ export function Creer() {
               </label>
             ) : null}
             {d.kind === 'memoire' && (
-              <>
+              <div className="editeur-rang">
                 <label className="field">
-                  <span className="field-label">Quelle était ta relation avec elle ? (facultatif)</span>
-                  <input value={d.relation} onChange={(e) => up({ relation: e.target.value })} />
+                  <span className="field-label">Ton prénom (facultatif)</span>
+                  <input value={d.deposant} onChange={(e) => up({ deposant: e.target.value })} maxLength={40} />
                 </label>
                 <label className="field">
-                  <span className="field-label">D’où viennent ces souvenirs ? (facultatif)</span>
-                  <textarea rows={3} value={d.origine} onChange={(e) => up({ origine: e.target.value })} />
+                  <span className="field-label">Ton lien avec elle (facultatif)</span>
+                  <input value={d.relation} onChange={(e) => up({ relation: e.target.value })} maxLength={60} placeholder="sa petite-fille, son ami…" />
                 </label>
-              </>
+              </div>
             )}
             <label className="field">
               <span className="field-label">Pays associé à {d.kind === 'memoire' ? 'cette mémoire' : 'ma trace'} (facultatif)</span>
-              <input value={d.pays} onChange={(e) => up({ pays: e.target.value })} maxLength={48} />
+              <select value={d.pays} onChange={(e) => up({ pays: e.target.value })}>
+                <option value="">Aucun</option>
+                {listePays().map((p) => (
+                  <option key={p}>{p}</option>
+                ))}
+                <option value={PAYS_AUTRE}>Autre</option>
+              </select>
             </label>
-            <BulleChoix couleur={d.couleur} matiere={d.matiere} seed={draftId} onChange={up} />
+            <BulleChoix couleur={d.couleur} matiere={d.matiere} seed={draftId} onChange={up} memoire={d.kind === 'memoire'} />
           </section>
         )}
 
@@ -388,6 +399,12 @@ export function Creer() {
                   <span className="compteur" aria-live="off">
                     {d.q[i].length} / {max}
                   </span>
+                  {i === 1 && (
+                    <span className="question-qui">
+                      <span className="field-label">Qui ? (facultatif)</span>
+                      <input value={d.q2Dest} maxLength={120} placeholder="ma mère, Inès, mes amis…" onChange={(e) => up({ q2Dest: e.target.value })} />
+                    </span>
+                  )}
                 </label>
               );
             })}
@@ -396,26 +413,31 @@ export function Creer() {
 
         {step === 3 && d.kind === 'memoire' && (
           <section className="etape">
-            <h1 className="etape-titre">Un premier souvenir</h1>
-            <p className="etape-texte">Un souvenir réel, vécu ou transmis. Tu pourras ajouter lieux, œuvres, personnes et médias ensuite.</p>
+            <h1 className="etape-titre">{QUESTION_MEMOIRE}</h1>
+            <p className="etape-texte">
+              Ce qu’elle était, ce qu’elle aimait, ce que tu gardes d’elle : ce que tu sais réellement, sans lui prêter de dernières paroles. Ces
+              mots apparaîtront sur sa bulle, dans le musée. Tu pourras ensuite ajouter ses souvenirs, ses lieux, ses œuvres, des photos.
+            </p>
             <label className="field">
-              <span className="sr-only">Souvenir</span>
-              <textarea rows={7} maxLength={1200} value={d.souvenir} onChange={(e) => up({ souvenir: e.target.value })} />
-              <span className="compteur">{d.souvenir.length} / 1200</span>
+              <span className="sr-only">{QUESTION_MEMOIRE}</span>
+              <textarea rows={7} maxLength={LIMITES.memoire} value={d.souvenir} onChange={(e) => up({ souvenir: e.target.value })} />
+              <span className="compteur">
+                {d.souvenir.length} / {LIMITES.memoire}
+              </span>
             </label>
           </section>
         )}
 
         {step === 4 && (
           <section className="etape etape-apercu">
-            <h1 className="etape-titre">Voilà comment ta bulle apparaîtra dans le musée.</h1>
-            <div className="apercu-demo">
+            <h1 className="etape-titre">{d.kind === 'memoire' ? 'Voilà comment sa bulle apparaîtra dans le musée.' : 'Voilà comment ta bulle apparaîtra dans le musée.'}</h1>
+            <div className={`apercu-demo${d.kind === 'memoire' ? ' apercu-memoire' : ''}`}>
               <BubbleImage id={draftId} couleur={d.couleur || 'b1'} matiere={d.matiere} size={150} className="breathing" />
               <div>
                 <p className="apercu-nom">{displayName}</p>
                 <p className="apercu-type">{d.kind === 'memoire' ? 'Mémoire pour une personne décédée' : 'Trace personnelle'}</p>
                 <p className="apercu-texte">
-                  <TexteBrode texte={d.kind === 'memoire' ? d.souvenir.slice(0, 200) : d.q[3]} />
+                  <TexteBrode texte={d.kind === 'memoire' ? d.souvenir.trim() : d.q[3]} />
                 </p>
               </div>
             </div>
@@ -439,29 +461,34 @@ export function Creer() {
             <div className="verif">
               <h2>{d.kind === 'memoire' ? 'Cette mémoire sera publique et scellée' : 'Ta trace sera publique et scellée'}</h2>
               <p>
-                En publiant, {d.kind === 'memoire' ? 'les 200 caractères et le premier souvenir sont scellés' : 'tes quatre réponses sont scellées'}{' '}
-                : ils ne pourront plus être modifiés pendant cinq ans. Chaque fragment que tu ajouteras ensuite sera scellé à son tour, au
-                moment où tu le déposes.
+                En publiant, {d.kind === 'memoire' ? 'ce que tu as écrit sur cette personne est scellé' : 'tes quatre réponses sont scellées'} : rien ne
+                pourra être modifié pendant cinq ans. Chaque fragment que tu ajouteras ensuite sera scellé à son tour, au moment où tu le déposes.
               </p>
-              <p>
-                Le scellement ne retire aucun de tes droits : si tu souhaites supprimer certaines de tes données avant la fin des cinq ans,
-                écris-moi en privé (<a href={`mailto:${CONTACT}`}>{CONTACT}</a>) et je les retirerai, comme le prévoit le RGPD.
-              </p>
-              <p>Tout ce qui est publié pourra être lu par n’importe quel visiteur, retrouvé par la recherche, et partagé ou capturé par d’autres.</p>
+              <p>Tout ce qui est publié pourra être lu par n’importe quel visiteur, retrouvé par la recherche, et partagé par d’autres.</p>
               <label className="check">
                 <input type="checkbox" checked={d.droits} onChange={(e) => up({ droits: e.target.checked })} />
-                <span>J’autorise Nos mots mémoriaux à héberger et afficher les contenus publics de ma trace.</span>
+                <span>J’autorise Nos Mots Mémoriaux à garder et à montrer ce que je publie.</span>
               </label>
+            </div>
+            <div className="verif">
+              <h2>Tes données restent à toi</h2>
+              <p>
+                Où que tu vives, tes données t’appartiennent. Le scellement ne retire aucun de tes droits : à tout moment, tu peux m’écrire pour
+                consulter, modifier ou supprimer tes données, toutes ou en partie, sans avoir à te justifier. Ton adresse e-mail n’est jamais
+                montrée, jamais vendue, jamais partagée.
+              </p>
+              <p>
+                <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
+              </p>
             </div>
             <div className="verif">
               <h2>Choix facultatifs</h2>
               <p className="muted petit">Les refuser n’empêche pas la publication. Tu pourras les modifier plus tard.</p>
               {(
                 [
-                  ['archives', 'Intégrer ma trace aux futures archives patrimoniales longue durée'],
-                  ['musee', 'Permettre sa présentation dans le futur musée et les expositions physiques'],
-                  ['broderie', 'Permettre que mes mots deviennent une œuvre brodée'],
-                  ['reseaux', 'Permettre sa présentation sur les réseaux sociaux du projet'],
+                  ['archives', 'Confier une copie de ma trace à une archive faite pour traverser les siècles (comme l’Arctic World Archive)'],
+                  ['broderie', 'Permettre que mes mots soient présentés dans le futur musée et deviennent une œuvre brodée à la main'],
+                  ['reseaux', 'Permettre que certains de mes mots soient partagés sur les réseaux sociaux du projet'],
                 ] as const
               ).map(([k, l]) => (
                 <label key={k} className="check">
@@ -489,15 +516,8 @@ export function Creer() {
             </button>
           ) : (
             <button className="bouton" disabled={!canNext} onClick={() => void publish()}>
-              Sceller et publier ma trace
+              {d.kind === 'memoire' ? 'Sceller et publier sa mémoire' : 'Sceller et publier ma trace'}
             </button>
-          )}
-          {attente === 'lien' && (
-            <p className="creer-lien" role="status">
-              Nous t’avons envoyé un lien à <strong>{d.email}</strong>. Ouvre-le : ta trace sera scellée et publiée aussitôt. Ton brouillon
-              t’attend ici.
-              {lienDev && <LienDeveloppement lien={lienDev} />}
-            </p>
           )}
           {attente === 'erreur' && (
             <p className="editeur-erreur" role="alert">
@@ -511,27 +531,27 @@ export function Creer() {
 }
 
 /**
- * Choisir sa bulle : une couleur de GRIS et une matière d'aquarelle, parmi le
- * catalogue complet. Les matières sont posées comme des taches sur une feuille,
- * chacune déjà dans la couleur choisie ; la bulle se transforme à chaque essai.
+ * Choisir sa bulle : une couleur de GRIS et une matière d'aquarelle. Les
+ * flèches, de chaque côté de la bulle, font défiler toutes les matières ; la
+ * bulle se transforme à chaque essai.
  */
 function BulleChoix({
   couleur,
   matiere,
   seed,
   onChange,
+  memoire = false,
 }: {
   couleur: string;
   matiere: number;
   seed: string;
   onChange: (p: { couleur?: string; matiere?: number }) => void;
+  memoire?: boolean;
 }) {
   const teinte = couleur || 'b1';
   useEffect(() => {
     void loadCatalogue();
   }, []);
-  // l'aquarelle cousue d'abord, puis les 92 taches
-  const matieres = useMemo(() => Array.from({ length: NB_MATIERES + 1 }, (_, i) => i), []);
   // les flèches font défiler les matières une à une (en boucle)
   const tourner = (sens: -1 | 1) => onChange({ matiere: (((matiere < 0 ? 0 : matiere) + sens) % (NB_MATIERES + 1) + NB_MATIERES + 1) % (NB_MATIERES + 1) });
   return (
@@ -547,12 +567,12 @@ function BulleChoix({
           </button>
         </div>
         <p className="bulle-numero" aria-live="polite">
-          {matiere === MATIERE_COUSUE ? 'Aquarelle cousue' : `Matière ${matiere} / ${NB_MATIERES}`}
+          {matiere === MATIERE_COUSUE ? 'Aquarelle cousue' : `Matière ${matiere} sur ${NB_MATIERES}`}
         </p>
       </div>
       <div className="bulle-choix-options">
         <fieldset className="couleurs">
-          <legend className="field-label">Choisis la couleur de ta bulle</legend>
+          <legend className="field-label">{memoire ? 'Choisis la couleur de sa bulle' : 'Choisis la couleur de ta bulle'}</legend>
           <div className="couleurs-grille" role="radiogroup" aria-label="Couleur de la bulle">
             {GRIS_PALETTE.map((c) => (
               <button key={c.id} role="radio" aria-checked={couleur === c.id} aria-label={c.label} className="couleur" onClick={() => onChange({ couleur: c.id })}>
@@ -561,31 +581,7 @@ function BulleChoix({
             ))}
           </div>
         </fieldset>
-        <fieldset className="couleurs matieres">
-          <legend className="field-label">Choisis sa matière</legend>
-          <div className="matieres-feuille" role="radiogroup" aria-label="Matière de la bulle">
-            {matieres.map((n) => {
-              // posées à la main : un léger décalage, jamais une grille parfaite
-              const h = hashString(`matiere-${n}`);
-              const dx = ((h % 9) - 4) * 0.6;
-              const dy = (((h >> 4) % 9) - 4) * 0.6;
-              return (
-                <button
-                  key={n}
-                  role="radio"
-                  aria-checked={matiere === n}
-                  aria-label={n === MATIERE_COUSUE ? 'Aquarelle cousue' : `Tache d’aquarelle ${n} sur ${NB_MATIERES}`}
-                  title={n === MATIERE_COUSUE ? 'Aquarelle cousue' : undefined}
-                  className="couleur matiere"
-                  style={{ transform: `translate(${dx}px, ${dy}px)` }}
-                  onClick={() => onChange({ matiere: n })}
-                >
-                  <BubbleImage id={seed} couleur={teinte} matiere={n} size={46} />
-                </button>
-              );
-            })}
-          </div>
-        </fieldset>
+        <p className="muted petit">Les flèches, de chaque côté de la bulle, font défiler les matières.</p>
       </div>
     </div>
   );

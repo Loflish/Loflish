@@ -39,7 +39,7 @@ export const config = {
   /** envoi des e-mails (lien de connexion) ; sans SMTP, le lien est écrit dans le journal du serveur */
   smtp: {
     url: process.env.SMTP_URL ?? '',
-    expediteur: lire('MAIL_FROM', 'Nos mots mémoriaux <bonjour@nosmotsmemoriaux.org>'),
+    expediteur: lire('MAIL_FROM', 'Nos Mots Mémoriaux <nosmots@memoriaux.org>'),
   },
   /** dossier du site construit (npm run build à la racine), servi par ce même serveur */
   siteDossier: lire('SITE_DOSSIER', '../dist'),

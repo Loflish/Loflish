@@ -59,6 +59,5 @@ export function lienValide(texte: string): string | null {
 /** Les couleurs GRIS des bulles (identifiants du site : b1…, v1…). */
 export const couleurValide = (c: string) => /^[a-z]{1,2}\d{1,2}$/.test(c);
 
-/** L'œuvre commune mesure 1,6 × 1 ; un trait fait au plus 0,3 (lib/oeuvre.ts du site). */
-export const MONDE = { l: 1.6, h: 1 };
-export const LONGUEUR_MAX_TRAIT = 0.3;
+/** L'œuvre commune (lib/oeuvre.ts du site) : une toile de 16 × 10 ; tous les fils ont la même longueur. */
+export { dansLOeuvre, LONGUEUR as LONGUEUR_TRAIT } from '../../src/data/oeuvre-regles';

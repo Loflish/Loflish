@@ -3,16 +3,18 @@ import { Link } from 'react-router-dom';
 import { Dock, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { useMuseumMode } from '../lib/museum';
-import { ecouterOeuvre, LONGUEUR_MAX, MONDE, traitsExemple, type Oeuvre, type Trait } from '../lib/oeuvre';
+import { arrivee as arriveeDuFil, COEUR, dansLOeuvre, ecouterOeuvre, MONDE, traitsExemple, type Oeuvre, type Trait } from '../lib/oeuvre';
+import { DEMO } from '../lib/api';
 import { hashString, rng } from '../lib/random';
 
 /**
- * L'œuvre commune — chaque personne coud un seul trait : un clic pour le
- * départ, un clic pour l'arrivée. Tous les traits, ensemble, forment une
- * broderie immense, une œuvre faite de tout le monde.
+ * L'œuvre commune : chaque personne coud un seul trait, de la même longueur
+ * que tous les autres. Un clic pour le départ, un clic pour la direction. Tous
+ * les traits, ensemble, forment une broderie immense, une œuvre faite de tout
+ * le monde, que le fondateur reproduira sur de grands tableaux brodés.
  *
  * Chaque trait est cousu au point avant, dans le fil bordeaux du logo brodé
- * de Nos mots mémoriaux : de petits points de fil, légèrement irréguliers,
+ * de Nos Mots Mémoriaux : de petits points de fil, légèrement irréguliers,
  * avec leur reflet et leur ombre sur le tissu.
  */
 
@@ -29,6 +31,10 @@ function coudreTrait(ctx: CanvasRenderingContext2D, t: Trait, v: Vue, jusqua = 1
   const by = t.y2 * v.s + v.y;
   const L = Math.hypot(bx - ax, by - ay);
   if (L < 1) return;
+  // hors de l'écran : rien à coudre (la toile est immense)
+  const W = ctx.canvas.clientWidth;
+  const H = ctx.canvas.clientHeight;
+  if (Math.max(ax, bx) < -10 || Math.min(ax, bx) > W + 10 || Math.max(ay, by) < -10 || Math.min(ay, by) > H + 10) return;
   const ux = (bx - ax) / L;
   const uy = (by - ay) / L;
   const pas = (POINT + ECART) * v.s;
@@ -85,22 +91,12 @@ function noeud(ctx: CanvasRenderingContext2D, x: number, y: number, v: Vue) {
   ctx.fill();
 }
 
-function borne(x1: number, y1: number, x2: number, y2: number): [number, number] {
-  let dx = x2 - x1;
-  let dy = y2 - y1;
-  const l = Math.hypot(dx, dy);
-  if (l > LONGUEUR_MAX) {
-    dx *= LONGUEUR_MAX / l;
-    dy *= LONGUEUR_MAX / l;
-  }
-  return [Math.min(MONDE.l, Math.max(0, x1 + dx)), Math.min(MONDE.h, Math.max(0, y1 + dy))];
-}
-
 export function OeuvreCommune() {
   useMuseumMode('texte');
   const base = useRef<HTMLCanvasElement>(null);
   const dessus = useRef<HTMLCanvasElement>(null);
-  const exemples = useMemo(() => traitsExemple(), []);
+  // des traits d'exemple, en pâle, seulement dans l'aperçu (jamais dans le vrai musée)
+  const exemples = useMemo(() => (DEMO ? traitsExemple() : []), []);
   const [oeuvre, setOeuvre] = useState<Oeuvre>({ mode: 'local', traits: [], mien: null, peutCoudre: true });
   const coudreRef = useRef<((t: Omit<Trait, 'id'>) => Promise<boolean>) | null>(null);
   const [depart, setDepart] = useState<[number, number] | null>(null);
@@ -127,11 +123,11 @@ export function OeuvreCommune() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, c.clientWidth, c.clientHeight);
     const v = vue.current;
-    // le cadre de l'œuvre, comme un tambour à broder
+    // les bords de la toile, comme un tambour à broder (on ne les voit qu'en s'éloignant beaucoup)
     ctx.strokeStyle = 'rgba(47,44,51,0.12)';
     ctx.setLineDash([4, 5]);
     ctx.lineWidth = 1;
-    ctx.strokeRect(v.x, v.y, MONDE.l * v.s, MONDE.h * v.s);
+    ctx.strokeRect(MONDE.x0 * v.s + v.x, MONDE.y0 * v.s + v.y, (MONDE.x1 - MONDE.x0) * v.s, (MONDE.y1 - MONDE.y0) * v.s);
     ctx.setLineDash([]);
     for (const t of exemples) coudreTrait(ctx, t, v, 1, true);
     for (const t of traits) if (!t.moi || !anim) coudreTrait(ctx, t, v);
@@ -150,7 +146,7 @@ export function OeuvreCommune() {
       return;
     }
     if (!depart) return;
-    const fin = arrivee ?? (survol.current ? borne(depart[0], depart[1], survol.current[0], survol.current[1]) : null);
+    const fin = arrivee ?? (survol.current ? arriveeDuFil(depart[0], depart[1], survol.current[0], survol.current[1]) : null);
     noeud(ctx, depart[0], depart[1], v);
     if (fin) {
       if (arrivee) coudreTrait(ctx, { id: 'apercu', x1: depart[0], y1: depart[1], x2: fin[0], y2: fin[1] }, v);
@@ -179,8 +175,9 @@ export function OeuvreCommune() {
       }
       const w = base.current?.clientWidth ?? window.innerWidth;
       const h = base.current?.clientHeight ?? window.innerHeight;
-      const s = Math.min(w / MONDE.l, (h - 40) / MONDE.h) * 0.9;
-      vue.current = { s, x: (w - MONDE.l * s) / 2, y: (h - MONDE.h * s) / 2 + 12 };
+      // la vue s'ouvre sur le cœur de l'œuvre ; autour, la toile s'étend loin
+      const s = Math.min(w / COEUR.l, (h - 40) / COEUR.h) * 0.9;
+      vue.current = { s, x: (w - COEUR.l * s) / 2 - COEUR.x * s, y: (h - COEUR.h * s) / 2 + 12 - COEUR.y * s };
       redessiner((n) => n + 1);
     };
     cadrer();
@@ -217,8 +214,9 @@ export function OeuvreCommune() {
     const v = vue.current;
     const w = r.width;
     const h = r.height;
-    const fit = Math.min(w / MONDE.l, (h - 40) / MONDE.h) * 0.9;
-    const s = Math.min(fit * 10, Math.max(fit * 0.8, v.s * f));
+    const fit = Math.min(w / COEUR.l, (h - 40) / COEUR.h) * 0.9;
+    // de toute la toile (dix fois plus loin) jusqu'aux points de fil (dix fois plus près)
+    const s = Math.min(fit * 10, Math.max(fit / 10, v.s * f));
     const px = cx - r.left;
     const py = cy - r.top;
     vue.current = { s, x: px - ((px - v.x) * s) / v.s, y: py - ((py - v.y) * s) / v.s };
@@ -264,9 +262,12 @@ export function OeuvreCommune() {
     geste.current = null;
     if (!g || g.bouge || !peutPoser) return;
     const [x, y] = versMonde(e.clientX, e.clientY);
-    if (x < 0 || y < 0 || x > MONDE.l || y > MONDE.h) return;
+    if (!dansLOeuvre(x, y)) return;
     if (!depart) setDepart([x, y]);
-    else setArrivee(borne(depart[0], depart[1], x, y));
+    else {
+      const fin = arriveeDuFil(depart[0], depart[1], x, y);
+      if (dansLOeuvre(fin[0], fin[1])) setArrivee(fin);
+    }
   };
 
   const recommencer = () => {
@@ -286,13 +287,13 @@ export function OeuvreCommune() {
   const consigne = oeuvre.mien
     ? 'Ton trait est cousu. Il fait partie de l’œuvre, pour toujours. Merci.'
     : oeuvre.connexion
-      ? 'Pour coudre ton trait, entre d’abord dans le musée (un lien arrive par e-mail) : un seul trait par personne.'
+      ? 'Pour coudre ton trait, entre d’abord dans le musée avec ton adresse e-mail : un seul trait par personne.'
     : !oeuvre.peutCoudre
       ? 'Ton accès à cette page permet de regarder l’œuvre, pas d’y coudre.'
       : arrivee
         ? 'Ce trait sera le tien, pour toujours : un seul par personne, et il ne s’efface pas.'
         : depart
-          ? 'Clique à un autre endroit pour y mener ton fil.'
+          ? 'Clique dans la direction où tu veux mener ton fil.'
           : 'Clique pour poser le début de ton trait.';
 
   return (
@@ -314,7 +315,10 @@ export function OeuvreCommune() {
       />
       <section className="oeuvre-panneau" aria-live="polite">
         <h1 className="oeuvre-titre">L’œuvre commune</h1>
-        <p className="oeuvre-texte">Chaque personne coud un seul trait. Ensemble, nous brodons une œuvre immense, faite de tout le monde.</p>
+        <p className="oeuvre-texte">
+          Chaque personne coud un seul trait, de la même longueur que tous les autres. Ensemble, nous brodons une œuvre immense, faite de tout
+          le monde. Un jour, je reproduirai ce tracé sur de grands tableaux brodés à la main.
+        </p>
         <p className="oeuvre-consigne">{consigne}</p>
         {arrivee && (
           <div className="oeuvre-actions">
@@ -338,11 +342,12 @@ export function OeuvreCommune() {
         )}
         <p className="oeuvre-compte">
           {n.toLocaleString('fr-FR')} trait{n > 1 ? 's' : ''} cousu{n > 1 ? 's' : ''}
-          {oeuvre.mode === 'local' ? ' sur cet appareil' : ''} · en pâle, des traits d’exemple le temps que l’œuvre commence
+          {oeuvre.mode === 'local' ? ' sur cet appareil' : ''}.
         </p>
+        {exemples.length > 0 && <p className="oeuvre-compte">En pâle, des traits d’exemple, le temps que l’œuvre commence.</p>}
       </section>
       <p className="oeuvre-aide" aria-hidden="true">
-        Glisser pour se déplacer · molette ou pincer pour s’approcher
+        Glisse pour te déplacer, approche-toi avec la molette ou en pinçant.
       </p>
       <Dock />
     </div>

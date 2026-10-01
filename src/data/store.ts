@@ -213,8 +213,7 @@ export function isMine(id: string): boolean {
 }
 
 function touch(t: Trace): Trace {
-  const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  return { ...t, majLe: today };
+  return { ...t, majLe: dateLongue(new Date()) };
 }
 
 export function updateLocal(id: string, fn: (t: Trace) => Trace): void {
@@ -252,9 +251,11 @@ export function estScelle(x: { scelleLe?: string }): boolean {
   return !!r && Date.now() < r.getTime();
 }
 
+/** Une date en toutes lettres, à la française : « 1er octobre 2031 », « 2 novembre 2025 ». */
 export function dateLongue(d: Date | string): string {
-  return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  return premier(new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }));
 }
+export const premier = (date: string) => date.replace(/^1 /, '1er ');
 
 /**
  * Chaque personne émet au plus deux bulles, différentes : sa propre trace, et
@@ -278,9 +279,8 @@ export function modifierReponses(id: string, questions: Trace['questions'], aper
 }
 
 /**
- * Dépose un fragment (avec au plus un média) : il est scellé aussitôt. Refusé
- * si la rubrique (ou le sens) a déjà ses 10 fragments. Posé en avant s'il reste
- * une des 5 places de la rubrique (ou du sens).
+ * Dépose un fragment (avec au plus un média) : il est scellé aussitôt, et se
+ * range à la fin de sa rubrique. Refusé si la rubrique a déjà tous ses fragments.
  */
 export function addElement(id: string, rubrique: RubriqueId, e: Element, medias: Media[] = []): boolean {
   const t = local.find((x) => x.id === id);
@@ -288,8 +288,8 @@ export function addElement(id: string, rubrique: RubriqueId, e: Element, medias:
   const maintenant = new Date().toISOString();
   updateLocal(id, (t) => {
     const list = t.rubriques[rubrique] ?? [];
-    const enAvant = !!e.enAvant && list.filter((x) => x.enAvant).length < MAX_EN_AVANT;
-    const el: Element = { ...e, enAvant, scelleLe: maintenant, medias: e.medias?.slice(0, 1) };
+    const { enAvant: _ancien, ...propre } = e;
+    const el: Element = { ...propre, scelleLe: maintenant, medias: e.medias?.slice(0, 1) };
     const ms = medias.slice(0, 1).map((m) => ({ ...m, origine: rubrique, scelleLe: maintenant }));
     return { ...t, rubriques: { ...t.rubriques, [rubrique]: [...list, el] }, medias: [...t.medias, ...ms] };
   });
@@ -305,54 +305,41 @@ export function removeElement(id: string, rubrique: RubriqueId, elementId: strin
   }));
 }
 
-/**
- * Déplace un élément mis en avant d'un cran parmi les autres mis en avant
- * (même rubrique, même sens) : l'ordre du profil suit l'ordre de la liste.
- */
-function deplacer<T extends { id: string; enAvant?: boolean }>(list: T[], idEl: string, sens: -1 | 1, meme: (x: T) => boolean): T[] {
+/** Monte ou descend un élément d'un cran parmi ceux qui partagent sa liste (même rubrique, ou médias libres). */
+function deplacer<T extends { id: string }>(list: T[], idEl: string, sens: -1 | 1, meme: (x: T) => boolean): T[] {
   const i = list.findIndex((x) => x.id === idEl);
-  if (i < 0 || !list[i]!.enAvant) return list;
+  if (i < 0) return list;
   let j = i + sens;
-  while (j >= 0 && j < list.length && !(list[j]!.enAvant && meme(list[j]!))) j += sens;
+  while (j >= 0 && j < list.length && !meme(list[j]!)) j += sens;
   if (j < 0 || j >= list.length) return list;
   const out = list.slice();
   [out[i], out[j]] = [out[j]!, out[i]!];
   return out;
 }
 
-/**
- * Poser en avant (ou non) un fragment : c'est un choix d'affichage, toujours
- * possible, même scellé ; 5 au plus par rubrique.
- */
-export function basculerEnAvant(id: string, rubrique: RubriqueId, elementId: string): void {
-  if (EN_LIGNE) {
-    const e = getTrace(id)?.rubriques[rubrique]?.find((x) => x.id === elementId);
-    return void action(id, () => appel('POST', `/api/fragments/${elementId}/en-avant`, { enAvant: !e?.enAvant }));
-  }
-  updateLocal(id, (t) => {
-    const list = t.rubriques[rubrique] ?? [];
-    const cible = list.find((e) => e.id === elementId);
-    if (!cible) return t;
-    const n = list.filter((e) => e.enAvant).length;
-    return {
-      ...t,
-      rubriques: {
-        ...t.rubriques,
-        [rubrique]: list.map((e) => (e.id === elementId ? { ...e, enAvant: e.enAvant ? false : n < MAX_EN_AVANT } : e)),
-      },
-    };
-  });
-}
-
-/** Trier les fragments mis en avant : monter (-1) ou descendre (+1) d'un cran. */
-export function deplacerEnAvant(id: string, rubrique: RubriqueId, elementId: string, sens: -1 | 1): void {
+/** Ranger ses fragments : monter (-1) ou descendre (+1) d'un cran. Les trois premiers se montrent sur le profil. */
+export function deplacerFragment(id: string, rubrique: RubriqueId, elementId: string, sens: -1 | 1): void {
   if (EN_LIGNE) return void action(id, () => appel('POST', `/api/fragments/${elementId}/deplacer`, { sens }));
   updateLocal(id, (t) => {
     const list = t.rubriques[rubrique] ?? [];
-    const cible = list.find((e) => e.id === elementId);
-    if (!cible) return t;
     return { ...t, rubriques: { ...t.rubriques, [rubrique]: deplacer(list, elementId, sens, () => true) } };
   });
+}
+
+/** Modifier un fragment : seulement une fois ses cinq ans de scellement passés ; il est scellé de nouveau. */
+export async function modifierFragment(id: string, rubrique: RubriqueId, elementId: string, champs: Omit<Element, 'id' | 'medias' | 'scelleLe' | 'enAvant'>): Promise<void> {
+  if (EN_LIGNE) {
+    const r = await appel<{ trace: Trace }>('PUT', `/api/fragments/${elementId}`, champs);
+    retenir(r.trace);
+    return;
+  }
+  updateLocal(id, (t) => ({
+    ...t,
+    rubriques: {
+      ...t.rubriques,
+      [rubrique]: (t.rubriques[rubrique] ?? []).map((e) => (e.id === elementId && !estScelle(e) ? { ...e, ...champs, scelleLe: new Date().toISOString() } : e)),
+    },
+  }));
 }
 
 /** Les médias & documents de la trace elle-même (les médias joints aux fragments n'en font pas partie). */
@@ -360,42 +347,26 @@ export function mediasLibres(t: Trace): Media[] {
   return t.medias.filter((m) => !m.origine);
 }
 
-/** Dépose un média ou document (20 au plus), scellé aussitôt, posé en avant s'il reste une des 5 places. */
+/** Dépose un média ou document (20 au plus), scellé aussitôt, rangé à la fin. */
 export function addMedia(id: string, m: Media): boolean {
   const t = local.find((x) => x.id === id);
   if (!t || mediasLibres(t).length >= MAX_MEDIAS) return false;
-  updateLocal(id, (t) => {
-    const enAvant = mediasLibres(t).filter((x) => x.enAvant).length < MAX_EN_AVANT;
-    return { ...t, medias: [...t.medias, { ...m, origine: undefined, enAvant, scelleLe: new Date().toISOString() }] };
-  });
+  const { enAvant: _ancien, ...propre } = m;
+  updateLocal(id, (t) => ({ ...t, medias: [...t.medias, { ...propre, origine: undefined, scelleLe: new Date().toISOString() }] }));
   return true;
 }
 
-export function basculerMediaEnAvant(id: string, mediaId: string): void {
-  if (EN_LIGNE) {
-    const m = getTrace(id)?.medias.find((x) => x.id === mediaId);
-    return void action(id, () => appel('POST', `/api/medias/${mediaId}/en-avant`, { enAvant: !m?.enAvant }));
-  }
-  updateLocal(id, (t) => {
-    const n = mediasLibres(t).filter((m) => m.enAvant).length;
-    return { ...t, medias: t.medias.map((m) => (m.id === mediaId && !m.origine ? { ...m, enAvant: m.enAvant ? false : n < MAX_EN_AVANT } : m)) };
-  });
-}
-
-export function deplacerMediaEnAvant(id: string, mediaId: string, sens: -1 | 1): void {
+export function deplacerMedia(id: string, mediaId: string, sens: -1 | 1): void {
   if (EN_LIGNE) return void action(id, () => appel('POST', `/api/medias/${mediaId}/deplacer`, { sens }));
   updateLocal(id, (t) => ({ ...t, medias: deplacer(t.medias, mediaId, sens, (m) => !m.origine) }));
 }
 
-/** Les éléments posés en avant d'abord (5 au plus), puis tous les autres. */
-export function enAvantDabord<T extends { enAvant?: boolean }>(list: T[]): { avant: T[]; reste: T[] } {
-  const marques = list.filter((x) => x.enAvant).slice(0, MAX_EN_AVANT);
-  // sans choix de l'auteur (anciennes traces, démonstration), les premiers déposés
-  const avant = marques.length ? marques : list.slice(0, MAX_EN_AVANT);
-  return { avant, reste: list.filter((x) => !avant.includes(x)) };
+/** Les trois premiers (dans l'ordre choisi par l'auteur) se montrent sur la vue d'ensemble ; le reste s'ouvre d'un clic. */
+export function premiersDabord<T>(list: T[]): { avant: T[]; reste: T[] } {
+  return { avant: list.slice(0, MAX_EN_AVANT), reste: list.slice(MAX_EN_AVANT) };
 }
 
-/** Texte d'aperçu : les 200 caractères par défaut, ou l'aperçu d'une mémoire. */
+/** Texte d'aperçu : les 200 caractères, ou, pour une mémoire, ce que l'on dit de la personne (500 caractères). */
 export function apercu(t: Trace): string {
   return t.questions ? t.questions[3] : t.memoire?.aperçu ?? '';
 }
@@ -496,16 +467,18 @@ export function useTrace(id: string): { trace?: Trace; chargement: boolean; intr
   return { trace: t && !t.leger ? t : undefined, chargement: aCharger, introuvable: !t && !aCharger };
 }
 
-export async function demanderLien(email: string): Promise<{ lien?: string }> {
-  return appel('POST', '/api/auth/lien', { email });
+/** Recevoir un code à six chiffres par e-mail (en développement, le serveur le renvoie aussi). */
+export async function demanderCode(email: string): Promise<{ code?: string }> {
+  return appel('POST', '/api/auth/code', { email });
 }
 
-export async function verifierLien(jeton: string): Promise<CompteSession & { changement?: boolean }> {
-  const r = await appel<{ compte: CompteSession; changement?: boolean }>('POST', '/api/auth/verifier', { jeton });
+/** Entrer avec le code reçu : la session s'ouvre sur cet appareil, les traces de la personne reviennent. */
+export async function entrerAvecCode(email: string, code: string): Promise<CompteSession> {
+  const r = await appel<{ compte: CompteSession }>('POST', '/api/auth/verifier', { email, code });
   compte = r.compte;
   await rafraichirMesTraces().catch(() => undefined);
   notifier();
-  return { ...r.compte, changement: r.changement };
+  return r.compte;
 }
 
 // ——— le compte : son adresse, et les choix de chacun sur ses données
@@ -522,7 +495,7 @@ export function emailDuCompte(): string {
   }
 }
 
-/** Prototype : retenir l'adresse donnée à la création (rien n'est envoyé). */
+/** Aperçu autonome : retenir l'adresse donnée à la création (rien n'est envoyé). */
 export function retenirEmailLocal(email: string): void {
   try {
     if (email.trim()) localStorage.setItem(CLE_EMAIL, email.trim().toLowerCase());
@@ -533,16 +506,22 @@ export function retenirEmailLocal(email: string): void {
 }
 
 /**
- * Changer d'adresse. En ligne, un lien de confirmation part vers la nouvelle adresse : rien ne change
- * tant qu'il n'est pas ouvert. Dans le prototype, l'adresse change tout de suite.
+ * Changer d'adresse. En ligne, un code part vers la nouvelle adresse : rien ne change tant
+ * qu'il n'est pas donné (confirmerEmail). Dans l'aperçu autonome, l'adresse change tout de suite.
  */
-export async function changerEmail(email: string): Promise<{ confirmation: boolean; lien?: string }> {
+export async function changerEmail(email: string): Promise<{ confirmation: boolean; code?: string }> {
   if (!EN_LIGNE) {
     retenirEmailLocal(email);
     return { confirmation: false };
   }
-  const r = await appel<{ lien?: string }>('POST', '/api/moi/email', { email });
-  return { confirmation: true, lien: r.lien };
+  const r = await appel<{ code?: string }>('POST', '/api/moi/email', { email });
+  return { confirmation: true, code: r.code };
+}
+
+export async function confirmerEmail(email: string, code: string): Promise<void> {
+  const r = await appel<{ compte: CompteSession }>('POST', '/api/moi/email/confirmer', { email, code });
+  compte = r.compte;
+  notifier();
 }
 
 /** Modifier ses choix sur ses données (archives, musée, réseaux…) : ce ne sont pas des contenus, ils ne sont pas scellés. */
@@ -616,7 +595,7 @@ export async function deposerFragment(traceId: string, rubrique: RubriqueId, e: 
 export async function deposerMedia(traceId: string, choix: NonNullable<MediaChoisi>, titre: string, legende: string): Promise<void> {
   if (!EN_LIGNE) {
     const m = await creerMedia(choix, `m-${Date.now().toString(36)}`, titre);
-    if (!addMedia(traceId, { ...m, legende: legende || undefined })) throw new Error(`Tu as déjà déposé ${MAX_MEDIAS} médias.`);
+    if (!addMedia(traceId, { ...m, legende: legende || undefined })) throw new Error(`Tu as déjà déposé ${MAX_MEDIAS} photos, vidéos, sons ou documents.`);
     return;
   }
   const prepare = 'file' in choix ? await preparerEnvoi(choix.file) : null;

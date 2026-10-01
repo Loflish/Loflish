@@ -1,5 +1,5 @@
 /*
- * Nos mots mémoriaux — jetons de design
+ * Nos Mots Mémoriaux : jetons de design
  *
  * Fond : entre écru, lin, ivoire et beige très légèrement grisé.
  * Encre : jamais un noir pur, un gris profond légèrement violacé.
@@ -24,13 +24,25 @@
 
   --focus: #2f2c33;
 
-  --serif: 'Newsreader Variable', 'Newsreader', 'Iowan Old Style', Georgia, serif;
-  --sans: 'IBM Plex Sans', 'IBM Plex Sans Arabic', 'IBM Plex Sans Hebrew', 'IBM Plex Sans Devanagari', 'IBM Plex Sans Thai',
-    'Hiragino Sans', 'Noto Sans CJK JP', 'Noto Sans JP', 'Apple SD Gothic Neo', 'Malgun Gothic', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /*
+   * Une seule police : Newsreader, une typographie de lecture dessinée pour l'écran,
+   * proche du papier et du livre. La hiérarchie vient de la taille, de la graisse
+   * et de l'italique, jamais d'une deuxième famille :
+   * - titres : romain, grand, graisse légère ;
+   * - intertitres : romain, graisse moyenne ;
+   * - les mots déposés par les personnes (réponses, citations) : italique ;
+   * - l'interface (boutons, étiquettes, notes) : romain, plus petit.
+   * Les écritures que Newsreader ne dessine pas (arabe, hébreu, devanagari, thaï,
+   * cyrillique, grec, japonais, chinois, coréen) prennent IBM Plex ou la police du système.
+   */
+  --serif: 'Newsreader Variable', 'Newsreader', 'IBM Plex Sans', 'IBM Plex Sans Arabic', 'IBM Plex Sans Hebrew',
+    'IBM Plex Sans Devanagari', 'IBM Plex Sans Thai', 'Hiragino Mincho ProN', 'Noto Serif CJK JP', 'Songti SC',
+    'Apple SD Gothic Neo', 'Malgun Gothic', Georgia, serif;
+  --sans: var(--serif);
 
   /* échelle typographique — respirante */
-  --t-xs: 0.78rem;
-  --t-s: 0.875rem;
+  --t-xs: 0.84rem;
+  --t-s: 0.94rem;
   --t-m: 1rem;
   --t-l: 1.2rem;
   --t-xl: clamp(1.45rem, 1.1rem + 1.2vw, 1.9rem);

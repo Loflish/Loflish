@@ -5,13 +5,14 @@
  */
 
 const date = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
-export const dateFr = (d: Date | string) => date.format(new Date(d));
+/** « 1er octobre 2026 », « 2 novembre 2025 » */
+export const dateFr = (d: Date | string) => date.format(new Date(d)).replace(/^1 /, '1er ');
 
 export interface LigneTrace {
   id: string;
   compte_id: string | null;
   type: 'personnelle' | 'memoire';
-  statut: 'publiee' | 'masquee';
+  statut: 'publiee' | 'retiree';
   nom: string;
   pseudo: string | null;
   couleur: string;
@@ -30,7 +31,7 @@ export interface LigneTrace {
   cree_le: Date;
   maj_le: Date;
   scellee_le: Date;
-  masquee_raison: string | null;
+  retiree_raison: string | null;
 }
 
 export interface LigneFragment {
@@ -146,6 +147,6 @@ export function trace(t: LigneTrace, fragments: LigneFragment[], medias: LigneMe
     medias: medias.map((m) => media(m, m.fragment_id ? rubriqueDe.get(m.fragment_id) : undefined)),
     parametres: auteur ? t.parametres : undefined,
     statut: auteur || t.statut !== 'publiee' ? t.statut : undefined,
-    masqueeRaison: auteur ? t.masquee_raison : undefined,
+    retireeRaison: auteur ? t.retiree_raison : undefined,
   });
 }

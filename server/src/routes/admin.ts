@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { exigerRole, Refus } from '../auth';
 import { journaliser, requete, transaction, une } from '../db';
+import { relireBannissements } from '../bannis';
 import { presence, type LigneTrace } from '../serialiser';
 import { stockage } from '../stockage';
 
@@ -16,7 +17,8 @@ export async function routesAdmin(app: FastifyInstance) {
     const [r] = await requete<Record<string, string>>(`select
       (select count(*) from comptes) comptes,
       (select count(*) from traces where statut = 'publiee') traces_publiees,
-      (select count(*) from traces where statut = 'masquee') traces_masquees,
+      (select count(*) from traces where statut = 'retiree') traces_retirees,
+      (select count(*) from bannissements) bannissements,
       (select count(*) from traces where type = 'memoire') memoires,
       (select count(*) from fragments) fragments,
       (select count(*) from medias) medias,
@@ -50,10 +52,10 @@ export async function routesAdmin(app: FastifyInstance) {
     return { ok: true };
   });
 
-  // les traces : chercher, masquer, réafficher
+  // les traces : chercher, retirer une bulle, bannir son auteur
   app.get('/api/admin/traces', async (req) => {
     exigerRole(req, 'moderation', 'admin');
-    const { q, statut } = z.object({ q: z.string().trim().max(80).optional(), statut: z.enum(['publiee', 'masquee']).optional() }).parse(req.query);
+    const { q, statut } = z.object({ q: z.string().trim().max(80).optional(), statut: z.enum(['publiee', 'retiree']).optional() }).parse(req.query);
     const lignes = await requete<LigneTrace & { email: string | null; n_fragments: string; n_medias: string }>(
       `select t.*, c.email,
               (select count(*) from fragments f where f.trace_id = t.id) n_fragments,
@@ -65,18 +67,74 @@ export async function routesAdmin(app: FastifyInstance) {
       [q ?? null, statut ?? null],
     );
     return {
-      traces: lignes.map((t) => ({ ...presence(t), statut: t.statut, email: t.email, fragments: Number(t.n_fragments), medias: Number(t.n_medias), masqueeRaison: t.masquee_raison })),
+      // les choix de confidentialité de chacun (non publics) sont visibles par le fondateur
+      traces: lignes.map((t) => ({
+        ...presence(t),
+        statut: t.statut,
+        email: t.email,
+        compteId: t.compte_id,
+        fragments: Number(t.n_fragments),
+        medias: Number(t.n_medias),
+        retireeRaison: t.retiree_raison,
+        parametres: t.parametres,
+      })),
     };
   });
 
+  // retirer une bulle du musée (raison obligatoire : l'auteur la lit), ou la remettre
   app.post('/api/admin/traces/:id/statut', async (req) => {
     const c = exigerRole(req, 'moderation', 'admin');
     const { id } = z.object({ id: z.string() }).parse(req.params);
-    const d = z.object({ statut: z.enum(['publiee', 'masquee']), raison: z.string().trim().max(500).optional() }).parse(req.body);
-    if (d.statut === 'masquee' && !d.raison) throw new Refus(400, 'Indique la raison : l’auteur la verra.', 'raison');
-    const r = await une('update traces set statut = $2, masquee_raison = $3 where id = $1 returning id', [id, d.statut, d.statut === 'masquee' ? d.raison : null]);
+    const d = z.object({ statut: z.enum(['publiee', 'retiree']), raison: z.string().trim().max(500).optional() }).parse(req.body);
+    if (d.statut === 'retiree' && !d.raison) throw new Refus(400, 'Indique la raison : l’auteur la lira.', 'raison');
+    const r = await une('update traces set statut = $2, retiree_raison = $3 where id = $1 returning id', [id, d.statut, d.statut === 'retiree' ? d.raison : null]);
     if (!r) throw new Refus(404, 'Cette trace n’existe pas.', 'introuvable');
-    await journaliser(c.id, d.statut === 'masquee' ? 'trace.masquee' : 'trace.reaffichee', id, { raison: d.raison });
+    await journaliser(c.id, d.statut === 'retiree' ? 'trace.retiree' : 'trace.remise', id, { raison: d.raison });
+    return { ok: true };
+  });
+
+  // bannir : les bulles de la personne sont retirées, son compte suspendu, et ses adresses IP connues
+  // (leur empreinte) ne peuvent plus ouvrir le musée
+  app.post('/api/admin/traces/:id/bannir', async (req) => {
+    const c = exigerRole(req, 'admin');
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const { raison } = z.object({ raison: z.string().trim().min(3).max(500) }).parse(req.body);
+    const n = await transaction(async (tx) => {
+      const t = await une<{ compte_id: string | null }>('select compte_id from traces where id = $1', [id], tx);
+      if (!t) throw new Refus(404, 'Cette trace n’existe pas.', 'introuvable');
+      if (!t.compte_id) throw new Refus(400, 'Cette trace n’a plus de compte : retire seulement la bulle.', 'sans-compte');
+      if (t.compte_id === c.id) throw new Refus(400, 'Tu ne peux pas te bannir toi-même.', 'soi');
+      const ips = await requete<{ ip: string }>(
+        `select distinct ip from (select ip from sessions where compte_id = $1 union all select derniere_ip as ip from comptes where id = $1) x where ip is not null`,
+        [t.compte_id],
+        tx,
+      );
+      for (const { ip } of ips)
+        await requete('insert into bannissements (ip, raison, compte_id, par) values ($1, $2, $3, $4) on conflict (ip) do nothing', [ip, raison, t.compte_id, c.id], tx);
+      await requete(`update traces set statut = 'retiree', retiree_raison = $2 where compte_id = $1`, [t.compte_id, raison], tx);
+      await requete('update comptes set suspendu = true where id = $1', [t.compte_id], tx);
+      await requete('delete from sessions where compte_id = $1', [t.compte_id], tx);
+      await journaliser(c.id, 'compte.banni', t.compte_id, { raison, trace: id, adresses: ips.length }, tx);
+      return ips.length;
+    });
+    await relireBannissements();
+    return { ok: true, adresses: n };
+  });
+
+  app.get('/api/admin/bannissements', async (req) => {
+    exigerRole(req, 'admin');
+    const lignes = await requete(
+      `select b.ip, b.raison, b.cree_le, c.email from bannissements b left join comptes c on c.id = b.compte_id order by b.cree_le desc limit 300`,
+    );
+    return { bannissements: lignes };
+  });
+
+  app.delete('/api/admin/bannissements/:ip', async (req) => {
+    const c = exigerRole(req, 'admin');
+    const { ip } = z.object({ ip: z.string().max(200) }).parse(req.params);
+    await requete('delete from bannissements where ip = $1', [ip]);
+    await journaliser(c.id, 'bannissement.leve', null, {});
+    await relireBannissements();
     return { ok: true };
   });
 
@@ -101,7 +159,7 @@ export async function routesAdmin(app: FastifyInstance) {
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const { raison } = z.object({ raison: z.string().trim().min(3).max(500) }).parse(req.body);
     const m = await une<{ cle: string | null; trace_id: string }>('delete from medias where id = $1 returning cle, trace_id', [id]);
-    if (!m) throw new Refus(404, 'Ce média n’existe pas.', 'introuvable');
+    if (!m) throw new Refus(404, 'Ce fichier n’existe pas.', 'introuvable');
     if (m.cle) await stockage.supprimer(m.cle);
     await journaliser(c.id, 'moderation.media_retire', id, { raison, trace: m.trace_id });
     return { ok: true };
