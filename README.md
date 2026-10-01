@@ -89,10 +89,10 @@ entièrement procédural). Si un fichier manque, le site revient seul au rendu p
 - **Entrer dans sa mémoire** : une vraie goutte d'aquarelle filmée en 4K sur papier (Kling), réduite
   à un masque de 1440 px (`design/hd/masque_encre.py` : papier soustrait, intérieur en lavis égal,
   bord capillaire, tache recentrée), s'ouvre depuis la bulle cliquée dans sa couleur GRIS exacte.
-- **Matière des bulles** : chacun la choisit en créant sa trace, dans le catalogue complet : en tête,
-  l'**aquarelle cousue** (matière 0, la première bulle du musée, peinte par le moteur : voiles d'aquarelle,
-  papier, fil au point avant sur le bord), puis les 92 taches (posées comme sur une feuille, déjà dans sa
-  couleur ; « Au hasard » pour se laisser surprendre) : 93 façons de donner une matière à son âme.
+- **Matière des bulles** : chacun la choisit en créant sa trace, avec les flèches de chaque côté de sa
+  bulle : l'**aquarelle cousue** (matière 0, la première bulle du musée, peinte par le moteur : voiles
+  d'aquarelle, papier, fil au point avant sur le bord), puis les 100 taches d'aquarelle (planches
+  Higgsfield découpées par `design/hd/matieres.py`) : 101 façons de donner une matière à son âme.
   Une matière est proposée d'avance au hasard ; les présences sans choix gardent une matière tirée de
   leur identifiant, fixe.
 - **Papier fait main** (chiffon de coton) : seules les fibres, en calque translucide, sur les pages et les

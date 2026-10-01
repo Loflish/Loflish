@@ -41,8 +41,10 @@ def gouttieres(prof, n):
 def planche(chemin, ecartees, n, grain_fixe=None):
     g = np.asarray(Image.open(chemin).convert('L')).astype(float)
     H, W = g.shape
-    # le papier ou le tissu n'est pas uniforme : son ton est suivi à grande échelle
-    fond = ndi.zoom(ndi.percentile_filter(g[::16, ::16], 92, size=25), 16, order=1)[:H, :W]
+    # le papier ou le tissu n'est pas uniforme : son ton est suivi à grande échelle, sur une fenêtre
+    # plus large qu'un cercle (sinon le centre d'un grand cercle plein passerait pour du papier)
+    taille = max(25, int(min(H, W) / 16 * 0.45))
+    fond = ndi.zoom(ndi.percentile_filter(g[::16, ::16], 92, size=taille), 16, order=1)[:H, :W]
     d = np.clip(fond - g, 0, 255)
     d = ndi.gaussian_filter(d, 0.8)
     encre = d > 16

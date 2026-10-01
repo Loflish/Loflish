@@ -12,7 +12,7 @@ export const HD = true;
 const base = `${import.meta.env.BASE_URL}hd/`;
 
 /** Nombre de taches d'aquarelle préparées (public/hd/taches) : le catalogue complet des matières. */
-export const NB_MATIERES = 92;
+export const NB_MATIERES = 100;
 /**
  * La matière 0 : l'aquarelle cousue, peinte par le moteur lui-même (voiles
  * d'aquarelle, papier, fil au point avant sur le bord). La toute première

@@ -92,7 +92,7 @@ export interface Trace {
   pseudo?: string;
   type: TraceType;
   couleur: string; // id GRIS
-  /** matière d'aquarelle choisie (0 = aquarelle cousue, 1 à 92 = taches) ; absente = tirée au hasard, fixe */
+  /** matière d'aquarelle choisie (0 = aquarelle cousue, 1 à 100 = taches) ; absente = tirée au hasard, fixe */
   matiere?: number;
   pays?: string;
   creeLe: string;
