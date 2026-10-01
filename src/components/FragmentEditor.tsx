@@ -16,7 +16,7 @@ const CONFIG: Record<RubriqueId, { champs: Champ[]; titre?: string; texte: strin
   voir: { champs: [], texte: 'Ce que tu aimerais voir', max: 800 },
   entendre: { champs: [], texte: 'Ce que tu aimerais entendre', max: 800 },
   sentir: { champs: [], texte: 'Ce que tu aimerais sentir', max: 800 },
-  gouter: { champs: [], texte: 'Ce que tu aimerais goûter', max: 800 },
+  gouter: { champs: [], texte: 'Ce que tu aimerais manger', max: 800 },
   toucher: { champs: [], texte: 'Ce que tu aimerais toucher ou tenir', max: 800 },
   souvenirs: { champs: ['titre', 'quand', 'lieu'], titre: 'Titre du souvenir', texte: 'Raconte', max: 1200 },
   chapitres: { champs: ['titre', 'quand'], titre: 'Nom du chapitre', texte: 'Ce qu’il a été', max: 1200 },

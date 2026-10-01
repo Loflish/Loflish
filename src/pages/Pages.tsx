@@ -3,7 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Footer, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { EDITIONS, tracesDeLEdition } from '../data/archives';
-import { allTraces, demanderLien, effacerMonCompte, seDeconnecter, useCompte, verifierLien, type CompteSession } from '../data/store';
+import { allTraces, changerEmail, demanderLien, effacerMonCompte, emailDuCompte, modifierParametres, seDeconnecter, useCompte, useMesTraces, verifierLien, type CompteSession } from '../data/store';
+import { CONTACT } from '../lib/contact';
 import { adresseApi, DEMO, EN_LIGNE } from '../lib/api';
 import { APRES_CONNEXION } from './Creer';
 import { useMuseumMode } from '../lib/museum';
@@ -26,31 +27,34 @@ export function Projet() {
     <Page className="projet">
       <h1 className="page-titre">Le projet</h1>
       <p className="lead">
-        Nous mourons trois fois. D’abord notre corps. Puis les objets qui rappelaient notre existence. Et enfin, la plus dure : le jour où
-        plus personne ne se souvient de notre visage, de nos mots, de ce que nous avons partagé.
+        Nous mourons trois fois. D’abord notre corps. Puis nos possessions, qui se dispersent. Et enfin l’oubli : la mort la plus
+        fatale, celle qui confirme que nous n’existons plus pour personne, pas même dans le cœur de celles et ceux qui nous ont connus.
       </p>
+      <p className="projet-mission">
+        Mon objectif : perpétuer chacune de vos existences, pour que le monde de demain apprenne à vous connaître à travers vos
+        propres mots. Des mots qui deviendront mémoriaux.
+      </p>
+
       <div className="deux-colonnes">
         <div className="texte-courant">
+          <h2 className="intertitre">Pourquoi ce musée</h2>
           <p>
-            Nos mots mémoriaux est né de la perte d’une personne chère. De cette conviction aussi : l’oubli ne devrait pas être le sort de
-            celles et ceux qui ne sont pas célèbres. Les grandes figures laissent leurs dernières paroles, leurs œuvres, leurs citations. Les
-            autres — nous — disparaissent avec tout ce qu’ils ont été.
+            J’ai toujours trouvé injuste que la mort des célébrités soit tellement plus documentée que celle des inconnus, comme vous et
+            moi. Nous, nous laissons une épitaphe, un testament, quelques souvenirs à nos proches. Nous restons gravés dans le cœur de
+            ceux qui nous ont aimés, mais tôt ou tard, le monde oublie notre visage, notre voix, nos souvenirs, l’existence que nous avons
+            construite. Puis ces personnes partent à leur tour, et notre trace s’efface pour toutes les générations qui suivent. Il ne
+            reste qu’une date, un chiffre parmi d’autres.
           </p>
           <p>
-            Ici, chacun peut déposer sa trace de son vivant : quatre questions, et autant de fragments d’existence qu’il le souhaite. Chaque
-            personne devient une bulle. Toutes ont la même taille. Aucune n’est plus importante qu’une autre.
+            Il est normal que l’on raconte la vie de celles et ceux qui ont cherché la gloire. Mais nous n’avons pas encore la chance de
+            découvrir, nous aussi, le parcours de personnes que nous ne connaissons pas. Je crois que chaque vie mérite d’être
+            entendue, que l’on ait le sentiment d’avoir accompli la sienne ou non. Écouter la vie de l’autre, c’est apprendre l’empathie,
+            et sortir un peu de l’individualisme.
           </p>
           <p>
-            Le musée est gratuit, pour visiter comme pour participer. Il n’y a ni compteur, ni classement, ni abonnés : seulement des
-            présences qui coexistent calmement dans le même espace.
+            Nous cherchons déjà à laisser une trace : sur les réseaux sociaux, auprès de nos proches, parfois auprès d’inconnus. Nos
+            mots mémoriaux offre à ce besoin un lieu fait pour durer.
           </p>
-          <h2 className="intertitre">Au-delà de l’écran</h2>
-          <p>
-            Avec l’accord de leurs auteurs, certains mots deviendront des tableaux brodés à la main, exposés un jour dans un musée
-            physique, le profil complet présenté au dos de chaque œuvre. La mémoire collective du musée pourra aussi être confiée à des
-            archives de très longue durée, comme l’Arctic World Archive.
-          </p>
-          <p className="vision">Lutter contre l’oubli.</p>
         </div>
         <figure className="objet-reel">
           <img src={tableauUrl} alt="Tableau brodé à la main en fil bordeaux sur satin clair, encadré de bois doré : « Nos mots mémoriaux »." loading="lazy" />
@@ -58,6 +62,106 @@ export function Projet() {
             Le premier tableau. Fil bordeaux sur satin, cadre doré — brodé à la main. C’est de lui que vient le logo.
           </figcaption>
         </figure>
+      </div>
+
+      <section className="projet-section" aria-labelledby="h-chance">
+        <h2 id="h-chance" className="intertitre">Une chance très ancienne</h2>
+        <p className="projet-intro">Pendant des siècles, pouvoir prononcer ses dernières paroles a été vu comme une chance.</p>
+        <div className="projet-cartes deux">
+          <article className="projet-carte">
+            <p className="projet-carte-lieu">Europe, Moyen Âge</p>
+            <blockquote>« De la mort subite et imprévue, délivre-nous, Seigneur. »</blockquote>
+            <p>
+              On le priait dans les églises. Ce que l’on redoutait le plus, c’était de partir sans avoir eu le temps de dire adieu, de
+              pardonner, de transmettre.
+            </p>
+          </article>
+          <article className="projet-carte">
+            <p className="projet-carte-lieu">Japon, depuis le XIIIᵉ siècle</p>
+            <blockquote>
+              « Malade en voyage —<br />
+              mes rêves errent
+              <br />
+              sur la lande desséchée. »
+            </blockquote>
+            <p>
+              Des moines zen et des poètes écrivent un dernier poème, le <em>jisei</em>, pour laisser au monde un regard apaisé sur leur
+              vie. Celui-ci est le dernier haïku de Bashō, en 1694.
+            </p>
+          </article>
+        </div>
+        <p className="projet-conclusion">
+          Nos mots mémoriaux redonne cette chance à chacun, sans attendre la fin : ici, de votre vivant et à votre rythme, vous écrivez
+          votre propre poésie.
+        </p>
+      </section>
+
+      <section className="projet-section" aria-labelledby="h-comment">
+        <h2 id="h-comment" className="intertitre">Comment ça marche</h2>
+        <ol className="projet-etapes">
+          <li>
+            <span className="projet-etape-icone" aria-hidden="true">
+              <Icon name="plume" size={26} />
+            </span>
+            <h3>Quatre questions</h3>
+            <p>Ce que vous diriez à vous-même, à la personne que vous aimez, au monde entier. Puis l’essentiel, en 200 caractères.</p>
+          </li>
+          <li>
+            <span className="projet-etape-icone" aria-hidden="true">
+              <Icon name="image" size={26} />
+            </span>
+            <h3>Des fragments d’existence</h3>
+            <p>Facultatifs : souvenirs, les cinq sens, personnes, lieux, œuvres, petites choses… Autant que vous le souhaitez.</p>
+          </li>
+          <li>
+            <span className="projet-etape-icone" aria-hidden="true">
+              <Icon name="bulle" size={26} />
+            </span>
+            <h3>Une bulle</h3>
+            <p>Votre trace devient une bulle dans la constellation. Toutes ont la même taille : aucune n’est plus importante qu’une autre.</p>
+          </li>
+        </ol>
+        <p className="projet-note">Le musée est gratuit, pour visiter comme pour participer. Ni compteur, ni classement, ni abonnés.</p>
+      </section>
+
+      <section className="projet-section" aria-labelledby="h-defi">
+        <h2 id="h-defi" className="intertitre">Mon défi</h2>
+        <p className="projet-intro">
+          Réunir les mots mémoriaux de toute une génération, pour celle d’aujourd’hui comme pour celles qui viendront. Chaque trace
+          compte, même la plus courte : plus nous serons nombreux, plus cette mémoire collective aura de force pour exister au-delà de
+          l’écran.
+        </p>
+        <p className="projet-intro">Avec votre accord, et seulement avec lui, vos mots pourront vivre ailleurs :</p>
+        <ol className="projet-cartes trois">
+          <li className="projet-carte">
+            <Icon name="projet" size={24} />
+            <h3>Un musée</h3>
+            <p>Certains mots deviendront des tableaux brodés à la main, exposés dans un vrai musée, le profil complet présenté au dos de chaque œuvre.</p>
+          </li>
+          <li className="projet-carte">
+            <Icon name="archive" size={24} />
+            <h3>L’Arctic World Archive</h3>
+            <p>
+              Une copie de la mémoire du musée confiée à cette archive creusée dans une montagne du Svalbard, pensée pour traverser les
+              siècles. Sans frais pour vous.
+            </p>
+          </li>
+          <li className="projet-carte">
+            <Icon name="reseau" size={24} />
+            <h3>Les réseaux sociaux</h3>
+            <p>Certains mots partagés sur les réseaux du projet, pour que d’autres les découvrent.</p>
+          </li>
+        </ol>
+      </section>
+
+      <p className="vision">Lutter contre l’oubli.</p>
+      <div className="projet-actions">
+        <Link to="/creer" className="lien-entrer">
+          Déposer ma trace <Icon name="fleche" size={16} />
+        </Link>
+        <Link to="/" className="lien-discret">
+          Se promener dans le musée
+        </Link>
       </div>
     </Page>
   );
@@ -216,14 +320,7 @@ export function Compte() {
       <Page className="compte-page">
         <h1 className="page-titre">Compte</h1>
         <p className="lead">Ce prototype garde tout dans ton navigateur. Dans le vrai musée, on entre avec un simple lien envoyé par e-mail.</p>
-        <div className="liens-colonne">
-          <Link to="/ma-trace" className="lien-entrer">
-            Ma trace et mes fragments <Icon name="fleche" size={16} />
-          </Link>
-          <Link to="/trace/sakinah" className="lien-entrer">
-            Voir un exemple de trace complète <Icon name="fleche" size={16} />
-          </Link>
-        </div>
+        <CompteReglages />
       </Page>
     );
   }
@@ -232,6 +329,147 @@ export function Compte() {
       <h1 className="page-titre">Compte</h1>
       {!pret ? <p className="lead muted">Un instant…</p> : compte ? <CompteConnecte compte={compte} /> : <DemandeLien />}
     </Page>
+  );
+}
+
+/** Les choix de chacun sur ses données : ce ne sont pas des contenus, ils ne sont jamais scellés. */
+const CHOIX: { cle: 'archivageLongueDuree' | 'droitsReutilisation' | 'reseauxSociaux' | 'feedbackPrive'; titre: string; detail: string }[] = [
+  {
+    cle: 'archivageLongueDuree',
+    titre: 'Archives de longue durée',
+    detail: 'Confier une copie de ma trace aux archives patrimoniales (comme l’Arctic World Archive).',
+  },
+  {
+    cle: 'droitsReutilisation',
+    titre: 'Musée et broderie',
+    detail: 'Permettre que mes mots soient présentés dans le futur musée et deviennent une œuvre brodée à la main.',
+  },
+  {
+    cle: 'reseauxSociaux',
+    titre: 'Réseaux sociaux',
+    detail: 'Permettre que certains de mes mots soient partagés sur les réseaux sociaux du projet.',
+  },
+  {
+    cle: 'feedbackPrive',
+    titre: 'Messages privés',
+    detail: 'Accepter de recevoir des messages privés à propos de ma trace (jamais affichés publiquement).',
+  },
+];
+
+/** Adresse e-mail, choix sur les données, demande de suppression : la même chose en ligne et dans le prototype. */
+function CompteReglages() {
+  const traces = useMesTraces();
+  const [params] = useSearchParams();
+  const email = emailDuCompte();
+  const [nouvelle, setNouvelle] = useState('');
+  const [etat, setEtat] = useState<'' | 'envoi' | 'envoye' | 'change' | 'erreur'>(params.get('adresse') === 'changee' ? 'change' : '');
+  const [message, setMessage] = useState('');
+  const [lienDev, setLienDev] = useState<string | undefined>();
+  const [erreurChoix, setErreurChoix] = useState('');
+
+  const changer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEtat('envoi');
+    try {
+      const r = await changerEmail(nouvelle.trim());
+      setLienDev(r.lien);
+      setEtat(r.confirmation ? 'envoye' : 'change');
+      if (!r.confirmation) setNouvelle('');
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'L’adresse n’a pas pu être changée.');
+      setEtat('erreur');
+    }
+  };
+
+  return (
+    <div className="compte-reglages">
+      <section className="compte-bloc" aria-labelledby="h-adresse">
+        <h2 id="h-adresse" className="intertitre">
+          Mon adresse e-mail
+        </h2>
+        <p className="compte-adresse">{email || <span className="muted">Aucune adresse pour l’instant : elle est demandée en créant ta trace.</span>}</p>
+        <p className="muted petit">Elle sert seulement à entrer dans le musée. Elle n’apparaît jamais sur ta trace.</p>
+        {etat === 'change' && <p className="compte-ok" role="status">C’est fait : ton adresse a changé.</p>}
+        {etat === 'envoye' ? (
+          <p className="compte-ok" role="status">
+            Un lien de confirmation est parti vers <strong>{nouvelle}</strong>. Ton adresse changera dès que tu l’auras ouvert (il est valable
+            20 minutes).
+            {lienDev && <LienDeveloppement lien={lienDev} />}
+          </p>
+        ) : (
+          (email || !EN_LIGNE) && (
+            <form className="compte-changer" onSubmit={changer}>
+              <label className="field">
+                <span className="field-label">Changer d’adresse</span>
+                <input type="email" autoComplete="email" value={nouvelle} onChange={(e) => setNouvelle(e.target.value)} placeholder="nouvelle@adresse.fr" required />
+              </label>
+              <button className="bouton bouton-discret" disabled={etat === 'envoi' || !nouvelle.trim()}>
+                {etat === 'envoi' ? 'Envoi…' : EN_LIGNE ? 'Recevoir un lien de confirmation' : 'Changer'}
+              </button>
+              {etat === 'erreur' && (
+                <p className="editeur-erreur" role="alert">
+                  {message}
+                </p>
+              )}
+            </form>
+          )
+        )}
+      </section>
+
+      <section className="compte-bloc" aria-labelledby="h-choix">
+        <h2 id="h-choix" className="intertitre">
+          Ce que j’autorise
+        </h2>
+        <p className="muted petit">
+          Tes choix sur l’usage de ta trace. Ils ne sont pas scellés : tu peux les changer quand tu veux, ils prennent effet tout de suite.
+        </p>
+        {traces.length === 0 ? (
+          <p className="compte-vide">
+            Tu n’as pas encore de trace. <Link to="/creer">Créer ma trace</Link>
+          </p>
+        ) : (
+          traces.map((t) => (
+            <fieldset key={t.id} className="compte-choix">
+              <legend>
+                {t.nom} <span className="muted petit">· {t.type === 'memoire' ? 'mémoire' : 'ma trace'}</span>
+              </legend>
+              {CHOIX.map((c) => (
+                <label key={c.cle} className="check">
+                  <input
+                    type="checkbox"
+                    checked={!!t.parametres?.[c.cle]}
+                    onChange={(e) =>
+                      void modifierParametres(t.id, { [c.cle]: e.target.checked })
+                        .then(() => setErreurChoix(''))
+                        .catch((err) => setErreurChoix(err instanceof Error ? err.message : 'Ce choix n’a pas pu être enregistré.'))
+                    }
+                  />
+                  <span>
+                    <strong>{c.titre}</strong> — {c.detail}
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          ))
+        )}
+        {erreurChoix && (
+          <p className="editeur-erreur" role="alert">
+            {erreurChoix}
+          </p>
+        )}
+      </section>
+
+      <section className="compte-bloc" aria-labelledby="h-suppression">
+        <h2 id="h-suppression" className="intertitre">
+          Supprimer certaines données
+        </h2>
+        <p>
+          Ce que tu déposes est scellé pendant cinq ans, mais le scellement ne retire aucun de tes droits. Si tu souhaites supprimer
+          certaines de tes données avant, écris-moi en privé : <a href={`mailto:${CONTACT}?subject=Suppression%20de%20donn%C3%A9es`}>{CONTACT}</a>.
+          Je les retirerai, comme le prévoit le RGPD.
+        </p>
+      </section>
+    </div>
   );
 }
 
@@ -294,13 +532,9 @@ function CompteConnecte({ compte }: { compte: CompteSession }) {
   const [erreur, setErreur] = useState('');
   return (
     <div className="compte-connecte">
-      <p className="lead">
-        Tu es entré·e avec <strong>{compte.email}</strong>.
-      </p>
+      <CompteReglages />
+      <h2 className="intertitre">Et aussi</h2>
       <div className="liens-colonne">
-        <Link to="/ma-trace" className="lien-entrer">
-          Ma trace et mes fragments <Icon name="fleche" size={16} />
-        </Link>
         {compte.role !== 'membre' && (
           <Link to="/admin" className="lien-entrer">
             L’espace de l’équipe du musée <Icon name="fleche" size={16} />
@@ -354,7 +588,8 @@ export function Connexion() {
     const jeton = params.get('jeton');
     if (!jeton) return setErreur('Ce lien est incomplet.');
     verifierLien(jeton)
-      .then(() => {
+      .then((r) => {
+        if (r.changement) return navigate('/compte?adresse=changee', { replace: true });
         let publier = false;
         try {
           publier = localStorage.getItem(APRES_CONNEXION) === '1';

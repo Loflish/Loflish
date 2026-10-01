@@ -29,7 +29,8 @@ classement, pas de compteur : toutes les bulles ont la même taille, le hasard e
   ailleurs.
 - Le logo brodé tient sur une seule ligne.
 - Typographies : Newsreader (titres, citations), IBM Plex Sans (interface, toutes écritures).
-- Les 200 caractères de la question 4 sont affichés en lettrage brodé.
+- Les 200 caractères de la question 4 s'affichent en IBM Plex Sans (gris de fil). Le créateur n'aime
+  pas le lettrage brodé : ne pas le remettre. Seul le logo est brodé.
 - Pas de flaques / aplats de couleur derrière les textes. Fond tissu sur toutes les pages sauf la
   constellation.
 - Le frontend se modifie avec beaucoup de précaution : le créateur tient à chaque détail visuel.
@@ -46,7 +47,7 @@ classement, pas de compteur : toutes les bulles ont la même taille, le hasard e
 - Limites par rubrique (`limiteDe` dans `src/data/types.ts`, source unique partagée avec le
   serveur) : 10 en général, 7 pour souvenirs / ce que je n'ai jamais dit / parole libre, 15 pour
   personnes et lieux. 5 mis en avant par rubrique. 20 médias & documents libres, 5 mis en avant.
-- Les 5 sens (voir, entendre, sentir, goûter, toucher) sont 5 rubriques séparées.
+- Les 5 sens (voir, entendre, sentir, manger — identifiant « gouter » —, toucher) sont 5 rubriques séparées.
 - « Les questions, les fragments et l'essence du profil ne doivent jamais être brisés. »
 - L'œuvre commune : un seul trait par personne et par appareil, dans le fil bordeaux du logo.
 - Aucune fausse bulle en production (les traces de démonstration n'existent qu'en prototype).

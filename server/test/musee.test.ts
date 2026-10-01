@@ -375,3 +375,27 @@ describe('rapidité et lecture des médias', () => {
     expect((await visiteur().get('/api/recherche?q=' + encodeURIComponent('RAPIDE'))).json().ids).toContain(id);
   });
 });
+
+describe('compte : changer d’adresse e-mail', () => {
+  it('ne change rien tant que le lien envoyé à la nouvelle adresse n’est pas ouvert', async () => {
+    const v = visiteur();
+    await v.connecter('ancienne@exemple.fr');
+    expect((await v.post('/api/moi/email', { email: 'ancienne@exemple.fr' })).statusCode).toBe(400);
+    await visiteur().connecter('prise@exemple.fr');
+    expect((await v.post('/api/moi/email', { email: 'prise@exemple.fr' })).statusCode).toBe(409);
+    expect((await visiteur().post('/api/moi/email', { email: 'x@exemple.fr' })).statusCode).toBe(401);
+
+    const r = await v.post('/api/moi/email', { email: 'Adresse-Neuve@Exemple.fr' });
+    expect(r.statusCode).toBe(200);
+    expect((await v.get('/api/moi')).json().compte.email).toBe('ancienne@exemple.fr');
+    const jeton = new URL(r.json().lien.replace('#/', '')).searchParams.get('jeton');
+    const ok = await v.post('/api/auth/verifier', { jeton });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json().changement).toBe(true);
+    expect((await v.get('/api/moi')).json().compte.email).toBe('adresse-neuve@exemple.fr');
+    // l'ancienne adresse ne mène plus à ce compte : elle ouvrirait un compte neuf, vide
+    const autre = visiteur();
+    const c = await autre.connecter('ancienne@exemple.fr');
+    expect(c.id).not.toBe((await v.get('/api/moi')).json().compte.id);
+  });
+});

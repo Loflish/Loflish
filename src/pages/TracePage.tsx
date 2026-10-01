@@ -587,7 +587,6 @@ function RubriqueDetail({ r, trace, canEdit }: { r: Rubrique; trace: Trace; canE
   return (
     <div className="rubrique-detail">
       {r.question && <p className="salle-q">{r.question}</p>}
-      {items.length === 0 && canEdit && <p className="muted">Rien encore ici. Ce que tu déposes est publié sur ta trace, et scellé.</p>}
       <ListeFragments items={items} r={r} trace={trace} canEdit={canEdit} />
       {editor}
     </div>

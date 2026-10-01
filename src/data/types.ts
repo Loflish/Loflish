@@ -142,7 +142,7 @@ export const RUBRIQUES: Rubrique[] = [
   { id: 'voir', titre: 'Voir une dernière fois', court: 'Voir', icone: 'oeil', famille: 'sens', question: 'Qu’aimerais-tu voir une dernière fois ?' },
   { id: 'entendre', titre: 'Entendre une dernière fois', court: 'Entendre', icone: 'oreille', famille: 'sens', question: 'Qu’aimerais-tu entendre une dernière fois ?' },
   { id: 'sentir', titre: 'Sentir une dernière fois', court: 'Sentir', icone: 'nez', famille: 'sens', question: 'Qu’aimerais-tu sentir une dernière fois ?' },
-  { id: 'gouter', titre: 'Goûter une dernière fois', court: 'Goûter', icone: 'tasse', famille: 'sens', question: 'Qu’aimerais-tu goûter ou manger une dernière fois ?' },
+  { id: 'gouter', titre: 'Manger une dernière fois', court: 'Manger', icone: 'tasse', famille: 'sens', question: 'Qu’aimerais-tu manger une dernière fois ?' },
   { id: 'toucher', titre: 'Toucher une dernière fois', court: 'Toucher', icone: 'main', famille: 'sens', question: 'Qu’aimerais-tu toucher ou tenir une dernière fois ?' },
   { id: 'souvenirs', titre: 'Souvenirs', icone: 'image' },
   { id: 'chapitres', titre: 'Chapitres de vie', icone: 'livre' },
@@ -163,7 +163,7 @@ export const QUESTIONS: [string, string, string, string] = [
   'Que dirais-tu à toi-même si ta vie s’arrêtait ?',
   'Que dirais-tu à la personne que tu aimes ?',
   'Que dirais-tu au monde entier ?',
-  'En 200 caractères maximum, que veux-tu laisser ?',
+  'En 200 caractères maximum, comment résumerais-tu tes trois réponses ?',
 ];
 
 export const LIMITES = { q: 1200, q4: 200, sens: 800 };

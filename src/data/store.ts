@@ -500,12 +500,60 @@ export async function demanderLien(email: string): Promise<{ lien?: string }> {
   return appel('POST', '/api/auth/lien', { email });
 }
 
-export async function verifierLien(jeton: string): Promise<CompteSession> {
-  const r = await appel<{ compte: CompteSession }>('POST', '/api/auth/verifier', { jeton });
+export async function verifierLien(jeton: string): Promise<CompteSession & { changement?: boolean }> {
+  const r = await appel<{ compte: CompteSession; changement?: boolean }>('POST', '/api/auth/verifier', { jeton });
   compte = r.compte;
   await rafraichirMesTraces().catch(() => undefined);
   notifier();
-  return r.compte;
+  return { ...r.compte, changement: r.changement };
+}
+
+// ——— le compte : son adresse, et les choix de chacun sur ses données
+
+const CLE_EMAIL = 'nmm:email';
+
+/** L'adresse e-mail : celle du compte en ligne, celle donnée à la création dans le prototype. */
+export function emailDuCompte(): string {
+  if (EN_LIGNE) return compte?.email ?? '';
+  try {
+    return localStorage.getItem(CLE_EMAIL) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/** Prototype : retenir l'adresse donnée à la création (rien n'est envoyé). */
+export function retenirEmailLocal(email: string): void {
+  try {
+    if (email.trim()) localStorage.setItem(CLE_EMAIL, email.trim().toLowerCase());
+  } catch {
+    /* navigation privée : tant pis */
+  }
+  notifier();
+}
+
+/**
+ * Changer d'adresse. En ligne, un lien de confirmation part vers la nouvelle adresse : rien ne change
+ * tant qu'il n'est pas ouvert. Dans le prototype, l'adresse change tout de suite.
+ */
+export async function changerEmail(email: string): Promise<{ confirmation: boolean; lien?: string }> {
+  if (!EN_LIGNE) {
+    retenirEmailLocal(email);
+    return { confirmation: false };
+  }
+  const r = await appel<{ lien?: string }>('POST', '/api/moi/email', { email });
+  return { confirmation: true, lien: r.lien };
+}
+
+/** Modifier ses choix sur ses données (archives, musée, réseaux…) : ce ne sont pas des contenus, ils ne sont pas scellés. */
+export async function modifierParametres(id: string, p: Partial<NonNullable<Trace['parametres']>>): Promise<void> {
+  if (!EN_LIGNE) {
+    updateLocal(id, (t) => ({ ...t, parametres: { ...(t.parametres as NonNullable<Trace['parametres']>), ...p } }));
+    return;
+  }
+  await appel('PUT', `/api/traces/${id}/parametres`, p);
+  await rafraichirMesTraces();
+  notifier();
 }
 
 export async function seDeconnecter(): Promise<void> {

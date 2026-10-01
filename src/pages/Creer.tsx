@@ -3,8 +3,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { BubbleImage, PageTop } from '../components/Chrome';
 import { TexteBrode } from '../components/TexteBrode';
 import { Icon } from '../components/Icon';
-import { demanderLien, deposerFragment, peutCreer, publier, publishLocal, useCompte, useMesTraces } from '../data/store';
+import { demanderLien, deposerFragment, peutCreer, publier, publishLocal, retenirEmailLocal, useCompte, useMesTraces } from '../data/store';
 import { EN_LIGNE } from '../lib/api';
+import { CONTACT } from '../lib/contact';
 import { LienDeveloppement } from './Pages';
 import { LIMITES, QUESTIONS, type Trace } from '../data/types';
 import { MATIERE_COUSUE, NB_MATIERES, loadCatalogue } from '../lib/hd';
@@ -150,6 +151,7 @@ export function Creer() {
     const t = construire();
     if (!EN_LIGNE) {
       publishLocal(t);
+      retenirEmailLocal(d.email);
       return terminer(t);
     }
     // en ligne : il faut être connecté ; sinon le lien part vers l'adresse donnée, et la trace
@@ -286,7 +288,10 @@ export function Creer() {
         {step === 1 && (
           <section className="etape">
             <h1 className="etape-titre">Ton compte</h1>
-            <p className="etape-texte">Ton adresse e-mail n’apparaîtra jamais sur ta trace. Aucune pièce d’identité n’est demandée.</p>
+            <p className="etape-texte">
+              Ton adresse e-mail te permet de revenir : tu reçois un lien pour entrer, sans mot de passe, et retrouver ta trace pour la
+              compléter quand tu le souhaites. Elle n’apparaîtra jamais sur ta trace.
+            </p>
             <label className="field">
               <span className="field-label">Adresse e-mail</span>
               <input type="email" autoComplete="email" value={d.email} onChange={(e) => up({ email: e.target.value })} />
@@ -312,7 +317,6 @@ export function Creer() {
                 J’ai créé Nos mots mémoriaux pour lutter contre l’oubli. Je refuse de porter sur ma conscience la mort de qui que ce soit :
                 ta vie compte infiniment plus que ta trace.
               </p>
-              <p className="mot-fondateur-signature">— la personne qui a créé ce musée</p>
             </aside>
             <p className="muted petit">Prototype : aucun compte n’est réellement créé, rien n’est envoyé.</p>
           </section>
@@ -356,7 +360,7 @@ export function Creer() {
               </>
             )}
             <label className="field">
-              <span className="field-label">Pays associé à {d.kind === 'memoire' ? 'cette mémoire' : 'ma trace'} (facultatif, encouragé)</span>
+              <span className="field-label">Pays associé à {d.kind === 'memoire' ? 'cette mémoire' : 'ma trace'} (facultatif)</span>
               <input value={d.pays} onChange={(e) => up({ pays: e.target.value })} maxLength={48} />
             </label>
             <BulleChoix couleur={d.couleur} matiere={d.matiere} seed={draftId} onChange={up} />
@@ -415,7 +419,6 @@ export function Creer() {
                 </p>
               </div>
             </div>
-            <p className="muted petit">Au survol, on ne voit que ton nom. Au clic, cet aperçu apparaît, puis on peut entrer dans ta mémoire.</p>
           </section>
         )}
 
@@ -439,6 +442,10 @@ export function Creer() {
                 En publiant, {d.kind === 'memoire' ? 'les 200 caractères et le premier souvenir sont scellés' : 'tes quatre réponses sont scellées'}{' '}
                 : ils ne pourront plus être modifiés pendant cinq ans. Chaque fragment que tu ajouteras ensuite sera scellé à son tour, au
                 moment où tu le déposes.
+              </p>
+              <p>
+                Le scellement ne retire aucun de tes droits : si tu souhaites supprimer certaines de tes données avant la fin des cinq ans,
+                écris-moi en privé (<a href={`mailto:${CONTACT}`}>{CONTACT}</a>) et je les retirerai, comme le prévoit le RGPD.
               </p>
               <p>Tout ce qui est publié pourra être lu par n’importe quel visiteur, retrouvé par la recherche, et partagé ou capturé par d’autres.</p>
               <label className="check">
@@ -525,10 +532,23 @@ function BulleChoix({
   }, []);
   // l'aquarelle cousue d'abord, puis les 92 taches
   const matieres = useMemo(() => Array.from({ length: NB_MATIERES + 1 }, (_, i) => i), []);
+  // les flèches font défiler les matières une à une (en boucle)
+  const tourner = (sens: -1 | 1) => onChange({ matiere: (((matiere < 0 ? 0 : matiere) + sens) % (NB_MATIERES + 1) + NB_MATIERES + 1) % (NB_MATIERES + 1) });
   return (
     <div className="bulle-choix">
       <div className="bulle-choix-apercu">
-        <BubbleImage key={`${teinte}-${matiere}`} id={seed} couleur={teinte} matiere={matiere} size={150} className="breathing bulle-change" />
+        <div className="bulle-fleches" role="group" aria-label="Matière de la bulle">
+          <button type="button" className="icon-btn bulle-fleche" onClick={() => tourner(-1)} aria-label="Matière précédente">
+            <Icon name="retour" size={20} />
+          </button>
+          <BubbleImage key={`${teinte}-${matiere}`} id={seed} couleur={teinte} matiere={matiere} size={150} className="breathing bulle-change" />
+          <button type="button" className="icon-btn bulle-fleche" onClick={() => tourner(1)} aria-label="Matière suivante">
+            <Icon name="fleche" size={20} />
+          </button>
+        </div>
+        <p className="bulle-numero" aria-live="polite">
+          {matiere === MATIERE_COUSUE ? 'Aquarelle cousue' : `Matière ${matiere} / ${NB_MATIERES}`}
+        </p>
       </div>
       <div className="bulle-choix-options">
         <fieldset className="couleurs">
@@ -565,9 +585,6 @@ function BulleChoix({
               );
             })}
           </div>
-          <button type="button" className="lien-discret matiere-hasard" onClick={() => onChange({ matiere: matiereAuHasard() })}>
-            Au hasard
-          </button>
         </fieldset>
       </div>
     </div>

@@ -56,6 +56,7 @@
   margin-top: 0;
 }
 .vision {
+  font-family: var(--serif);
   margin-top: 2.4rem !important;
   font-style: italic;
   font-size: 1.5rem !important;
@@ -81,6 +82,145 @@
   margin-top: 0;
   padding-top: 1rem;
   border-top: 1px solid var(--filet);
+}
+
+/* ——— le projet : un manifeste qu'on lit d'une traite */
+
+.projet-mission {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.25rem, 1.05rem + 0.7vw, 1.6rem);
+  line-height: 1.5;
+  max-width: 40rem;
+  padding-left: 1.2rem;
+  border-left: 1px solid var(--filet-fort);
+  margin: calc(-1 * clamp(1rem, 3vw, 2.4rem)) 0 clamp(2.5rem, 6vw, 4.5rem);
+}
+.projet .texte-courant .intertitre {
+  margin-top: 0;
+}
+.projet-section {
+  margin-top: clamp(3rem, 7vw, 5.5rem);
+}
+.projet-intro,
+.projet-conclusion,
+.projet-note {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  line-height: 1.7;
+  max-width: 40rem;
+}
+.projet-intro + .projet-intro {
+  margin-top: 1rem;
+}
+.projet-conclusion {
+  margin-top: 1.8rem;
+  font-style: italic;
+}
+.projet-note {
+  margin-top: 1.6rem;
+  color: var(--encre-2);
+  font-size: 1.05rem;
+}
+.projet-cartes {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: clamp(1rem, 3vw, 2rem);
+  margin-top: 1.6rem;
+}
+.projet-cartes.deux {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.projet-cartes.trois {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.projet-carte {
+  padding: clamp(1.2rem, 3vw, 1.8rem);
+  border: 1px solid var(--filet);
+  border-radius: var(--rayon);
+  background: rgba(243, 241, 236, 0.55);
+}
+.projet-carte h3 {
+  font-family: var(--serif);
+  font-weight: 460;
+  font-size: 1.25rem;
+  margin: 0.7rem 0 0.4rem;
+}
+.projet-carte p {
+  font-size: var(--t-s);
+  line-height: 1.6;
+  color: var(--encre-2);
+}
+.projet-carte .icon {
+  color: var(--encre-2);
+}
+.projet-carte-lieu {
+  font-family: var(--sans);
+  font-size: var(--t-xs) !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.projet-carte blockquote {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.3rem;
+  line-height: 1.5;
+  color: var(--encre);
+  margin: 0.8rem 0 1rem;
+}
+.projet-etapes {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.4rem, 4vw, 3rem);
+  margin-top: 1.6rem;
+  counter-reset: etape;
+}
+.projet-etapes li {
+  counter-increment: etape;
+  position: relative;
+  padding-top: 1rem;
+  border-top: 1px solid var(--filet-fort);
+}
+.projet-etapes li::before {
+  content: counter(etape);
+  position: absolute;
+  top: 1rem;
+  right: 0;
+  font-family: var(--serif);
+  font-size: 2.4rem;
+  line-height: 1;
+  color: var(--encre-3);
+}
+.projet-etape-icone {
+  color: var(--encre-2);
+}
+.projet-etapes h3 {
+  font-family: var(--serif);
+  font-weight: 460;
+  font-size: 1.3rem;
+  margin: 0.8rem 0 0.4rem;
+}
+.projet-etapes p {
+  font-size: var(--t-s);
+  line-height: 1.6;
+  color: var(--encre-2);
+}
+.projet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 2rem;
+  margin-top: 1.6rem;
+}
+@media (max-width: 760px) {
+  .projet-cartes.deux,
+  .projet-cartes.trois,
+  .projet-etapes {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* l'objet réel : matière maximale et authentique */
@@ -422,7 +562,7 @@
 /* choisir sa bulle : l'aperçu reste en vue pendant que l'on essaie */
 .bulle-choix {
   display: grid;
-  grid-template-columns: 170px minmax(0, 1fr);
+  grid-template-columns: 240px minmax(0, 1fr);
   gap: 1.5rem clamp(1.5rem, 4vw, 3rem);
   align-items: start;
   margin-top: 2rem;
@@ -452,8 +592,24 @@
   margin-top: 0.4rem;
   max-width: 34rem;
 }
-.matiere-hasard {
-  margin-top: 0.8rem;
+.bulle-fleches {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.bulle-fleche {
+  border: 1px solid var(--filet);
+  background: rgba(243, 241, 236, 0.7);
+}
+.bulle-fleche:hover {
+  border-color: var(--filet-fort);
+}
+.bulle-numero {
+  margin-top: 0.6rem;
+  text-align: center;
+  font-size: var(--t-xs);
+  color: var(--encre-3);
+  font-variant-numeric: tabular-nums;
 }
 .couleur-choisie {
   margin-top: 0.8rem;
@@ -488,6 +644,9 @@
 .verif > p {
   font-size: var(--t-s);
   color: var(--encre-2);
+}
+.verif > p + p {
+  margin-top: 0.6rem;
 }
 .etape-actions {
   display: flex;
@@ -752,6 +911,68 @@
 .compte-effacer summary {
   cursor: pointer;
   color: var(--encre-2);
+}
+
+/* ——— le compte : l'adresse, les choix sur ses données, la suppression */
+.compte-reglages {
+  max-width: 40rem;
+}
+.compte-bloc + .compte-bloc {
+  margin-top: clamp(2.4rem, 5vw, 3.4rem);
+}
+.compte-bloc .intertitre {
+  margin-top: 0;
+}
+.compte-bloc > p {
+  font-size: var(--t-s);
+  line-height: 1.6;
+}
+.compte-adresse {
+  font-family: var(--serif);
+  font-size: 1.3rem !important;
+  margin-bottom: 0.3rem;
+  overflow-wrap: anywhere;
+}
+.compte-changer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0 1rem;
+}
+.compte-changer .field {
+  flex: 1 1 16rem;
+  margin: 1rem 0 0;
+}
+.compte-changer .bouton {
+  margin-top: 1rem;
+}
+.compte-changer .editeur-erreur {
+  flex-basis: 100%;
+  margin-top: 0.6rem;
+}
+.compte-ok {
+  margin-top: 0.8rem;
+  padding-left: 0.9rem;
+  border-left: 1px solid var(--filet-fort);
+}
+.compte-choix {
+  border: 0;
+  padding: 0;
+  margin: 1.2rem 0 0;
+}
+.compte-choix legend {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  margin-bottom: 0.2rem;
+}
+.compte-choix .check strong {
+  font-weight: 600;
+}
+.compte-vide {
+  margin-top: 1rem;
+}
+.compte-connecte > .intertitre {
+  margin-top: clamp(2.4rem, 5vw, 3.4rem);
 }
 
 /* ——— l'espace de l'équipe du musée : sobre, lisible, sans décor */

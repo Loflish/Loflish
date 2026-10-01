@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { config } from './config';
-import { envoyerLienConnexion } from './courriel';
+import { envoyerLienChangement, envoyerLienConnexion } from './courriel';
 import { journaliser, requete, transaction, une } from './db';
 import { empreinte, jeton } from './securite';
 
@@ -92,14 +92,23 @@ export async function routesAuth(app: FastifyInstance) {
   app.post('/api/auth/verifier', { config: { rateLimit: { max: 20, timeWindow: '15 minutes' } } }, async (req, rep) => {
     const { jeton: j } = z.object({ jeton: z.string().min(20).max(200) }).parse(req.body);
     const compte = await transaction(async (c) => {
-      const lien = await une<{ email: string }>(
+      const lien = await une<{ email: string; compte_id: string | null }>(
         `update liens_connexion set utilise_le = now()
           where empreinte = $1 and utilise_le is null and expire_le > now()
-          returning email`,
+          returning email, compte_id`,
         [empreinte(j)],
         c,
       );
       if (!lien) throw new Refus(400, 'Ce lien a expiré ou a déjà servi. Demande-en un nouveau.', 'lien');
+      // un lien de changement d'adresse : le compte prend la nouvelle adresse
+      if (lien.compte_id) {
+        const deja = await une('select 1 from comptes where email = $1 and id <> $2', [lien.email, lien.compte_id], c);
+        if (deja) throw new Refus(409, 'Cette adresse est déjà utilisée par un autre compte.', 'pris');
+        const ancien = await une<{ email: string }>('select email from comptes where id = $1', [lien.compte_id], c);
+        if (!ancien) throw new Refus(400, 'Ce compte n’existe plus.', 'lien');
+        await requete('update comptes set email = $2 where id = $1', [lien.compte_id, lien.email], c);
+        await journaliser(lien.compte_id, 'compte.email_change', lien.compte_id, {}, c);
+      }
       const role = config.admins.includes(lien.email) ? 'admin' : null;
       const compte = (await une<Compte>(
         `insert into comptes (email, role) values ($1, coalesce($2, 'membre'))
@@ -112,10 +121,10 @@ export async function routesAuth(app: FastifyInstance) {
       const s = jeton();
       await requete(`insert into sessions (empreinte, compte_id, expire_le) values ($1, $2, now() + interval '${DUREE_SESSION_JOURS} days')`, [empreinte(s), compte.id], c);
       await journaliser(compte.id, 'connexion', null, {}, c);
-      return { compte, s };
+      return { compte, s, changement: !!lien.compte_id };
     });
     rep.setCookie(COOKIE, compte.s, optionsCookie());
-    return { compte: publicCompte(compte.compte) };
+    return { compte: publicCompte(compte.compte), changement: compte.changement };
   });
 
   app.post('/api/auth/deconnexion', async (req, rep) => {
@@ -126,6 +135,22 @@ export async function routesAuth(app: FastifyInstance) {
   });
 
   app.get('/api/moi', async (req) => ({ compte: req.compte ? publicCompte(req.compte) : null }));
+
+  // changer d'adresse e-mail : rien ne change tant que le lien envoyé à la nouvelle adresse n'est pas ouvert
+  app.post('/api/moi/email', { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } }, async (req) => {
+    const c = exigerCompte(req);
+    const { email } = z.object({ email: z.string().trim().toLowerCase().email().max(200) }).parse(req.body);
+    if (email === c.email) throw new Refus(400, 'C’est déjà ton adresse.', 'meme');
+    if (await une('select 1 from comptes where email = $1', [email])) throw new Refus(409, 'Cette adresse est déjà utilisée par un autre compte.', 'pris');
+    const j = jeton();
+    await requete(
+      `insert into liens_connexion (empreinte, email, expire_le, compte_id) values ($1, $2, now() + interval '${DUREE_LIEN_MIN} minutes', $3)`,
+      [empreinte(j), email, c.id],
+    );
+    const lien = `${config.siteUrl}/#/connexion?jeton=${j}`;
+    await envoyerLienChangement(email, lien);
+    return config.production ? { envoye: true } : { envoye: true, lien };
+  });
 
   // déclarer avoir 18 ans ou plus (demandé avant de créer une trace)
   app.post('/api/moi/majeur', async (req) => {

@@ -17,6 +17,9 @@
 }
 
 .trace-nav {
+  /* toujours au-dessus du halo de la grande bulle, qui déborde vers le haut sur téléphone */
+  position: relative;
+  z-index: 6;
   display: flex;
   justify-content: space-between;
   align-items: center;

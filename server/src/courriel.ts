@@ -25,3 +25,24 @@ export async function envoyerLienConnexion(email: string, lien: string): Promise
   }
   await transport.sendMail({ from: config.smtp.expediteur, to: email, subject: 'Ton lien pour entrer dans Nos mots mémoriaux', text: texte });
 }
+
+/** Confirmer une nouvelle adresse : le lien arrive à la nouvelle adresse, et ne change rien tant qu'il n'est pas ouvert. */
+export async function envoyerLienChangement(email: string, lien: string): Promise<void> {
+  const texte = [
+    'Bonjour,',
+    '',
+    'Tu as demandé à utiliser cette adresse pour entrer dans Nos mots mémoriaux.',
+    'Ouvre ce lien pour confirmer (valable 20 minutes, une seule fois) :',
+    '',
+    lien,
+    '',
+    'Si tu n’as rien demandé, ignore simplement ce message : rien ne changera.',
+    '',
+    'Nos mots mémoriaux',
+  ].join('\n');
+  if (!transport) {
+    console.log(`[courriel] lien de changement d’adresse pour ${email} : ${lien}`);
+    return;
+  }
+  await transport.sendMail({ from: config.smtp.expediteur, to: email, subject: 'Confirme ta nouvelle adresse — Nos mots mémoriaux', text: texte });
+}

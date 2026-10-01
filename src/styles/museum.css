@@ -563,6 +563,8 @@
   height: 166.667%;
   max-width: none;
   mix-blend-mode: multiply;
+  /* le halo de la bulle déborde : il ne doit jamais intercepter un clic (ex. « Retour au musée ») */
+  pointer-events: none;
 }
 
 .hint-small {
