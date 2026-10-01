@@ -55,7 +55,8 @@ n'importe quelle version.
    - `cahier-des-charges-conversation-chatgpt.md` : le document de conception de départ ;
    - `images-envoyees/` : les images que tu m'as envoyées ;
    - `RECUPERER.md` et `CLAUDE.md` : ce guide et la mémoire du projet.
-   La transcription brute complète (avec tous les détails techniques, ~70 Mo) est envoyée à part :
+   La transcription technique complète (`transcription-complete-sans-images.jsonl.gz`, sans les
+   captures d’écran) est envoyée à part :
    elle ne sert que si une future session doit retrouver un détail précis.
 3. Ces fichiers restent privés : ne les mets pas dans le dépôt GitHub (il est public).
 
