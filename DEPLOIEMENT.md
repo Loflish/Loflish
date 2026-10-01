@@ -257,5 +257,30 @@ pas dans `/usr/lib/postgresql/16/bin`.
 | Équipe | `/api/admin/…` : `etat`, `signalements`, `traces`, `fragments/:id`, `medias/:id`, `traits`, `comptes`, `editions`, `journal`, `export` |
 
 Le code : `server/src/routes/` (une route = une règle lisible), le schéma : `server/migrations/`.
-Pour faire évoluer la base, ajoute un fichier `server/migrations/002_….sql` : il sera appliqué
-une fois, au prochain démarrage.
+Pour faire évoluer la base, ajoute un fichier `server/migrations/003_….sql` (le suivant dans
+l'ordre) : il sera appliqué une fois, au prochain démarrage.
+
+---
+
+## 10. Rapidité : ce que le serveur fait déjà
+
+- **Vidéos et sons lus par morceaux** (requêtes « Range ») : on peut avancer dans une vidéo, et
+  les iPhone et iPad les lisent (ils l'exigent).
+- **Rien n'est envoyé deux fois** : la constellation et l'œuvre commune sont gardées en mémoire et
+  portent une étiquette de version ; un navigateur qui a déjà la bonne version reçoit une réponse
+  vide (« 304 »). Toute écriture renouvelle la version, la nouvelle bulle apparaît aussitôt.
+- **Les fichiers déposés** sont gardés une semaine par le navigateur (ils ne changent jamais) ;
+  avec S3, la même adresse temporaire est redonnée pendant 50 minutes pour que le cache serve.
+- **Le site** : les fichiers `assets/` sont gardés un an (leur nom change à chaque version), la page
+  `index.html` est toujours revérifiée : une mise à jour est vue tout de suite, sans page cassée.
+- **La recherche** passe par des index « trigrammes » (migration 002) : elle reste rapide avec des
+  milliers de traces et de fragments.
+- **Garde-fous** : une requête à la base ne dure jamais plus de 15 secondes ; une connexion perdue
+  avec la base n'arrête pas le serveur.
+
+Réglages facultatifs (dans `.env`, rarement utiles) :
+
+| Réglage | Par défaut | Rôle |
+| --- | --- | --- |
+| `PG_CONNEXIONS` | `10` | connexions simultanées à la base |
+| `PROXY_DE_CONFIANCE` | `loopback, linklocal, uniquelocal` | les relais dont on croit l'adresse transmise (Caddy, sur le réseau privé de Docker) |

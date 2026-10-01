@@ -100,10 +100,20 @@ async function lireFormulaire(req: FastifyRequest): Promise<{ donnees: unknown; 
       }
       fichier = { chemin, nom: part.filename, dossier };
     } else if (part.fieldname === 'donnees') {
-      donnees = JSON.parse(String(part.value));
+      try {
+        donnees = JSON.parse(String(part.value));
+      } catch {
+        throw new Refus(400, 'Certaines informations ne conviennent pas.', 'invalide');
+      }
     }
   }
   return { donnees, fichier };
+}
+
+/** Avant de ranger un fichier : la trace existe et appartient bien à cette personne (sinon rien n'est stocké). */
+async function verifierProprietaire(compte: Compte, id: string) {
+  const t = await une<{ compte_id: string | null }>('select compte_id from traces where id = $1', [id]);
+  if (!t || t.compte_id !== compte.id) throw new Refus(404, 'Cette trace n’est pas la tienne.', 'introuvable');
 }
 
 /** Vérifie la vraie nature d'un fichier et le range dans le stockage. */
@@ -193,6 +203,7 @@ export async function routesAuteur(app: FastifyInstance) {
     const { donnees, fichier } = await lireFormulaire(req);
     try {
       const d = schemaFragment.parse(donnees);
+      if (fichier) await verifierProprietaire(c, id);
       const range = fichier ? await rangerFichier(id, fichier) : null;
       const r = await transaction(async (tx) => {
         await maTrace(tx, c, id);
@@ -292,6 +303,7 @@ export async function routesAuteur(app: FastifyInstance) {
     try {
       const d = schemaMedia.parse(donnees);
       if (!fichier && !d.lien) throw new Refus(400, 'Choisis un fichier ou un lien.', 'vide');
+      if (fichier) await verifierProprietaire(c, id);
       const range = fichier ? await rangerFichier(id, fichier) : null;
       await transaction(async (tx) => {
         await maTrace(tx, c, id);

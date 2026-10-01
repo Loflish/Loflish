@@ -17,10 +17,21 @@ import { config } from './config';
  */
 export interface Stockage {
   deposer(cle: string, fichierLocal: string, mime: string): Promise<void>;
-  /** un flux à renvoyer, ou une adresse temporaire vers laquelle rediriger */
-  lire(cle: string): Promise<{ flux: Readable; taille: number } | { redirection: string } | null>;
+  /**
+   * Un flux à renvoyer (en entier, ou seulement les octets demandés : les lecteurs vidéo et audio
+   * lisent par morceaux), ou une adresse temporaire vers laquelle rediriger.
+   */
+  lire(cle: string, plage?: Plage): Promise<{ flux: Readable; taille: number; modifie: Date } | { redirection: string } | null>;
+  /** la taille et la date d'un fichier, sans l'ouvrir (null s'il n'existe pas) */
+  infos?(cle: string): Promise<{ taille: number; modifie: Date } | null>;
   supprimer(cle: string): Promise<void>;
   type: 'disque' | 's3';
+}
+
+/** Les octets demandés, bornes comprises (en-tête HTTP « Range: bytes=debut-fin »). */
+export interface Plage {
+  debut: number;
+  fin: number;
 }
 
 function disque(dossier: string): Stockage {
@@ -37,11 +48,19 @@ function disque(dossier: string): Stockage {
       await mkdir(dirname(p), { recursive: true });
       await copyFile(fichierLocal, p);
     },
-    async lire(cle) {
+    async infos(cle) {
+      try {
+        const s = await stat(chemin(cle));
+        return { taille: s.size, modifie: s.mtime };
+      } catch {
+        return null;
+      }
+    },
+    async lire(cle, plage) {
       try {
         const p = chemin(cle);
         const s = await stat(p);
-        return { flux: createReadStream(p), taille: s.size };
+        return { flux: createReadStream(p, plage ? { start: plage.debut, end: plage.fin } : undefined), taille: s.size, modifie: s.mtime };
       } catch {
         return null;
       }
@@ -54,6 +73,7 @@ function disque(dossier: string): Stockage {
 
 function s3(): Stockage {
   const { bucket, region, endpoint, cle, secret } = config.stockage.s3;
+  const adresses = new Map<string, { url: string; expire: number }>();
   const client = new S3Client({ region, endpoint, forcePathStyle: !!endpoint, credentials: { accessKeyId: cle, secretAccessKey: secret } });
   return {
     type: 's3',
@@ -61,11 +81,19 @@ function s3(): Stockage {
       await new Upload({ client, params: { Bucket: bucket, Key: k, Body: createReadStream(fichierLocal), ContentType: mime } }).done();
     },
     async lire(k) {
-      // le navigateur lit directement dans le stockage, par une adresse valable une heure
+      // le navigateur lit directement dans le stockage (qui gère lui-même la lecture par morceaux),
+      // par une adresse valable une heure. La même adresse est redonnée pendant 50 minutes : le
+      // navigateur peut ainsi garder le fichier en cache au lieu de le retélécharger à chaque visite.
+      const maintenant = Date.now();
+      const deja = adresses.get(k);
+      if (deja && deja.expire > maintenant) return { redirection: deja.url };
       const url = await getSignedUrl(client, new GetObjectCommand({ Bucket: bucket, Key: k }), { expiresIn: 3600 });
+      if (adresses.size > 20000) adresses.clear();
+      adresses.set(k, { url, expire: maintenant + 50 * 60 * 1000 });
       return { redirection: url };
     },
     async supprimer(k) {
+      adresses.delete(k);
       await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: k }));
     },
   };

@@ -1,8 +1,25 @@
 import pg from 'pg';
 import { config } from './config';
 
-/** La base PostgreSQL : un seul pool pour tout le serveur. */
-export const pool = new pg.Pool({ connectionString: config.baseDeDonnees, max: 10 });
+/**
+ * La base PostgreSQL : un seul pool pour tout le serveur.
+ * - une requête ne peut pas durer plus de 15 secondes (une requête bloquée ne bloque pas le musée) ;
+ * - une transaction oubliée ouverte est fermée au bout de 30 secondes ;
+ * - si la base ne répond pas, on abandonne au bout de 10 secondes au lieu d'attendre indéfiniment.
+ */
+export const pool = new pg.Pool({
+  connectionString: config.baseDeDonnees,
+  max: Number(process.env.PG_CONNEXIONS ?? 10),
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 10_000,
+  statement_timeout: 15_000,
+  idle_in_transaction_session_timeout: 30_000,
+  application_name: 'nos-mots-memoriaux',
+});
+
+// une connexion inactive qui tombe (redémarrage de la base, réseau) ne doit pas arrêter le serveur :
+// le pool en ouvrira une autre à la prochaine requête
+pool.on('error', (e) => console.error('[base] connexion perdue :', e.message));
 
 export type Client = pg.PoolClient | pg.Pool;
 

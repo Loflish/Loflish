@@ -1,20 +1,54 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { exigerCompte, Refus } from '../auth';
+import { dejaAJour, etiquette, memoire } from '../cache';
 import { config } from '../config';
 import { journaliser, requete, une } from '../db';
 import { LONGUEUR_MAX_TRAIT, MONDE, RUBRIQUE_IDS } from '../regles';
 import { presence, trace, type LigneFragment, type LigneMedia, type LigneTrace } from '../serialiser';
 import { empreinte, jeton } from '../securite';
-import { stockage } from '../stockage';
+import { stockage, type Plage } from '../stockage';
+
+/**
+ * L'en-tête « Range » d'un lecteur vidéo ou audio : une seule plage d'octets.
+ * undefined = tout le fichier ; 'impossible' = plage hors du fichier (réponse 416).
+ */
+export function lirePlage(entete: string | undefined, taille: number): Plage | 'impossible' | undefined {
+  const m = entete ? /^bytes=(\d*)-(\d*)$/.exec(entete.trim()) : null;
+  if (!m || (m[1] === '' && m[2] === '')) return undefined;
+  let debut: number, fin: number;
+  if (m[1] === '') {
+    // « bytes=-500 » : les 500 derniers octets
+    debut = Math.max(0, taille - Number(m[2]));
+    fin = taille - 1;
+  } else {
+    debut = Number(m[1]);
+    fin = m[2] === '' ? taille - 1 : Math.min(Number(m[2]), taille - 1);
+  }
+  if (debut >= taille || debut > fin) return 'impossible';
+  return { debut, fin };
+}
+
+/** Le nom proposé au téléchargement, sans risque pour l'en-tête (RFC 6266). */
+function nomDeTelechargement(nom: string | null): string {
+  const n = (nom ?? 'document').replace(/[\r\n"\\]/g, '').slice(0, 180) || 'document';
+  const ascii = n.normalize('NFD').replace(/[^\x20-\x7e]/g, '') || 'document';
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(n)}`;
+}
 
 /** Ce que tout le monde peut voir et faire, sans compte (sauf coudre un trait). */
 export async function routesPubliques(app: FastifyInstance) {
-  // la constellation : toutes les présences publiées
-  app.get('/api/presences', async (_req, rep) => {
-    const lignes = await requete<LigneTrace>(`select * from traces where statut = 'publiee' order by cree_le`);
-    rep.header('cache-control', 'public, max-age=30');
-    return { presences: lignes.map(presence) };
+  // la constellation : toutes les présences publiées (gardée en mémoire jusqu'à la prochaine écriture)
+  const presences = memoire(async () => {
+    const lignes = await requete<LigneTrace>(
+      `select id, nom, type, couleur, matiere, pays, cree_le, q4, memoire_apercu from traces where statut = 'publiee' order by cree_le`,
+    );
+    return JSON.stringify({ presences: lignes.map(presence) });
+  });
+  app.get('/api/presences', async (req, rep) => {
+    rep.header('cache-control', 'public, no-cache');
+    if (dejaAJour(req, rep, etiquette('presences'))) return rep;
+    return rep.type('application/json; charset=utf-8').send(await presences());
   });
 
   // un profil complet
@@ -39,17 +73,19 @@ export async function routesPubliques(app: FastifyInstance) {
       .parse(req.query);
     const rubs = (rubriques ?? '').split(',').map((r) => r.trim()).filter((r) => RUBRIQUE_IDS.has(r));
     if (!q && rubs.length === 0) throw new Refus(400, 'Écris au moins deux lettres, ou choisis une rubrique.', 'recherche');
+    // le motif est comparé au texte sans accents ni majuscules ; les index de la migration 002 rendent
+    // cette recherche rapide (les expressions doivent rester identiques à celles des index)
+    const motif = q ? `%${q.toLowerCase().replace(/[\\%_]/g, (c) => '\\' + c)}%` : null;
     const lignes = await requete<{ id: string }>(
       `select t.id from traces t
         where t.statut = 'publiee'
-          and ($1::text is null or unaccent(t.nom) ilike unaccent($1) or unaccent(coalesce(t.pays, '')) ilike unaccent($1)
-               or unaccent(concat_ws(' ', t.q1, t.q2, t.q3, t.q4, t.memoire_apercu)) ilike unaccent($1)
-               or exists (select 1 from fragments f where f.trace_id = t.id
-                           and unaccent(concat_ws(' ', f.titre, f.texte, f.lieu)) ilike unaccent($1)))
+          and ($1::text is null
+               or texte_recherche_trace(t.nom, t.pays, t.q1, t.q2, t.q3, t.q4, t.memoire_apercu) like lower(sans_accents($1))
+               or t.id in (select f.trace_id from fragments f where texte_recherche_fragment(f.titre, f.texte, f.lieu) like lower(sans_accents($1))))
           and not exists (select 1 from unnest($2::text[]) r
                            where not exists (select 1 from fragments f where f.trace_id = t.id and f.rubrique = r))
         limit 1000`,
-      [q ? `%${q.replace(/[\\%_]/g, (c) => '\\' + c)}%` : null, rubs],
+      [motif, rubs],
     );
     return { ids: lignes.map((l) => l.id) };
   });
@@ -84,13 +120,30 @@ export async function routesPubliques(app: FastifyInstance) {
     );
     const visible = m && (m.statut === 'publiee' || (req.compte && (req.compte.id === m.compte_id || req.compte.role !== 'membre')));
     if (!m || !visible) throw new Refus(404, 'Ce fichier n’existe pas.', 'introuvable');
-    const f = await stockage.lire(cle);
-    if (!f) throw new Refus(404, 'Ce fichier est introuvable dans le stockage.', 'introuvable');
-    if ('redirection' in f) return rep.redirect(f.redirection, 302);
-    rep.header('content-type', m.mime).header('content-length', f.taille).header('cache-control', 'private, max-age=86400');
+    // les fichiers ne changent jamais (chaque dépôt a sa propre clé) : le navigateur peut les garder.
+    // « private » : aucun cache partagé ne les conserve (un retrait par la modération est immédiat pour
+    // les nouveaux visiteurs).
+    rep.header('cache-control', m.statut === 'publiee' ? 'private, max-age=604800, immutable' : 'private, no-store');
     rep.header('x-content-type-options', 'nosniff');
-    if (m.mime === 'application/pdf' || m.mime.startsWith('image/') || m.mime.startsWith('video/') || m.mime.startsWith('audio/')) rep.header('content-disposition', 'inline');
-    else rep.header('content-disposition', `attachment; filename="${encodeURIComponent(m.nom_fichier ?? 'document')}"`);
+    const etag = `"${cle.replace(/[^a-zA-Z0-9._-]/g, '')}"`;
+    if (stockage.type === 'disque' && (req.headers['if-none-match'] ?? '').split(',').some((e) => e.trim().replace(/^W\//, '') === etag))
+      return rep.status(304).header('etag', etag).send();
+
+    const infos = stockage.infos ? await stockage.infos(cle) : null;
+    const plage = infos ? lirePlage(req.headers.range, infos.taille) : undefined;
+    if (plage === 'impossible') return rep.status(416).header('content-range', `bytes */${infos!.taille}`).send();
+    const f = await stockage.lire(cle, plage);
+    if (!f) throw new Refus(404, 'Ce fichier est introuvable dans le stockage.', 'introuvable');
+    if ('redirection' in f) return rep.header('cache-control', 'private, no-cache').redirect(f.redirection, 302);
+
+    rep.header('content-type', m.mime).header('accept-ranges', 'bytes').header('etag', etag).header('last-modified', f.modifie.toUTCString());
+    const lisible = m.mime === 'application/pdf' || m.mime.startsWith('image/') || m.mime.startsWith('video/') || m.mime.startsWith('audio/');
+    rep.header('content-disposition', lisible ? 'inline' : nomDeTelechargement(m.nom_fichier));
+    if (plage) {
+      rep.status(206).header('content-range', `bytes ${plage.debut}-${plage.fin}/${f.taille}`).header('content-length', plage.fin - plage.debut + 1);
+    } else {
+      rep.header('content-length', f.taille);
+    }
     return rep.send(f.flux);
   });
 
@@ -120,12 +173,17 @@ export async function routesPubliques(app: FastifyInstance) {
 
   // ——— l'œuvre commune : un seul trait par personne et par appareil
   const APPAREIL = 'nmm_appareil';
-  app.get('/api/traits', async (req, rep) => {
-    const lignes = await requete<{ id: string; x1: number; y1: number; x2: number; y2: number; compte_id: string | null; appareil: string | null }>(
+  const traits = memoire(() =>
+    requete<{ id: string; x1: number; y1: number; x2: number; y2: number; compte_id: string | null; appareil: string | null }>(
       'select id, x1, y1, x2, y2, compte_id, appareil from traits where not masque order by cousu_le limit 50000',
-    );
+    ),
+  );
+  app.get('/api/traits', async (req, rep) => {
     const app_ = req.cookies[APPAREIL] ? empreinte(req.cookies[APPAREIL]!) : null;
-    rep.header('cache-control', 'no-store');
+    // l'étiquette dépend aussi de la personne : « moi » marque son propre trait
+    rep.header('cache-control', 'private, no-cache');
+    if (dejaAJour(req, rep, etiquette('traits', empreinte(`${req.compte?.id ?? ''}|${app_ ?? ''}`).slice(0, 12)))) return rep;
+    const lignes = await traits();
     return {
       traits: lignes.map((t) => ({ id: t.id, x1: t.x1, y1: t.y1, x2: t.x2, y2: t.y2, moi: (req.compte && t.compte_id === req.compte.id) || (app_ !== null && t.appareil === app_) || undefined })),
     };

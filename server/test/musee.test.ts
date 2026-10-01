@@ -40,7 +40,7 @@ function visiteur() {
   const req = async (method: string, url: string, payload?: unknown, headers: Record<string, string> = {}) =>
     garder((await app.inject({ method: method as 'GET', url, payload: payload as never, headers: { ...headers, cookie: Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ') } })) as unknown as Rep);
   return {
-    get: (u: string) => req('GET', u),
+    get: (u: string, h?: Record<string, string>) => req('GET', u, undefined, h),
     post: (u: string, p?: unknown, h?: Record<string, string>) => req('POST', u, p ?? {}, h),
     put: (u: string, p: unknown) => req('PUT', u, p),
     del: (u: string, p?: unknown) => req('DELETE', u, p ?? {}),
@@ -282,5 +282,96 @@ describe('RGPD', () => {
     expect((await visiteur().get(src)).statusCode).toBe(404);
     const reste = await pool.query('select count(*) from traces where id = $1', [t.id]);
     expect(Number(reste.rows[0].count)).toBe(0);
+  });
+});
+
+describe('rapidité et lecture des médias', () => {
+  const v = visiteur();
+  let id = '';
+  let src = '';
+  let doc = '';
+
+  it('lit une vidéo ou un son par morceaux (Range), et laisse le navigateur garder les fichiers', async () => {
+    await v.connecter('rapide@exemple.fr');
+    await v.post('/api/moi/majeur', { majeur: true });
+    id = (await v.post('/api/traces', personnelle('Rapide'))).json().trace.id;
+    const image = png();
+    const f = formulaire({ rubrique: 'voir', texte: 'Une image.' }, { nom: 'i.png', contenu: image, type: 'image/png' });
+    src = (await v.post(`/api/traces/${id}/fragments`, f.corps, f.entetes)).json().trace.medias[0].src;
+
+    const tout = await visiteur().get(src);
+    expect(tout.statusCode).toBe(200);
+    expect(tout.headers['accept-ranges']).toBe('bytes');
+    expect(String(tout.headers['cache-control'])).toContain('max-age=604800');
+    const etag = String(tout.headers.etag);
+
+    const debut = await visiteur().get(src, { range: 'bytes=0-7' });
+    expect(debut.statusCode).toBe(206);
+    expect(debut.headers['content-range']).toBe(`bytes 0-7/${image.length}`);
+    expect(Buffer.from(debut.body, 'latin1').length).toBe(8);
+
+    const fin = await visiteur().get(src, { range: 'bytes=-4' });
+    expect(fin.statusCode).toBe(206);
+    expect(fin.headers['content-range']).toBe(`bytes ${image.length - 4}-${image.length - 1}/${image.length}`);
+
+    expect((await visiteur().get(src, { range: `bytes=${image.length + 10}-` })).statusCode).toBe(416);
+    expect((await visiteur().get(src, { 'if-none-match': etag })).statusCode).toBe(304);
+  });
+
+  it('propose un nom de téléchargement sans risque pour les documents', async () => {
+    const f = formulaire({ titre: 'Lettre' }, { nom: 'lettre à Jeannot.txt', contenu: Buffer.from('Cher Jeannot,\nà bientôt.'), type: 'text/plain' });
+    const r = await v.post(`/api/traces/${id}/medias`, f.corps, f.entetes);
+    expect(r.statusCode).toBe(200);
+    doc = r.json().trace.medias.find((m: any) => m.kind === 'document').src;
+    const d = await visiteur().get(doc);
+    expect(String(d.headers['content-disposition'])).toMatch(/^attachment; filename="lettre a Jeannot.txt"; filename\*=UTF-8''/);
+  });
+
+  it('ne renvoie la constellation que si elle a changé', async () => {
+    const a = await visiteur().get('/api/presences');
+    const etag = String(a.headers.etag);
+    expect(a.json().presences.some((p: any) => p.id === id)).toBe(true);
+    expect((await visiteur().get('/api/presences', { 'if-none-match': etag })).statusCode).toBe(304);
+    // une nouvelle trace : la constellation change aussitôt
+    const autre = visiteur();
+    await autre.connecter('nouvelle@exemple.fr');
+    await autre.post('/api/moi/majeur', { majeur: true });
+    const nouvelle = (await autre.post('/api/traces', personnelle('Nouvelle'))).json().trace.id;
+    const b = await visiteur().get('/api/presences', { 'if-none-match': etag });
+    expect(b.statusCode).toBe(200);
+    expect(b.json().presences.some((p: any) => p.id === nouvelle)).toBe(true);
+  });
+
+  it('l’œuvre commune aussi, et l’étiquette dépend de la personne (« moi »)', async () => {
+    const t = await v.get('/api/traits');
+    expect(t.statusCode).toBe(200);
+    expect((await v.get('/api/traits', { 'if-none-match': String(t.headers.etag) })).statusCode).toBe(304);
+    expect((await visiteur().get('/api/traits', { 'if-none-match': String(t.headers.etag) })).statusCode).toBe(200);
+  });
+
+  it('refuse proprement des données illisibles, et ne stocke rien pour la trace d’un autre', async () => {
+    const limite = '----nmmx';
+    const corps = Buffer.from(`--${limite}\r\nContent-Disposition: form-data; name="donnees"\r\n\r\n{pas du json\r\n--${limite}--\r\n`);
+    expect((await v.post(`/api/traces/${id}/fragments`, corps, { 'content-type': `multipart/form-data; boundary=${limite}` })).statusCode).toBe(400);
+    const intrus = visiteur();
+    await intrus.connecter('intrus@exemple.fr');
+    const f = formulaire({ rubrique: 'voir', texte: 'x' }, { nom: 'i.png', contenu: png(), type: 'image/png' });
+    expect((await intrus.post(`/api/traces/${id}/fragments`, f.corps, f.entetes)).statusCode).toBe(404);
+  });
+
+  it('la recherche passe par ses index (rapide même avec des milliers de traces)', async () => {
+    const c = await pool.connect();
+    try {
+      await c.query('set enable_seqscan = off');
+      const plan = (await c.query(`explain select id from traces where texte_recherche_trace(nom, pays, q1, q2, q3, q4, memoire_apercu) like lower(sans_accents('%ocean%'))`)).rows.map((r) => r['QUERY PLAN']).join('\n');
+      expect(plan).toContain('traces_recherche');
+      const planF = (await c.query(`explain select trace_id from fragments where texte_recherche_fragment(titre, texte, lieu) like lower(sans_accents('%ocean%'))`)).rows.map((r) => r['QUERY PLAN']).join('\n');
+      expect(planF).toContain('fragments_recherche');
+    } finally {
+      await c.query('reset enable_seqscan');
+      c.release();
+    }
+    // et elle trouve toujours, accents et majuscules ignorés
+    expect((await visiteur().get('/api/recherche?q=' + encodeURIComponent('RAPIDE'))).json().ids).toContain(id);
   });
 });

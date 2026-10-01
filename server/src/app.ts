@@ -8,6 +8,7 @@ import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import { ZodError } from 'zod';
 import { chargerCompte, Refus, routesAuth } from './auth';
+import { changement } from './cache';
 import { config } from './config';
 import { pool, requete } from './db';
 import { routesAdmin } from './routes/admin';
@@ -18,7 +19,10 @@ import { routesPubliques } from './routes/public';
 export async function creerApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: config.production ? { level: 'info' } : false,
-    trustProxy: true,
+    // on ne croit l'adresse transmise par un relais (Caddy) que s'il est sur la même machine ou le
+    // même réseau privé : sinon, n'importe qui pourrait se faire passer pour une autre adresse et
+    // contourner les limites de débit
+    trustProxy: process.env.PROXY_DE_CONFIANCE ?? 'loopback, linklocal, uniquelocal',
     bodyLimit: 1024 * 1024,
   });
 
@@ -28,11 +32,15 @@ export async function creerApp(): Promise<FastifyInstance> {
   // protection contre les abus (désactivable pour les tests automatiques : LIMITES_DEBIT=non)
   if (process.env.LIMITES_DEBIT !== 'non') await app.register(rateLimit, { global: true, max: 600, timeWindow: '1 minute' });
 
-  // en-têtes de sécurité, sur toutes les réponses
-  app.addHook('onSend', async (_req, rep) => {
+  // en-têtes de sécurité, sur toutes les réponses ; et toute écriture réussie renouvelle les
+  // réponses gardées en mémoire (constellation, œuvre commune), avant même d'être envoyée
+  app.addHook('onSend', async (req, rep) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD' && rep.statusCode < 400) changement();
     rep.header('x-content-type-options', 'nosniff');
     rep.header('referrer-policy', 'strict-origin-when-cross-origin');
     rep.header('x-frame-options', 'SAMEORIGIN');
+    rep.header('permissions-policy', 'camera=(), geolocation=(), payment=(), usb=()');
+    if (config.production) rep.header('strict-transport-security', 'max-age=31536000; includeSubDomains');
   });
 
   // les refus du musée et les données mal formées reçoivent une réponse claire, en français
@@ -60,8 +68,25 @@ export async function creerApp(): Promise<FastifyInstance> {
   // le site lui-même (npm run build à la racine), servi par le même serveur : une seule adresse
   const site = resolve(config.siteDossier);
   if (existsSync(resolve(site, 'index.html'))) {
-    await app.register(fastifyStatic, { root: site, wildcard: false, maxAge: '1h' });
-    app.setNotFoundHandler((req, rep) => (req.url.startsWith('/api/') ? rep.status(404).send({ erreur: 'Adresse inconnue.', code: 'introuvable' }) : rep.sendFile('index.html')));
+    // - assets/ : noms qui changent à chaque version (empreinte dans le nom) → gardés un an ;
+    // - index.html : toujours revérifié → une mise à jour du site est vue tout de suite, sans page cassée ;
+    // - le reste (images HD, polices, démonstrations) : un jour, puis revérifié.
+    await app.register(fastifyStatic, {
+      root: site,
+      wildcard: false,
+      cacheControl: false,
+      setHeaders(res, chemin) {
+        const nom = chemin.replace(/\\/g, '/');
+        if (nom.includes('/assets/')) res.header('cache-control', 'public, max-age=31536000, immutable');
+        else if (nom.endsWith('.html')) res.header('cache-control', 'no-cache');
+        else res.header('cache-control', 'public, max-age=86400');
+      },
+    });
+    app.setNotFoundHandler((req, rep) =>
+      req.url.startsWith('/api/')
+        ? rep.status(404).send({ erreur: 'Adresse inconnue.', code: 'introuvable' })
+        : rep.header('cache-control', 'no-cache').sendFile('index.html'),
+    );
   }
 
   app.addHook('onClose', async () => {
