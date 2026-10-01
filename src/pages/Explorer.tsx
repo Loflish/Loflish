@@ -254,7 +254,7 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
           {(
             [
               ['tous', 'Toutes'],
-              ['personnelle', TYPE_LABEL.personnelle],
+              ['personnelle', 'Traces personnelles'],
               ['memoire', 'Mémoires'],
             ] as const
           ).map(([v, l]) => (
