@@ -147,6 +147,7 @@ export function Dock() {
         <button
           ref={btnRef}
           className="dock-item dock-menu"
+          aria-label="Menu"
           aria-expanded={open}
           onClick={() => setOpen((o) => !o)}
         >

@@ -30,16 +30,15 @@ docker compose up -d --build   # tout le musée en production (site, API, base, 
 
 | Surface | Contenu |
 | --- | --- |
-| **Explorer** (`/`) | Constellation plein écran : fond pictural vivant, bulles qui se promènent, survol = nom seul, clic = aperçu (les 200 caractères), « Entrer dans sa mémoire » = transition douce vers le profil, retour au même endroit. Recherche et filtres discrets. Le logo brodé n'apparaît en grand qu'ici. |
+| **Explorer** (`/`) | Constellation plein écran : fond pictural vivant, bulles qui se promènent, survol = le nom seul, posé à côté de la bulle, clic = aperçu (les 200 caractères, ou les 500 d'une mémoire), « Entrer dans sa mémoire » = l'encre s'ouvre vers le profil, retour au même endroit. Recherche et filtres discrets (tous les résultats, par séries). Un lien partagé (`#/bulle/…`, en ligne `/b/…`) ouvre la constellation sur l'aperçu de la bulle. Le logo brodé n'apparaît en grand qu'ici. |
 | **Archives** (`/archives`, `/archives/:edition`) | Chaque édition (`src/data/archives.ts`, titre renommable : « 2026 », « 2028 »…) s'ouvre sur sa propre constellation, identique à l'accueil, avec les présences déposées jusqu'à la fin de son année. |
-| **Se perdre** | Une présence à la fois, hasard équitable, glisser / boutons / flèches, aucun signal de popularité. |
-| **Profil** (`/trace/:id`) | Architecture « Proposition A révisée » : une seule zone bulle, identité, type de trace, pays, dates clés ; les 4 questions obligatoires (les 200 caractères en IBM Plex) ; les 18 rubriques de fragments d'existence, dont les 5 sens côte à côte (Voir, Entendre, Sentir, Manger, Toucher : chacun est une rubrique à part, avec les mêmes limites que les autres) ; médias & documents ; paramètres non publics (vue auteur). Chaque rubrique s'ouvre en « salle » : 5 fragments mis en avant, puis « Voir tout » ; la limite dépend de ce qu'on dépose (10 pour les réponses brèves, 7 pour les souvenirs, ce que je n'ai jamais dit et la parole libre, 15 pour les personnes et les lieux). Pour qui visite, les rubriques encore vides se replient ; une tuile sans image montre son fragment comme une citation. Même scellés, l'auteur choisit ses mis en avant et leur ordre (↑ ↓). Médias & documents : 20 au plus, 5 mis en avant (triables aussi) ; chaque fragment peut porter un média. Photos, vidéos, enregistrements, documents (PDF lisible sur place) et liens (YouTube et Vimeo lus sur place) s'ouvrent dans une visionneuse. Deux profils de démonstration remplis entièrement, avec de vrais fichiers (photos, vidéos, enregistrements, lettres en PDF, liens) : `/trace/sakinah` (trace personnelle) et `/trace/jeannot` (mémoire déposée par sa petite-fille). |
-| **L'œuvre commune** (`/oeuvre-commune`) | Chaque personne coud un seul trait : un clic pour le départ, un clic pour l'arrivée, une confirmation (définitif), puis le trait se coud point par point, au point avant, dans le fil bordeaux du logo. Tous les traits forment une broderie immense. Publié sur claude.ai, les traits sont partagés en direct (stockage partagé de l'Artifact : un document par personne) ; en ligne, le serveur garde les traits (un par compte et par appareil) ; ailleurs, le trait reste sur l'appareil. En pâle, des traits d'exemple le temps que l'œuvre commence. |
-| **Ma trace** (`/ma-trace`) | L'espace de l'auteur : voir son profil, retrouver sa bulle dans le musée, compléter ses 14 rubriques. Deux bulles au plus par personne : sa propre trace et une mémoire pour une personne décédée. Dans la constellation, sa propre bulle est entourée d'un fil « ta trace », visible uniquement sur son appareil. |
-| **Créer ma trace** | Choisir → Compte (18+, avec un mot du créateur du musée et findahelpline.com) → Identité (couleur GRIS ; matière d'aquarelle choisie avec les flèches ← → ou dans le catalogue) → 4 questions (1200 / 200 caractères) → Aperçu → Enrichir → Vérifier → **Sceller et publier**. Le brouillon reste privé ; publier scelle les réponses pour cinq ans et rend la trace publique. Ensuite, chaque fragment et chaque média est scellé au moment où il est déposé, après une confirmation explicite. Parcours distinct « mémoire pour une personne décédée ». |
-| **L’équipe du musée** (`/admin`, en ligne) | État du musée, signalements, traces (masquer, retirer un fragment ou un média), œuvre commune, comptes et rôles, éditions d’archives (figer), journal, export. |
-| **Compte** (`/compte`) | L'adresse e-mail et son changement (en ligne : confirmé par un lien envoyé à la nouvelle adresse), « Ce que j'autorise » (archives, musée et broderie, réseaux sociaux, messages privés : jamais scellés, modifiables à tout moment), et la demande de suppression de données au titre du RGPD, possible malgré le scellement. |
-| **Menu** | Dock centré en bas : Explorer · Se perdre · Créer ma trace (devient « Ma trace » une fois publiée) · Menu → Le projet, L'œuvre commune, Archives, Ressources & aide, Soutenir, Juridique & confidentialité, Compte. |
+| **Se perdre** | Une présence à la fois, hasard équitable, glisser / boutons / flèches, aucun signal de popularité ; « Signaler » dans le coin de chaque carte. |
+| **Profil** (`/trace/:id`) | Architecture « Proposition A révisée » : la bulle, le nom tel que la personne a choisi d'apparaître, type de trace, pays, dates clés ; les 4 questions, réponses en entier ; pour une mémoire, « Que peux-tu me dire sur cette personne ? » (500 caractères) ; les 18 rubriques de fragments d'existence (dites à propos de la personne pour une mémoire), dont les 5 sens côte à côte. Chaque tuile montre les trois premiers fragments, dans l'ordre choisi par l'auteur (flèches ↑ ↓) ; la rubrique s'ouvre en « salle » avec tous ses fragments. Limites : 10, 7 (souvenirs, ce que je n'ai jamais dit, parole libre) ou 15 (personnes, lieux). Photos, vidéos, sons & documents : 20 au plus, trois montrés ; documents en simple téléchargement. Vue auteur : bandeau du scellement et de la protection des données, choix de confidentialité en un clic, et, après cinq ans, un clic pour modifier une réponse ou un fragment. « Signaler » (trois motifs). Deux profils de démonstration : `/trace/sakinah` et `/trace/jeannot`. |
+| **L'œuvre commune** (`/oeuvre-commune`) | Chaque personne coud un seul trait, de la même longueur que tous les autres, sur une toile immense (16 × 10) : un clic pour le départ, un clic pour la direction, une confirmation (définitif), puis le trait se coud point par point, au point avant, dans le fil bordeaux du logo. Tous les traits forment une broderie immense. Publié sur claude.ai, les traits sont partagés en direct (stockage partagé de l'Artifact : un document par personne) ; en ligne, le serveur garde les traits (un par compte et par appareil) ; ailleurs, le trait reste sur l'appareil. Dans l'aperçu seulement, des traits d'exemple en pâle. Le fondateur reproduira ce tracé sur de grands tableaux brodés. |
+| **Créer ma trace** | Choisir → Compte (18+, e-mail et code à six chiffres en ligne, un mot du créateur du musée et findahelpline.com) → Identité (nom affiché, pays choisi dans la liste de tous les pays, couleur GRIS, matière avec les flèches ← →) → 4 questions (1200 / 200 caractères, « Qui ? » facultatif pour la deuxième) → Aperçu → Enrichir → Vérifier (scellement, protection des données) → **Sceller et publier**. Parcours « mémoire pour une personne décédée » : la personne, ton prénom et ton lien avec elle, « sa bulle », puis « Que peux-tu me dire sur cette personne ? » (500 caractères). Avec deux bulles déjà publiées : « Tu as déjà tes deux bulles ». |
+| **L’espace du fondateur** (`/admin`, en ligne) | État du musée, signalements (reçus aussi par e-mail), traces (retirer la bulle, bannir, retirer un fragment ou un fichier ; les choix de confidentialité de chacun), œuvre commune, comptes et rôles, adresses bannies, éditions d’archives (figer), journal, export. |
+| **Compte** (`/compte`) | Entrer avec son e-mail et un code à six chiffres (en ligne) ; « Mes traces » (sa trace, puis la mémoire) et leurs rubriques à compléter ; l'adresse e-mail et son changement (confirmé par un code) ; les choix de confidentialité (jamais scellés, un clic) ; la protection des données (écrire au fondateur pour consulter, modifier ou supprimer). |
+| **Menu** | Dock centré en bas : Explorer, Se perdre, Créer ma trace, L'œuvre commune (la page où l'on est disparaît du dock), Menu → Le projet, Compte, Archives, Ressources & aide, Soutenir, Juridique. |
 
 ## Direction artistique — où elle vit dans le code
 
@@ -50,8 +49,10 @@ docker compose up -d --build   # tout le musée en production (site, API, base, 
 - **Mouvement** (promenade autonome, évitement doux, pas d'orbite ni de rebond, espace sans bords) —
   `src/engine/constellation.ts`.
 - **Fond vivant** (lin + nappes de pigment façon Monet, très lent) — `src/engine/atmosphere.ts`.
-- **Typographies** : Newsreader (expressive) + IBM Plex Sans (fonctionnelle, avec ses versions arabe, hébraïque,
-  devanagari et thaï ; cyrillique et grec inclus ; japonais, chinois et coréen dans la police du système) — `src/styles/tokens.css`.
+- **Typographie** : une seule police, Newsreader ; la hiérarchie vient de la taille, de la graisse et de
+  l'italique (les mots des personnes en italique). Les écritures qu'elle ne dessine pas prennent IBM Plex
+  (arabe, hébreu, devanagari, thaï, cyrillique, grec) ou la police du système (japonais, chinois, coréen) :
+  `src/styles/tokens.css`.
 - **Alphabet brodé** (les 200 caractères) : les lettres d'IBM Plex Sans cousues en contour au point avant
   (planches Higgsfield découpées par `design/hd/alphabet.py … plex` → `public/hd/alphabet.webp` +
   `src/data/alphabet.json`), composant `TexteBrode` : minuscules, capitales, chiffres, ponctuation et les
@@ -104,16 +105,15 @@ Préparation des images : `python3 design/hd/preparer.py fond|lin|papier …`, m
 
 - Constellation et mouvement toujours présents (choix du projet) ; si le système demande de réduire
   les animations, les bulles ralentissent sans s'arrêter.
-- Au clavier : Tab jusqu'à la constellation, flèches pour se déplacer,
-  `+`/`-` pour s'approcher, Entrée pour rencontrer la présence la plus proche du centre.
+- Au clavier : flèches pour se déplacer dans la constellation, `+`/`-` pour s'approcher.
 - Fond rendu en basse résolution à cadence réduite ; bulles générées progressivement avec un budget
   de temps par image ; moins de bulles sur mobile.
 
 ## Le serveur (`server/`)
 
-Fastify + PostgreSQL + stockage des fichiers sur disque ou S3, en TypeScript. Entrée par lien
-e-mail (sans mot de passe), règles du musée appliquées côté serveur (18+, deux bulles, scellement
+Fastify + PostgreSQL + stockage des fichiers sur disque ou S3, en TypeScript. Entrée par un code
+à six chiffres envoyé par e-mail (sans mot de passe), règles du musée appliquées côté serveur (18+, deux bulles, scellement
 de cinq ans, limites par rubrique, un trait par personne et par appareil, vérification du type
 réel des fichiers), signalements et modération, éditions d'archives figées, journal de toutes les
-décisions, export et effacement des données (RGPD). L'espace de l'équipe est dans le site, à
+décisions, export et effacement des données, retrait de bulle et bannissement. L'espace du fondateur est dans le site, à
 `/admin`. Tout est décrit dans [DEPLOIEMENT.md](DEPLOIEMENT.md).

@@ -25,8 +25,10 @@ comment gérer ses données au quotidien : modération, archives, sauvegardes, d
     démonstration. C'est ce mode qui est publié sur claude.ai pour l'aperçu.
   - *en ligne* (`npm run build:en-ligne`, utilisé par Docker) : le site parle au serveur. Aucune
     fausse bulle : la constellation montre seulement les vraies traces.
-- **Entrer dans le musée** se fait sans mot de passe : la personne donne son e-mail, reçoit un lien
-  valable 20 minutes et à usage unique, et reste connectée 90 jours.
+- **Entrer dans le musée** se fait sans mot de passe : la personne donne son e-mail, reçoit un code
+  à six chiffres (valable 15 minutes, une seule fois, cinq essais au plus), le tape sur la page, et
+  reste connectée 90 jours sur cet appareil. Changer d'adresse se confirme de la même façon, par un
+  code envoyé à la nouvelle adresse.
 
 ---
 
@@ -34,11 +36,11 @@ comment gérer ses données au quotidien : modération, archives, sauvegardes, d
 
 | Décision | Pourquoi | Pistes |
 | --- | --- | --- |
-| **Un serveur (VPS)** | Faire tourner le musée. Pour commencer : 2 processeurs, 4 Go de mémoire, 80 Go de disque, Ubuntu 24.04. | Hetzner, Scaleway, OVHcloud, Infomaniak (hébergement en Europe : plus simple pour le RGPD). |
+| **Un serveur (VPS)** | Faire tourner le musée. Pour commencer : 2 processeurs, 4 Go de mémoire, 80 Go de disque, Ubuntu 24.04. | Hetzner, Scaleway, OVHcloud, Infomaniak (hébergement en Europe : plus simple pour la protection des données). |
 | **Le nom de domaine** | L'adresse du musée, par exemple `nosmotsmemoriaux.org`. | Chez n'importe quel registraire (Gandi, OVHcloud, Infomaniak…). |
-| **Un service d'envoi d'e-mails (SMTP)** | Sans lui, personne ne reçoit son lien de connexion. | Brevo, Scaleway TEM, Mailjet, Postmark. Il faudra ajouter les enregistrements SPF/DKIM qu'ils indiquent dans les réglages du domaine. |
+| **Un service d'envoi d'e-mails (SMTP)** | Sans lui, personne ne reçoit son code pour entrer, et tu ne reçois pas les signalements. | Brevo, Scaleway TEM, Mailjet, Postmark. Il faudra ajouter les enregistrements SPF/DKIM qu'ils indiquent dans les réglages du domaine. |
 | **Où garder les fichiers** | Photos, sons, vidéos, documents. | Pour commencer : le disque du serveur (`STOCKAGE=disque`). Quand le musée grandit : un stockage S3 (Scaleway Object Storage, OVHcloud, Cloudflare R2, Backblaze B2). |
-| **Les e-mails de l'équipe** | Ces adresses deviennent administratrices à leur connexion (`ADMIN_EMAILS`). | La tienne, et celles des personnes de confiance. |
+| **Ton adresse de fondateur** | Elle devient administratrice à la connexion et reçoit chaque signalement par e-mail (`ADMIN_EMAILS`). | La tienne (plusieurs adresses possibles, séparées par des virgules). |
 | **Une copie des sauvegardes ailleurs** | Si le serveur disparaît, les sauvegardes qui sont dessus disparaissent avec lui. | Un second stockage (S3, Backblaze B2…) ou le service de sauvegarde de l'hébergeur. |
 
 Les prix changent souvent : compare sur les sites des fournisseurs au moment de choisir.
@@ -73,10 +75,10 @@ Les prix changent souvent : compare sur les sites des fournisseurs au moment de 
    Au premier démarrage, le serveur crée toutes les tables (migrations). Caddy obtient le
    certificat HTTPS tout seul, en quelques secondes.
 4. **Première connexion** : va sur `https://ton-domaine/#/compte`, entre une adresse listée dans
-   `ADMIN_EMAILS`, ouvre le lien reçu. Le lien « L'espace de l'équipe du musée » apparaît dans
-   Compte (adresse directe : `/#/admin`).
-   *Si l'e-mail n'arrive pas* : le lien est aussi écrit dans le journal du serveur
-   (`docker compose logs musee | grep "lien de connexion"`) tant que `SMTP_URL` est vide.
+   `ADMIN_EMAILS`, tape le code reçu. Le lien « L'espace du fondateur » apparaît dans Compte
+   (adresse directe : `/#/admin`).
+   *Si l'e-mail n'arrive pas* : le code est aussi écrit dans le journal du serveur
+   (`docker compose logs musee | grep "code de connexion"`) tant que `SMTP_URL` est vide.
 5. **Vérifier** : `https://ton-domaine/api/sante` doit répondre `{"ok":true}`.
 
 ### Mettre à jour le musée
@@ -92,23 +94,29 @@ Les nouvelles migrations de la base s'appliquent toutes seules au démarrage. Le
 
 ---
 
-## 4. Gérer le musée au quotidien : l'espace de l'équipe (`/admin`)
+## 4. Gérer le musée au quotidien : l'espace du fondateur (`/admin`)
 
-Deux rôles d'équipe :
-- **modération** : état du musée, signalements, traces, œuvre commune ;
-- **administration** : tout cela, plus les comptes, les éditions des archives, le journal et l'export.
+Deux rôles :
+- **administration** (le fondateur) : tout, y compris bannir, les comptes, les adresses bannies,
+  les éditions des archives, le journal et l'export ;
+- **modération** (si un jour quelqu'un t'aide) : état du musée, signalements, traces (retirer une
+  bulle), œuvre commune.
+
+Chaque signalement t'arrive aussi par e-mail, aussitôt (objet « Urgent » pour « Quelqu'un est en
+danger »), avec le lien vers la trace et vers cet espace.
 
 | Onglet | Ce qu'on y fait |
 | --- | --- |
 | **État du musée** | Le nombre de traces, mémoires, fragments, médias, traits, comptes, la place prise par les fichiers, les signalements en attente. |
-| **Signalements** | Ce que les visiteurs ont signalé depuis un profil (bouton « Signaler »). Les signalements « Quelqu'un est en danger » sont marqués d'un fil rouge : à traiter en premier. On les classe « Traité » ou « Rejeté », avec une décision écrite. |
-| **Traces** | Chercher par nom, identifiant ou e-mail. **Masquer** une trace (la raison est obligatoire : son auteur la voit sur son profil) ou la réafficher. **Fragments et médias** : retirer un élément précis, même scellé (contenu illégal, danger, vie privée d'un tiers). Le retrait efface aussi le fichier. |
+| **Signalements** | Ce que les visiteurs ont signalé (bouton « Signaler », sur un profil ou dans Se perdre) : quelqu'un en danger ; haine, harcèlement ou violence ; autre chose. « Danger » est marqué d'un fil rouge : à traiter en premier. On les classe « Traité » ou « Rejeté », avec une décision écrite. |
+| **Traces** | Chercher par nom, identifiant ou e-mail ; les choix de confidentialité de chacun sont affichés. Selon la gravité : **Retirer la bulle** (la raison est obligatoire : son auteur la lit sur son profil ; « Remettre la bulle » est possible) ou **Bannir** (toutes ses bulles retirées, son compte suspendu, et l'empreinte de ses adresses IP connues refusée sur tout le site). **Fragments et fichiers** : retirer un élément précis, même scellé. Le retrait efface aussi le fichier. |
 | **Œuvre commune** | Les derniers traits cousus. Masquer un trait le fait disparaître de l'œuvre ; la personne ne peut pas en coudre un autre. |
-| **Comptes** | Donner ou retirer un rôle ; suspendre un compte (ses sessions sont fermées ; ses traces restent visibles, masque-les à part si besoin). |
+| **Comptes** | Donner ou retirer un rôle ; suspendre un compte (ses sessions sont fermées ; ses bulles restent visibles : retire-les à part, ou bannis). |
+| **Adresses bannies** | Les bannissements (gardés sous forme d'empreinte chiffrée, jamais l'adresse IP en clair), avec leur raison ; « Lever le bannissement ». |
 | **Archives** | Créer les éditions (« 2026 », « 2028 »…). Une édition montre les présences publiées jusqu'à son année. **Figer** une édition garde pour toujours la liste exacte de ses présences : c'est l'instantané à confier aux archives de longue durée. |
 | **Journal & export** | Toutes les décisions (qui, quoi, quand, pourquoi). **Exporter** télécharge toutes les données du musée en un fichier JSON lisible. |
 
-Chaque action de l'équipe est écrite dans le journal. Rien n'est effacé en silence.
+Chaque décision est écrite dans le journal. Rien n'est effacé en silence.
 
 ### Les règles que le serveur fait respecter (même si quelqu'un contourne le site)
 
@@ -116,11 +124,15 @@ Chaque action de l'équipe est écrite dans le journal. Rien n'est effacé en si
 - Deux bulles au plus par compte : sa propre trace, et une mémoire pour une personne décédée.
 - Publier scelle les quatre réponses pendant cinq ans ; chaque fragment et chaque média est scellé
   au moment où il est déposé (ni modifiable, ni retirable par l'auteur pendant cinq ans).
-  L'auteur garde la main sur l'ordre et les « mis en avant ».
-- Limites par rubrique (10, 7 ou 15 selon la rubrique), 5 mis en avant par rubrique, 20 médias &
-  documents libres ; tailles maximales par type de fichier ; le type réel des fichiers est vérifié
-  (un faux fichier image est refusé).
-- L'œuvre commune : un seul trait par compte **et** par appareil, pas trop long, dans l'œuvre.
+  L'auteur garde la main sur l'ordre : les trois premiers se montrent sur son profil. Après cinq
+  ans, une réponse ou un fragment se modifie, et il est scellé de nouveau.
+- Une mémoire commence par « Que peux-tu me dire sur cette personne ? » : 500 caractères.
+- Limites par rubrique (10, 7 ou 15 selon la rubrique), 20 photos, vidéos, sons et documents
+  libres ; tailles maximales par type de fichier ; le type réel des fichiers est vérifié (un faux
+  fichier image est refusé).
+- L'œuvre commune : un seul trait par compte **et** par appareil, tous de la même longueur, dans
+  la toile (16 × 10).
+- Une adresse IP bannie (son empreinte) ne peut plus ouvrir le site.
 - Les limites viennent du même fichier que le site (`src/data/types.ts`) : les changer à un
   endroit les change partout.
 
@@ -133,13 +145,14 @@ Chaque action de l'équipe est écrite dans le journal. Rien n'est effacé en si
 | Table | Contenu |
 | --- | --- |
 | `comptes` | e-mail, rôle, date de la déclaration 18+, suspension, dates de venue |
-| `liens_connexion`, `sessions` | connexions en cours (seule une empreinte des jetons est gardée ; le ménage est automatique) |
-| `traces` | les bulles : nom, couleur, matière, pays, les quatre réponses (ou l'aperçu d'une mémoire), paramètres privés, statut publiée/masquée, date de scellement |
-| `fragments` | les fragments d'existence, par rubrique, avec leur ordre et « mis en avant » |
+| `liens_connexion`, `sessions` | codes en attente et connexions en cours (seule une empreinte des codes et des jetons est gardée) |
+| `traces` | les bulles : nom, couleur, matière, pays, les quatre réponses (ou l'aperçu d'une mémoire), paramètres privés, statut publiée/retirée (et la raison), date de scellement |
+| `fragments` | les fragments d'existence, par rubrique, avec l'ordre choisi par l'auteur |
 | `medias` | les fiches des médias (titre, légende, type, clé du fichier ou adresse d'un lien) |
 | `traits` | l'œuvre commune |
 | `editions` | les éditions des archives (et la liste figée de leurs présences) |
 | `signalements` | les signalements et leur traitement |
+| `bannissements` | les empreintes des adresses IP bannies, et la raison |
 | `journal` | toutes les actions importantes |
 
 **Les fichiers** (photos, sons, vidéos, documents) : dans le volume Docker `fichiers`
@@ -210,7 +223,7 @@ jamais restaurée n'est qu'un espoir.
 
 ---
 
-## 7. Les droits des personnes (RGPD)
+## 7. La protection des données (les droits de chacun)
 
 - **Emporter ses données** : dans Compte, « Emporter toutes mes données » télécharge un fichier
   avec son compte, ses traces, fragments, les fiches de ses médias (avec leurs liens de
@@ -218,8 +231,12 @@ jamais restaurée n'est qu'un espoir.
 - **Tout effacer** : dans Compte, en écrivant `EFFACER`. Le scellement ne l'empêche pas : c'est
   un droit. Les fichiers sont effacés du stockage ; ils disparaissent des sauvegardes au bout de
   30 jours.
-- **Minimisation** : on ne garde que l'e-mail (pas de nom légal, pas de mot de passe) ; les jetons
-  et l'identifiant d'appareil de l'œuvre commune ne sont gardés que sous forme d'empreinte.
+- **Minimisation** : on ne garde que l'e-mail (pas de nom légal, pas de mot de passe) ; les codes,
+  les sessions, l'identifiant d'appareil de l'œuvre commune et l'adresse IP de qui écrit (pour
+  pouvoir bannir) ne sont gardés que sous forme d'empreinte.
+- **Écrire au fondateur** : partout sur le site, la même adresse (`VITE_CONTACT` au moment de
+  construire le site, `nosmots@memoriaux.org` par défaut) pour consulter, modifier ou supprimer
+  ses données.
 - À compléter par toi : les mentions légales et la politique de confidentialité (page Juridique),
   avec le nom de l'hébergeur, du service d'e-mail et, s'il y en a un, du stockage S3.
 
@@ -238,7 +255,7 @@ npm run serveur                          # l'API sur http://localhost:8787
 npm run dev:en-ligne                     # le site sur http://localhost:5173, relié à l'API
 ```
 
-Sans SMTP, le lien de connexion s'affiche sur la page (« ouvrir le lien directement ») et dans le
+Sans SMTP, le code s'affiche sur la page (« Serveur de développement : le code est … ») et dans le
 terminal du serveur. `npm run dev` (sans « en-ligne ») lance le prototype autonome.
 
 Les tests du serveur (`npm run serveur:test`) créent une base jetable : ils ont besoin des
@@ -251,13 +268,13 @@ pas dans `/usr/lib/postgresql/16/bin`.
 
 | Qui | Routes |
 | --- | --- |
-| Tout le monde | `GET /api/presences` · `GET /api/traces/:id` · `GET /api/recherche?q=…&rubriques=…` · `GET /api/editions` · `GET /api/editions/:id/presences` · `GET /api/fichiers/…` · `POST /api/signalements` · `GET /api/traits` · `GET /api/sante` |
-| Connexion | `POST /api/auth/lien` · `POST /api/auth/verifier` · `POST /api/auth/deconnexion` · `GET /api/moi` · `POST /api/moi/majeur` |
-| Auteur | `GET /api/moi/traces` · `POST /api/traces` · `PUT /api/traces/:id/reponses` (après cinq ans) · `PUT /api/traces/:id/parametres` · `POST /api/traces/:id/fragments` · `POST /api/traces/:id/medias` · mis en avant et ordre (`…/en-avant`, `…/deplacer`) · `POST /api/traits` · `GET /api/moi/export` · `DELETE /api/moi` |
-| Équipe | `/api/admin/…` : `etat`, `signalements`, `traces`, `fragments/:id`, `medias/:id`, `traits`, `comptes`, `editions`, `journal`, `export` |
+| Tout le monde | `GET /api/presences` · `GET /api/traces/:id` · `GET /api/recherche?q=…&rubriques=…` · `GET /api/editions` · `GET /api/editions/:id/presences` · `GET /api/fichiers/…` · `POST /api/signalements` · `GET /api/traits` · `GET /b/:id` (lien partagé, aperçu pour les messageries) · `GET /api/sante` |
+| Connexion | `POST /api/auth/code` · `POST /api/auth/verifier` (adresse + code) · `POST /api/auth/deconnexion` · `GET /api/moi` · `POST /api/moi/majeur` · `POST /api/moi/email` · `POST /api/moi/email/confirmer` |
+| Auteur | `GET /api/moi/traces` · `POST /api/traces` · `PUT /api/traces/:id/reponses` (après cinq ans) · `PUT /api/traces/:id/parametres` · `POST /api/traces/:id/fragments` · `PUT /api/fragments/:id` (après cinq ans) · `POST /api/traces/:id/medias` · ordre (`…/deplacer`) · `POST /api/traits` · `GET /api/moi/export` · `DELETE /api/moi` |
+| Fondateur | `/api/admin/…` : `etat`, `signalements`, `traces` (`…/statut`, `…/bannir`), `bannissements`, `fragments/:id`, `medias/:id`, `traits`, `comptes`, `editions`, `journal`, `export` |
 
 Le code : `server/src/routes/` (une route = une règle lisible), le schéma : `server/migrations/`.
-Pour faire évoluer la base, ajoute un fichier `server/migrations/003_….sql` (le suivant dans
+Pour faire évoluer la base, ajoute un fichier `server/migrations/005_….sql` (le suivant dans
 l'ordre) : il sera appliqué une fois, au prochain démarrage.
 
 ---
