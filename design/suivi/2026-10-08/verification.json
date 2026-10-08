@@ -11,7 +11,7 @@
   "catalogue_choix": 101,
   "rendu_mobile": "non valide",
   "publication_service": "non effectuee",
-  "dossier_suivi": "contenu selectionne pour reprise dans un depot public, hors donnees de compte et conversations privees",
+  "dossier_suivi": "fichiers et etat de progression sauvegardes dans le depot public, hors donnees de compte et conversations privees",
   "comparatif_lot04_depuis_copie_depot": {
     "rendus_charges": 14,
     "originaux_2048_charges": 3,

@@ -3,24 +3,7 @@
   "source_depot": "https://github.com/Loflish/Loflish",
   "branche": "claude/practical-newton-r1t0oq",
   "base_recuperee_commit": "d54033d81d7080c207c8913cafaa6e302068b9ea",
-  "statut_travail_artistique": "arrete a la demande du createur, reprise a son initiative",
-  "demande_actuelle": "sauvegarder sur GitHub pour permettre une prochaine reprise a partir du depot",
-  "objectif": "version personnelle tres aboutie, progression jusqu a satisfaction exprimee",
-  "ordre_choisi": [
-    "matieres des bulles",
-    "fond et autres elements visuels",
-    "fonctionnement et serveur"
-  ],
-  "regle_decision": "assistant propose avec exemples concrets, createur tranche les decisions visibles et les depenses",
-  "contraintes_artistiques": [
-    "preserver direction actuelle et douceur",
-    "aquarelle, papier, textile",
-    "palette GRIS",
-    "fil brode actuel sur chaque bulle",
-    "taille commune et zoom global",
-    "singularite des structures de matiere",
-    "motifs explicites comme la feuille de ginkgo peu apprecies dans les propositions"
-  ],
+  "statut_travail_artistique": "arrete au 8 octobre 2026",
   "catalogue_choix": 101,
   "remplacements_integres": [
     {
@@ -695,10 +678,7 @@
       "integre": false,
       "original": "matieres/lot04/reserves-diffuses-original.png",
       "sha256": "4dedda15b73e0d892708dd6a2c9708b3ccba0a47ba516e719c62939fed9b93d3",
-      "brief": "Un papier absorbant parcouru par trois ou quatre réserves claires inégales et décentrées. Le pigment contourne ces passages avec des bords doux et légèrement fibreux.",
-      "difference_recherchee": "La structure serait donnée par les espaces clairs dans une surface continue. Les fibres 15 resteraient des filaments, le voile 70 des couches superposées et l’encre 50 des chemins plus sombres.",
-      "risque": "Les réserves peuvent devenir trop blanches ou trop dessinées. Je rechercherais des transitions absorbées, sans contour net ni effet de découpage.",
-      "prompt": "Create one abstract watercolor and handmade textile material swatch, centered face-on macro view, gently irregular circular silhouette occupying about 80 percent of a square canvas. Neutral grayscale only. Matte porous surface, absorbed pigment, delicate quiet light reserves, soft even diffuse illumination. Preserve readable internal structure at small website bubble sizes. No sphere, glossy reflection, hard vector outline, cast shadow, colored background, recognizable plant, leaf, animal, celestial object, text, ornament, border or embroidery. Plain white background outside the swatch. The website applies its GRIS palette and embroidered perimeter thread. Produce only the material surface. The defining structure is three or four unequal off-center soft light reserves in a continuous watercolor paper wash, with irregular elongated edges and faint paper fibers at the absorbed pigment boundary. Uneven spacing, no repeated pattern. The light areas are shallow low-pigment regions, not physical holes or raised patches. Do not use a central white hole, complete ring, concentric circles, plant silhouette, stacked transparent sheets, dramatic tearing or hard cutout edges. Keep the reserves gently visible as asymmetrical light passages."
+      "brief": "Un papier absorbant parcouru par trois ou quatre réserves claires inégales et décentrées. Le pigment contourne ces passages avec des bords doux et légèrement fibreux."
     },
     {
       "candidate_proposee": 19,
@@ -709,10 +689,7 @@
       "integre": false,
       "original": "matieres/lot04/feutre-nuage-original.png",
       "sha256": "f5b444ff79c3f92b6f6ddf5c22bbdef5c7723f6fdb5cfcf0dd304c08ef4894d2",
-      "brief": "Un feutre mat à fibres très courtes, réunies en quelques amas souples et irréguliers. Le pigment s’accroche à ces amas ; des zones moins denses laissent respirer la surface.",
-      "difference_recherchee": "La signature serait une surface dense et poreuse à fibres courtes. La 15 conserverait ses longs fils visibles, la 95 ses larges plis et la 85 son relief de papier.",
-      "risque": "Un feutre trop uniforme perdrait sa singularité ; un relief trop fort rendrait la bulle lourde. Je viserais quelques différences de densité, avec une lumière plate.",
-      "prompt": "Create one abstract watercolor and handmade textile material swatch, centered face-on macro view, gently irregular circular silhouette occupying about 80 percent of a square canvas. Neutral grayscale only. Matte porous surface, absorbed pigment, delicate quiet light reserves, soft even diffuse illumination. Preserve readable internal structure at small website bubble sizes. No sphere, glossy reflection, hard vector outline, cast shadow, colored background, recognizable plant, leaf, animal, celestial object, text, ornament, border or embroidery. Plain white background outside the swatch. The website applies its GRIS palette and embroidered perimeter thread. Produce only the material surface. The defining structure is softly needle-felted cotton with very short compressed fibers, shallow irregular clustered tufts in only a few uneven regions, and more open porous transitions between them. A continuous low-relief felt surface, with pigment caught in the short-fiber clusters. No long filament network, woven grid, lace, fluffy fur, deep plush piles, crumpled folds, paper embossing, uniform stipple, smooth cloudy gradient or directional shiny highlight. Make the short-fiber clustered structure readable without hardening the material."
+      "brief": "Un feutre mat à fibres très courtes, réunies en quelques amas souples et irréguliers. Le pigment s’accroche à ces amas ; des zones moins denses laissent respirer la surface."
     },
     {
       "candidate_proposee": 76,
@@ -723,10 +700,7 @@
       "integre": false,
       "original": "matieres/lot04/pigment-sedimente-original.png",
       "sha256": "259f1330a0fce7121739267ebb48616acfb8ea604fed3c5af6fe5af04927435a",
-      "brief": "Des petits grains mats se regroupent en deux ou trois zones irrégulières dans le papier. De fins dépôts suivent les creux de ces zones, entre des passages plus calmes.",
-      "difference_recherchee": "La singularité serait la répartition des grains en groupes de densités différentes. La 39 resterait plus fine et uniforme, le pastel 81 un geste frotté et l’encre 50 une diffusion ramifiée.",
-      "risque": "Des grains trop petits disparaîtraient au dézoom ; des amas trop contrastés ressembleraient à une autre tache d’aquarelle. Je limiterais leur nombre avec des transitions poreuses.",
-      "prompt": "Create one abstract watercolor and handmade textile material swatch, centered face-on macro view, gently irregular circular silhouette occupying about 80 percent of a square canvas. Neutral grayscale only. Matte porous surface, absorbed pigment, delicate quiet light reserves, soft even diffuse illumination. Preserve readable internal structure at small website bubble sizes. No sphere, glossy reflection, hard vector outline, cast shadow, colored background, recognizable plant, leaf, animal, celestial object, text, ornament, border or embroidery. Plain white background outside the swatch. The website applies its GRIS palette and embroidered perimeter thread. Produce only the material surface. The defining structure is sedimented watercolor pigment: fine matte uneven grains gathered in two or three asymmetric low-contrast clusters, a few softer deposits along shallow irregular paper depressions, with quiet porous regions between clusters. Vary grain size subtly; grains are absorbed in paper, not floating objects. No even all-over speckle, repeated polka dots, stars, glitter, salt crystals, angular facets, hard crackle network, rubbed pastel stroke, branching ink paths, strong diagonal band or cast shadows. Keep the clustered deposition readable when reduced to a small bubble."
+      "brief": "Des petits grains mats se regroupent en deux ou trois zones irrégulières dans le papier. De fins dépôts suivent les creux de ces zones, entre des passages plus calmes."
     }
   ],
   "originaux_higgsfield": [
@@ -813,16 +787,8 @@
     }
   ],
   "modele_des_essais": "Nano Banana Pro, format carre, une image 2K par piste",
-  "nouvelle_generation_autorisee": false,
-  "questions_ouvertes": [
-    "comparer singularite lot04 avec tout le catalogue",
-    "valider correspondances avant integration lot04",
-    "discuter variations individuelles de taille dans les animations",
-    "suite du fond et des visuels a choisir",
-    "audit fonctionnel et serveur a reprendre ensuite"
-  ],
   "limites": [
-    "synthese de reprise, pas export integral des conversations",
+    "etat factuel sauvegarde, sans export integral des conversations",
     "pas de donnees du navigateur ni de base en ligne",
     "rendu mobile non valide",
     "tests serveur bloques avant execution par absence de PostgreSQL prevu sous Linux"

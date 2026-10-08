@@ -2,19 +2,14 @@
   "date": "2026-10-08",
   "fichiers": [
     {
-      "fichier": "AUDIT_A_REPRENDRE.md",
-      "octets": 32935,
-      "sha256": "cc9fa83f484a3b2ea0619f309e10ac8690580973694e0b6f4dd4b6920fde2c0c"
-    },
-    {
       "fichier": "avis-initiaux.json",
       "octets": 8595,
       "sha256": "d50c2414058eabc307cc3093078cd6b5e7205ae2728bcd03767ee9eeaa4bf675"
     },
     {
       "fichier": "Bilan_matieres_2026-10-08.html",
-      "octets": 7614310,
-      "sha256": "e0f2df6b3206d69db7f68d57f337a8267359429edd06d0df472e82930bb99913"
+      "octets": 7614257,
+      "sha256": "a82b5ce3c32dbb9dc1c8823e0ed73177da1c659664e44daf155c76540869bc10"
     },
     {
       "fichier": "Catalogue_matieres_actuelles.html",
@@ -22,9 +17,14 @@
       "sha256": "9df98d8c01f11db8bb0083490bc1320feffaff9de41bc8e37e81c178649a29bc"
     },
     {
+      "fichier": "CONSTATS_AUDIT_2026-10-02.md",
+      "octets": 14621,
+      "sha256": "cd4d3c3dc2464077c58d0dfdf237045107a9f0e34ef389a1ca613a2cdec3ce90"
+    },
+    {
       "fichier": "etat.json",
-      "octets": 24620,
-      "sha256": "f223de6a18c81e85324b686fa115049cdd5fa3152263789bed55e3f754b2457a"
+      "octets": 18376,
+      "sha256": "203e28697e454c37ab3935652dbdb39d3a918d91150af1e5eac119f194c1cfa4"
     },
     {
       "fichier": "matieres/lot02/papier-gaufre-original.png",
@@ -74,36 +74,32 @@
     {
       "fichier": "Remplacements_matieres_lot_02.html",
       "octets": 1133460,
-      "sha256": "f0291af82bd00ad08678735504951de817bf101045d5a8d4065283c25e93ab5d"
+      "sha256": "19cf253e449b2f8ff0b17e4dd1687b26b7a9822b3bae830d2f2a04364d0ecddf"
     },
     {
       "fichier": "Remplacements_matieres_lot_03.html",
       "octets": 1133332,
-      "sha256": "e9448b42fcee482073d36fead7c1292d529cdae7dbe6a502b586e33413225d0a"
+      "sha256": "0592dc9e0b9fab7fcc7f094fec735e2fb0c7b29c7d5ff0e3dc28b012440806ed"
     },
     {
       "fichier": "Resultats_matieres_abstraites_lot_02.html",
-      "octets": 1332270,
-      "sha256": "8ec667d433b71c7b4ab2eeff0415269e0428916125acaf5f936a58c5eca74d89"
+      "octets": 1332081,
+      "sha256": "7ecc3396601e26931e5c4d839f71adb2d9ea2938ed5afa556aba81cd3de002a8"
     },
     {
       "fichier": "Resultats_matieres_lot_03.html",
-      "octets": 2716539,
-      "sha256": "c6cb21a68bc76c6c8b551aec6d0c8bf94c70a0157a7d55cd1ed38af963b60c7d"
+      "octets": 2716353,
+      "sha256": "b1b67eb9e14aa7c0cf56f2647f4a81b11f4dd2b8d95d5319ebcc458f03ab9437"
     },
     {
       "fichier": "Resultats_matieres_lot_04.html",
-      "octets": 3774996,
-      "sha256": "231bf7ca5de08732c131fe5fbd9f4efad7328b785919beed8db1b81a48d895f1"
+      "octets": 3774770,
+      "sha256": "3b6da2c522105b46e2469a2a59faad2706a790df7f2d112249a10413c41a5faf"
     },
     {
       "fichier": "verification.json",
-      "octets": 1043,
-      "sha256": "e387eb153dca15d9229071f569475ee289f7402f778157f67525fc31b7f36593"
+      "octets": 1054,
+      "sha256": "f08a9202bdbde74c3d0a160a027104b5317c213d6c7d5c8c85eacce7a46d965a"
     }
-  ],
-  "originaux": 9,
-  "avis_initiaux": 101,
-  "remplacements_integres": 6,
-  "essais_lot04_non_integres": 3
+  ]
 }
