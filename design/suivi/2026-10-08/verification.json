@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-08",
+  "interface_types": "reussi",
+  "construction_autonome": "reussie",
+  "construction_en_ligne": "reussie",
+  "serveur_types": "reussi",
+  "tests_integration_serveur": "non executes : initialisation PostgreSQL Linux absente sur cet ordinateur Windows",
+  "six_png_compares_au_rendu_accepte_lors_integration": true,
+  "neuf_originaux_copies_sans_modification": true,
+  "avis_initiaux_conserves": 101,
+  "catalogue_choix": 101,
+  "rendu_mobile": "non valide",
+  "publication_service": "non effectuee",
+  "dossier_suivi": "contenu selectionne pour reprise dans un depot public, hors donnees de compte et conversations privees",
+  "comparatif_lot04_depuis_copie_depot": {
+    "rendus_charges": 14,
+    "originaux_2048_charges": 3,
+    "condition_de_singularite_affichee": true,
+    "controle": "page de la copie du depot ouverte et lue dans le navigateur avant envoi"
+  },
+  "controle_contenu_public": "aucune reference de compte Higgsfield, aucun chemin personnel, aucun jeton identifiable dans les nouveaux documents"
+}

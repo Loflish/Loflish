@@ -1,5 +1,14 @@
 # Ne jamais perdre le travail — récupérer, sauvegarder, reprendre
 
+## Dernier état de progression
+
+Le point actuel est [REPRISE.md](REPRISE.md), daté du 8 octobre 2026. Il réunit les
+décisions utiles, les six matières intégrées et les trois essais conservés sous
+condition de singularité. Les fichiers sont dans `design/suivi/2026-10-08/`.
+Les notes ci-dessous décrivent aussi des échanges Claude antérieurs ; leur
+historique privé n'est pas inclus dans ce dépôt. Commencer par REPRISE.md pour
+retrouver l'état actuel, les vérifications et les questions encore ouvertes.
+
 Tout le travail sur le site est gardé à trois endroits différents. Même si une limite
 d'utilisation est atteinte au milieu d'une tâche, rien de ce qui a été poussé n'est perdu.
 

@@ -1,5 +1,9 @@
 # Nos mots mémoriaux
 
+**Pour reprendre la progression au 8 octobre 2026 : lire [REPRISE.md](REPRISE.md).**
+Le site contient les six matières validées des lots 02 et 03. Les trois essais du
+lot 04 et les décisions de reprise sont conservés dans `design/suivi/2026-10-08/`.
+
 Un musée vivant où chacun peut laisser sa trace : ses dernières volontés, ses mots, ses souvenirs.
 Ce dépôt contient **le site** (React + Vite, construit à partir du cahier des charges maître et de
 la direction artistique) et **le serveur du musée** (`server/` : comptes, traces, médias, règles,

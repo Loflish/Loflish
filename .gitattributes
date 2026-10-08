@@ -1,0 +1,4 @@
+design/suivi/**/*.md text eol=lf
+design/suivi/**/*.json text eol=lf
+design/suivi/**/*.html text eol=lf
+design/suivi/**/*.png -text

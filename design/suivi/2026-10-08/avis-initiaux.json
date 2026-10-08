@@ -1,0 +1,511 @@
+{
+  "date": "2026-10-05",
+  "source": "Choix du createur dans la fiche des 101 matieres",
+  "avis": [
+    {
+      "numero": 0,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 1,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 2,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 3,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 4,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 5,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 6,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 7,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 8,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 9,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 10,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 11,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 12,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 13,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 14,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 15,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 16,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 17,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 18,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 19,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 20,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 21,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 22,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 23,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 24,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 25,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 26,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 27,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 28,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 29,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 30,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 31,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 32,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 33,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 34,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 35,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 36,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 37,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 38,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 39,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 40,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 41,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 42,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 43,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 44,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 45,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 46,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 47,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 48,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 49,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 50,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 51,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 52,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 53,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 54,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 55,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 56,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 57,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 58,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 59,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 60,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 61,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 62,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 63,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 64,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 65,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 66,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 67,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 68,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 69,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 70,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 71,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 72,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 73,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 74,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 75,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 76,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 77,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 78,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 79,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 80,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 81,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 82,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 83,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 84,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 85,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 86,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 87,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 88,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 89,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 90,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 91,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 92,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 93,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 94,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 95,
+      "avis": "moins",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 96,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 97,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 98,
+      "avis": "garder",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 99,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    },
+    {
+      "numero": 100,
+      "avis": "affiner",
+      "date": "2026-10-05"
+    }
+  ]
+}

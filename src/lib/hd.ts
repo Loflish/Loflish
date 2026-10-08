@@ -62,7 +62,9 @@ export const HD_FILES = {
   lin: `${base}lin.webp`,
 };
 
-const tacheUrl = (n: number) => `${base}taches/tache-${String(n).padStart(2, '0')}.webp`;
+/** Lots 02 et 03 validés : six remplacements conservés en PNG sans perte. */
+const matieresSansPerte = new Set([15, 50, 70, 81, 85, 95]);
+const tacheUrl = (n: number) => `${base}taches/tache-${String(n).padStart(2, '0')}.${matieresSansPerte.has(n) ? 'png' : 'webp'}`;
 
 /**
  * Surfaces HD des pages : les papiers faits main (calques translucides de
@@ -78,7 +80,7 @@ export function installSurfaces(): void {
   r.style.setProperty('--papier-washi', abs('papier-washi.webp'));
 }
 
-const taches = new Map<number, HTMLImageElement>();
+const taches = new Map<number, HTMLImageElement | HTMLCanvasElement>();
 const enCours = new Map<number, Promise<void>>();
 let loading: Promise<void> | null = null;
 
@@ -89,7 +91,21 @@ function charger(n: number): Promise<void> {
     p = new Promise<void>((res) => {
       const img = new Image();
       img.onload = () => {
-        taches.set(n, img);
+        if (matieresSansPerte.has(n)) {
+          // Même source canvas que la fiche approuvée : conserver le filtrage du pigment.
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            taches.set(n, canvas);
+          } else {
+            taches.set(n, img);
+          }
+        } else {
+          taches.set(n, img);
+        }
         res();
       };
       img.onerror = () => res();
@@ -127,7 +143,7 @@ export function matiereFor(seed: number): number {
  * La tache d'aquarelle d'une matière. Si elle n'est pas (encore) chargée —
  * téléphone, connexion lente —, la plus proche dans le catalogue la remplace.
  */
-export function tacheFor(n: number): HTMLImageElement | null {
+export function tacheFor(n: number): HTMLImageElement | HTMLCanvasElement | null {
   if (!taches.size) return null;
   const hit = taches.get(n);
   if (hit) return hit;

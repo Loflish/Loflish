@@ -261,7 +261,7 @@ export function bubbleSprite(seedKey: string, hex: string, opts: SpriteOptions =
  * matière. Elle est teintée exactement dans la couleur GRIS de la personne ;
  * ses variations de densité, sa granulation et son bord séché sont conservés.
  */
-function paintTache(ctx: CanvasRenderingContext2D, tache: HTMLImageElement, hex: string, c: number, R: number, r: () => number): void {
+function paintTache(ctx: CanvasRenderingContext2D, tache: CanvasImageSource, hex: string, c: number, R: number, r: () => number): void {
   const size = ctx.canvas.width;
   const side = (2 * R) / 0.82; // la tache occupe ~82 % de sa vignette
   const angle = r() * Math.PI * 2;

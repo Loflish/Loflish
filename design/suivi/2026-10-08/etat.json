@@ -1,0 +1,830 @@
+{
+  "date": "2026-10-08",
+  "source_depot": "https://github.com/Loflish/Loflish",
+  "branche": "claude/practical-newton-r1t0oq",
+  "base_recuperee_commit": "d54033d81d7080c207c8913cafaa6e302068b9ea",
+  "statut_travail_artistique": "arrete a la demande du createur, reprise a son initiative",
+  "demande_actuelle": "sauvegarder sur GitHub pour permettre une prochaine reprise a partir du depot",
+  "objectif": "version personnelle tres aboutie, progression jusqu a satisfaction exprimee",
+  "ordre_choisi": [
+    "matieres des bulles",
+    "fond et autres elements visuels",
+    "fonctionnement et serveur"
+  ],
+  "regle_decision": "assistant propose avec exemples concrets, createur tranche les decisions visibles et les depenses",
+  "contraintes_artistiques": [
+    "preserver direction actuelle et douceur",
+    "aquarelle, papier, textile",
+    "palette GRIS",
+    "fil brode actuel sur chaque bulle",
+    "taille commune et zoom global",
+    "singularite des structures de matiere",
+    "motifs explicites comme la feuille de ginkgo peu apprecies dans les propositions"
+  ],
+  "catalogue_choix": 101,
+  "remplacements_integres": [
+    {
+      "numero": 70,
+      "nom": "Voile superposé",
+      "fichier_site": "public/hd/taches/tache-70.png",
+      "sha256": "c9c12f92938d64e7d138a943cc7702087b17234ecf051a18ccc74a3145a455b0",
+      "statut": "resultat et correspondance valides"
+    },
+    {
+      "numero": 81,
+      "nom": "Pastel frotté",
+      "fichier_site": "public/hd/taches/tache-81.png",
+      "sha256": "10552dd0236dbdbefd309a4c6236d9ad5c659143df8f058bde47e7c35ff6c656",
+      "statut": "resultat et correspondance valides"
+    },
+    {
+      "numero": 85,
+      "nom": "Papier gaufré",
+      "fichier_site": "public/hd/taches/tache-85.png",
+      "sha256": "87bd1c8c152d1e4f4de96035c6f47914e38215841e88c0a773ce2f4966b1b877",
+      "statut": "resultat et correspondance valides"
+    },
+    {
+      "numero": 15,
+      "nom": "Fibres libres",
+      "fichier_site": "public/hd/taches/tache-15.png",
+      "sha256": "39a47be3afbfe4bbf3388fbec91c9b0a11d43ffb742d60362bb15a7296a73f82",
+      "statut": "resultat et correspondance valides"
+    },
+    {
+      "numero": 50,
+      "nom": "Encre capillaire",
+      "fichier_site": "public/hd/taches/tache-50.png",
+      "sha256": "412984c751016f9fb7baa951ab6bcff66b7d1028c3f7f4f28aff6124aa6f16f8",
+      "statut": "resultat et correspondance valides"
+    },
+    {
+      "numero": 95,
+      "nom": "Coton froissé",
+      "fichier_site": "public/hd/taches/tache-95.png",
+      "sha256": "2d4a4d00dfbcb257bf8859ac4944c119839459b9f3cd0f27f9f0b0c55a44f9c9",
+      "statut": "resultat et correspondance valides"
+    }
+  ],
+  "avis_catalogue_actuel": [
+    {
+      "numero": 0,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 1,
+      "avis": "moins",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 2,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 3,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 4,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 5,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 6,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 7,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 8,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 9,
+      "avis": "moins",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 10,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 11,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 12,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 13,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 14,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 15,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "nom": "Fibres libres",
+      "source": "resultat et remplacement valides"
+    },
+    {
+      "numero": 16,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 17,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 18,
+      "avis": "moins",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 19,
+      "avis": "moins",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 20,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 21,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 22,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 23,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 24,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 25,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 26,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 27,
+      "avis": "moins",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 28,
+      "avis": "moins",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 29,
+      "avis": "moins",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 30,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 31,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 32,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 33,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 34,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 35,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 36,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 37,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 38,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 39,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 40,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 41,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 42,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 43,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 44,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 45,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 46,
+      "avis": "moins",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 47,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 48,
+      "avis": "moins",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 49,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 50,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "nom": "Encre capillaire",
+      "source": "resultat et remplacement valides"
+    },
+    {
+      "numero": 51,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 52,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 53,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 54,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 55,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 56,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 57,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 58,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 59,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 60,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 61,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 62,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 63,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 64,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 65,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 66,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 67,
+      "avis": "moins",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 68,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 69,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 70,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "nom": "Voile superposé",
+      "source": "resultat et remplacement valides"
+    },
+    {
+      "numero": 71,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 72,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 73,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 74,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 75,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 76,
+      "avis": "moins",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 77,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 78,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 79,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 80,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 81,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "nom": "Pastel frotté",
+      "source": "resultat et remplacement valides"
+    },
+    {
+      "numero": 82,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 83,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 84,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 85,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "nom": "Papier gaufré",
+      "source": "resultat et remplacement valides"
+    },
+    {
+      "numero": 86,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 87,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 88,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 89,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 90,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 91,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 92,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 93,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 94,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 95,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "nom": "Coton froissé",
+      "source": "resultat et remplacement valides"
+    },
+    {
+      "numero": 96,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 97,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 98,
+      "avis": "garder",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 99,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    },
+    {
+      "numero": 100,
+      "avis": "affiner",
+      "date": "2026-10-05",
+      "source": "avis initial"
+    }
+  ],
+  "totaux_catalogue_actuel": {
+    "garder": 60,
+    "affiner": 30,
+    "moins": 11
+  },
+  "lot04": [
+    {
+      "candidate_proposee": 1,
+      "nom": "Réserves diffuses",
+      "avis_createur": "garder sous condition de singularite par rapport aux autres matieres",
+      "singularite_catalogue_verifiee": false,
+      "remplacement_valide": false,
+      "integre": false,
+      "original": "matieres/lot04/reserves-diffuses-original.png",
+      "sha256": "4dedda15b73e0d892708dd6a2c9708b3ccba0a47ba516e719c62939fed9b93d3",
+      "brief": "Un papier absorbant parcouru par trois ou quatre réserves claires inégales et décentrées. Le pigment contourne ces passages avec des bords doux et légèrement fibreux.",
+      "difference_recherchee": "La structure serait donnée par les espaces clairs dans une surface continue. Les fibres 15 resteraient des filaments, le voile 70 des couches superposées et l’encre 50 des chemins plus sombres.",
+      "risque": "Les réserves peuvent devenir trop blanches ou trop dessinées. Je rechercherais des transitions absorbées, sans contour net ni effet de découpage.",
+      "prompt": "Create one abstract watercolor and handmade textile material swatch, centered face-on macro view, gently irregular circular silhouette occupying about 80 percent of a square canvas. Neutral grayscale only. Matte porous surface, absorbed pigment, delicate quiet light reserves, soft even diffuse illumination. Preserve readable internal structure at small website bubble sizes. No sphere, glossy reflection, hard vector outline, cast shadow, colored background, recognizable plant, leaf, animal, celestial object, text, ornament, border or embroidery. Plain white background outside the swatch. The website applies its GRIS palette and embroidered perimeter thread. Produce only the material surface. The defining structure is three or four unequal off-center soft light reserves in a continuous watercolor paper wash, with irregular elongated edges and faint paper fibers at the absorbed pigment boundary. Uneven spacing, no repeated pattern. The light areas are shallow low-pigment regions, not physical holes or raised patches. Do not use a central white hole, complete ring, concentric circles, plant silhouette, stacked transparent sheets, dramatic tearing or hard cutout edges. Keep the reserves gently visible as asymmetrical light passages."
+    },
+    {
+      "candidate_proposee": 19,
+      "nom": "Feutre nuagé",
+      "avis_createur": "garder sous condition de singularite par rapport aux autres matieres",
+      "singularite_catalogue_verifiee": false,
+      "remplacement_valide": false,
+      "integre": false,
+      "original": "matieres/lot04/feutre-nuage-original.png",
+      "sha256": "f5b444ff79c3f92b6f6ddf5c22bbdef5c7723f6fdb5cfcf0dd304c08ef4894d2",
+      "brief": "Un feutre mat à fibres très courtes, réunies en quelques amas souples et irréguliers. Le pigment s’accroche à ces amas ; des zones moins denses laissent respirer la surface.",
+      "difference_recherchee": "La signature serait une surface dense et poreuse à fibres courtes. La 15 conserverait ses longs fils visibles, la 95 ses larges plis et la 85 son relief de papier.",
+      "risque": "Un feutre trop uniforme perdrait sa singularité ; un relief trop fort rendrait la bulle lourde. Je viserais quelques différences de densité, avec une lumière plate.",
+      "prompt": "Create one abstract watercolor and handmade textile material swatch, centered face-on macro view, gently irregular circular silhouette occupying about 80 percent of a square canvas. Neutral grayscale only. Matte porous surface, absorbed pigment, delicate quiet light reserves, soft even diffuse illumination. Preserve readable internal structure at small website bubble sizes. No sphere, glossy reflection, hard vector outline, cast shadow, colored background, recognizable plant, leaf, animal, celestial object, text, ornament, border or embroidery. Plain white background outside the swatch. The website applies its GRIS palette and embroidered perimeter thread. Produce only the material surface. The defining structure is softly needle-felted cotton with very short compressed fibers, shallow irregular clustered tufts in only a few uneven regions, and more open porous transitions between them. A continuous low-relief felt surface, with pigment caught in the short-fiber clusters. No long filament network, woven grid, lace, fluffy fur, deep plush piles, crumpled folds, paper embossing, uniform stipple, smooth cloudy gradient or directional shiny highlight. Make the short-fiber clustered structure readable without hardening the material."
+    },
+    {
+      "candidate_proposee": 76,
+      "nom": "Pigment sédimenté",
+      "avis_createur": "garder sous condition de singularite par rapport aux autres matieres",
+      "singularite_catalogue_verifiee": false,
+      "remplacement_valide": false,
+      "integre": false,
+      "original": "matieres/lot04/pigment-sedimente-original.png",
+      "sha256": "259f1330a0fce7121739267ebb48616acfb8ea604fed3c5af6fe5af04927435a",
+      "brief": "Des petits grains mats se regroupent en deux ou trois zones irrégulières dans le papier. De fins dépôts suivent les creux de ces zones, entre des passages plus calmes.",
+      "difference_recherchee": "La singularité serait la répartition des grains en groupes de densités différentes. La 39 resterait plus fine et uniforme, le pastel 81 un geste frotté et l’encre 50 une diffusion ramifiée.",
+      "risque": "Des grains trop petits disparaîtraient au dézoom ; des amas trop contrastés ressembleraient à une autre tache d’aquarelle. Je limiterais leur nombre avec des transitions poreuses.",
+      "prompt": "Create one abstract watercolor and handmade textile material swatch, centered face-on macro view, gently irregular circular silhouette occupying about 80 percent of a square canvas. Neutral grayscale only. Matte porous surface, absorbed pigment, delicate quiet light reserves, soft even diffuse illumination. Preserve readable internal structure at small website bubble sizes. No sphere, glossy reflection, hard vector outline, cast shadow, colored background, recognizable plant, leaf, animal, celestial object, text, ornament, border or embroidery. Plain white background outside the swatch. The website applies its GRIS palette and embroidered perimeter thread. Produce only the material surface. The defining structure is sedimented watercolor pigment: fine matte uneven grains gathered in two or three asymmetric low-contrast clusters, a few softer deposits along shallow irregular paper depressions, with quiet porous regions between clusters. Vary grain size subtly; grains are absorbed in paper, not floating objects. No even all-over speckle, repeated polka dots, stars, glitter, salt crystals, angular facets, hard crackle network, rubbed pastel stroke, branching ink paths, strong diagonal band or cast shadows. Keep the clustered deposition readable when reduced to a small bubble."
+    }
+  ],
+  "originaux_higgsfield": [
+    {
+      "lot": 2,
+      "fichier": "matieres/lot02/papier-gaufre-original.png",
+      "sha256": "1172d27cad09581239916107d578081a0249f4cf7c88d3a06f7fbaf5d4241db7",
+      "dimensions": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "lot": 2,
+      "fichier": "matieres/lot02/pastel-frotte-original.png",
+      "sha256": "f749e3cc2ca3db5d15ab5147737339fbbb6c9a925f1bed88aefacba508e6279b",
+      "dimensions": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "lot": 2,
+      "fichier": "matieres/lot02/voile-superpose-original.png",
+      "sha256": "a9142879da2ed075a3d16dead8252582c95c567c67c40f5c9a2619348e825769",
+      "dimensions": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "lot": 3,
+      "fichier": "matieres/lot03/coton-froisse-original.png",
+      "sha256": "ce41412a4013f02529fe485e8a723c1cb980829ab799505764375837e3d2f8d3",
+      "dimensions": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "lot": 3,
+      "fichier": "matieres/lot03/encre-capillaire-original.png",
+      "sha256": "114925520d851430901aa3aab573d71c14b4aa2e403724f0708416fd05590597",
+      "dimensions": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "lot": 3,
+      "fichier": "matieres/lot03/fibres-libres-original.png",
+      "sha256": "d91c467e4e3661e763995befcf06e025d612790c2af9c713ab3152105fe387d8",
+      "dimensions": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "lot": 4,
+      "fichier": "matieres/lot04/feutre-nuage-original.png",
+      "sha256": "f5b444ff79c3f92b6f6ddf5c22bbdef5c7723f6fdb5cfcf0dd304c08ef4894d2",
+      "dimensions": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "lot": 4,
+      "fichier": "matieres/lot04/pigment-sedimente-original.png",
+      "sha256": "259f1330a0fce7121739267ebb48616acfb8ea604fed3c5af6fe5af04927435a",
+      "dimensions": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "lot": 4,
+      "fichier": "matieres/lot04/reserves-diffuses-original.png",
+      "sha256": "4dedda15b73e0d892708dd6a2c9708b3ccba0a47ba516e719c62939fed9b93d3",
+      "dimensions": [
+        2048,
+        2048
+      ]
+    }
+  ],
+  "modele_des_essais": "Nano Banana Pro, format carre, une image 2K par piste",
+  "nouvelle_generation_autorisee": false,
+  "questions_ouvertes": [
+    "comparer singularite lot04 avec tout le catalogue",
+    "valider correspondances avant integration lot04",
+    "discuter variations individuelles de taille dans les animations",
+    "suite du fond et des visuels a choisir",
+    "audit fonctionnel et serveur a reprendre ensuite"
+  ],
+  "limites": [
+    "synthese de reprise, pas export integral des conversations",
+    "pas de donnees du navigateur ni de base en ligne",
+    "rendu mobile non valide",
+    "tests serveur bloques avant execution par absence de PostgreSQL prevu sous Linux"
+  ]
+}

@@ -4,6 +4,12 @@ Ce fichier garde les décisions prises avec le créateur du musée, pour qu'une 
 reprenne le travail sans rien casser. Le site et ses textes sont en français ; on lui répond en
 français.
 
+**Dernier point de reprise, 8 octobre 2026 : [REPRISE.md](REPRISE.md).** Lire ce fichier
+et `design/suivi/2026-10-08/etat.json` pour retrouver les six remplacements intégrés,
+les trois essais du lot 04 conservés sous condition de singularité et l'arrêt du
+travail artistique demandé par le créateur. La demande suivante porte sur la
+sauvegarde sur GitHub ; les remplacements du lot 04 ne sont pas validés.
+
 ## Le projet
 
 Un musée vivant des dernières volontés : chacun dépose sa « trace » (quatre questions, puis des
@@ -26,6 +32,14 @@ classement, pas de compteur : toutes les bulles ont la même taille, le hasard e
   Higgsfield + la matière 0 (aquarelle cousue, procédurale). On choisit sa matière avec les
   flèches seulement (pas de feuille des matières). Le créateur veut en reparler. Chaque bulle porte un fil cousu sur
   son pourtour. Les teintes sont appliquées par multiplication (`paintTache`).
+- **Lot 02 des matières, validé le 5 octobre 2026** : 70 = voile superposé, 81 = pastel frotté,
+  85 = papier gaufré. Ces trois matières remplacent les anciennes aux mêmes numéros. Les PNG
+  transparents de 512 × 512 sont chargés dans un canvas pour conserver le rendu approuvé ;
+  les anciens WebP restent conservés. Le catalogue garde ses 101 choix, le fil et la palette.
+- **Lot 03 des matières, validé le 8 octobre 2026** : 15 = fibres libres, 50 = encre capillaire,
+  95 = coton froissé. Les trois créations et ces correspondances ont été validées séparément.
+  Même préparation et lecture PNG dans un canvas de 512 × 512 que le lot 02 ; anciens WebP
+  conservés, 101 choix au total. Les six remplacements des deux lots sont actifs ensemble.
 - **Bordeaux** : réservé au logo brodé et au fil de l'œuvre commune (`rgb(113, 42, 57)`). Nulle part
   ailleurs.
 - Le logo brodé tient sur une seule ligne.
