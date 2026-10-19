@@ -1,0 +1,186 @@
+{
+  "date": "2026-10-19",
+  "algorithme": "SHA-256",
+  "nombre": 35,
+  "exclus": [
+    "inventaire.json (lui-même)",
+    "reconstruits/ (sorties reproductibles, ignorées par Git)"
+  ],
+  "fichiers": [
+    {
+      "fichier": ".gitattributes",
+      "octets": 93,
+      "sha256": "df196b0fb7fc98f8a40719001773517bf370074932086ea1aa2337c939277910"
+    },
+    {
+      "fichier": ".gitignore",
+      "octets": 14,
+      "sha256": "35f977d02e7b8e06aa4cb4940bdc27810c83e0350ca1d898e9b0ed4d1bb48ad0"
+    },
+    {
+      "fichier": "copies-verifiees.json",
+      "octets": 5587,
+      "sha256": "e5c38f1f307023112d1117f3013c994f11c5be0545078682b988ca60c4046a71"
+    },
+    {
+      "fichier": "etat.json",
+      "octets": 1876,
+      "sha256": "34d128359ee9ae70494917451bafadab72e243d381c624fbb6312c3c1cca94af"
+    },
+    {
+      "fichier": "outils/atelier-matieres.ts",
+      "octets": 3269,
+      "sha256": "7cd52ff18c451280bc368f0ac9f245dbe9e48eef9817a65b5fee15792f7f276b"
+    },
+    {
+      "fichier": "outils/boucle-pigments.ts",
+      "octets": 3231,
+      "sha256": "0c187e65b1544bfff2d5623dfe8972ed524726c31bc8385ad3fc514d49c6c2df"
+    },
+    {
+      "fichier": "outils/construire-atelier.cjs",
+      "octets": 4989,
+      "sha256": "504d98f29c631e396e79ac99664ff216aee015f4f77b6e275e9750187ea9e5bc"
+    },
+    {
+      "fichier": "outils/construire-essai.cjs",
+      "octets": 8261,
+      "sha256": "2154548fa1c09d4cd61c975a0559645dd4215da2a0f42ad99424ed5b64d1e8bf"
+    },
+    {
+      "fichier": "outils/essai-lisibilite.ts",
+      "octets": 6288,
+      "sha256": "7f3bd8c11a63824c71191714f571e2c9c912f69728a6f03b93386903b0618584"
+    },
+    {
+      "fichier": "outils/verifier-integrite.cjs",
+      "octets": 694,
+      "sha256": "0680f3b31ec1d774e107c76bcd5e1855cbea7cc72937800f99723d82e39a5c57"
+    },
+    {
+      "fichier": "outputs/comparaison-cinq-matieres.jpg",
+      "octets": 108743,
+      "sha256": "cf5516bbe00f54f94218fd493d1b254e13fda8a9d9a1f90fc17da7fda1b8937c"
+    },
+    {
+      "fichier": "outputs/Comparateur_des_matieres.html",
+      "octets": 6462362,
+      "sha256": "eb180309081c53c7113466f49598d6cebf3efabd5810a314a7504b94904dd56d"
+    },
+    {
+      "fichier": "outputs/constellation-reference-mobile.jpg",
+      "octets": 33453,
+      "sha256": "969e218be8b6b167618900a42e7909a213603cd03307de3de9e2c2e1821915dd"
+    },
+    {
+      "fichier": "outputs/constellation-reference-ordinateur.jpg",
+      "octets": 97684,
+      "sha256": "0baab697f865c17741934776889140c968b978c3ed92bb2907df03c9f3e7ad5a"
+    },
+    {
+      "fichier": "outputs/Diagnostic_visuel_et_prochains_essais.md",
+      "octets": 10462,
+      "sha256": "61099c609551c3a554a35bc85ecc04bc5f4745c8707c44f551b5b6cc128bc5c3"
+    },
+    {
+      "fichier": "outputs/essai-fond-vivant-80.jpg",
+      "octets": 81836,
+      "sha256": "2cd06d49087edb6c83689ce9cbc4f52973561d34745b66107f009c501f8bd71f"
+    },
+    {
+      "fichier": "outputs/essai-trois-matieres.jpg",
+      "octets": 90905,
+      "sha256": "51b6e4e918bb556373040e8f76e2c8c39ed0803c291de36f6624ab73c233d2d4"
+    },
+    {
+      "fichier": "outputs/Essai_lisibilite_00_81_95.html",
+      "octets": 9823238,
+      "sha256": "ddf5e07ab462eac8a4d9fb9d5367820d540667321ac1b6f8e65d71357c3a048b"
+    },
+    {
+      "fichier": "outputs/Etat_initial_du_musee.md",
+      "octets": 3979,
+      "sha256": "b45ebd8411d91aa563215b0ec30b2e9464b99922b5f20cd1d8b1b81baebc5c7f"
+    },
+    {
+      "fichier": "outputs/Feuille_de_route_du_musee.md",
+      "octets": 21719,
+      "sha256": "3573962f3291db54714ce1b73b61ac157d84c2d068757806bb816fdb81e7a6de"
+    },
+    {
+      "fichier": "outputs/fond-90-95-100-mouvements.jpg",
+      "octets": 95172,
+      "sha256": "04ce010b9d44ca899cbe8ae36ac65d85ef8c94ca93d014e645c83b7c088dcb75"
+    },
+    {
+      "fichier": "outputs/fond-boucle-douce-100.jpg",
+      "octets": 118204,
+      "sha256": "a1282e6b572b9e544b0ec3e797025e39629cd53c7b40588d2fa274ea6d531c55"
+    },
+    {
+      "fichier": "outputs/fond-seul-visible.jpg",
+      "octets": 120082,
+      "sha256": "ca0a6e2c0c828105580f8acace410c8d5598d80573d806158263fb2b6444ce3f"
+    },
+    {
+      "fichier": "outputs/fond-visible-corrige.jpg",
+      "octets": 68008,
+      "sha256": "4cccc5e7cbf109b8f7bd172c52a1e82d1ad3d3e19598c32a29f34d1b91081078"
+    },
+    {
+      "fichier": "outputs/Fond_mouvements_et_budget_Higgsfield.md",
+      "octets": 13503,
+      "sha256": "70f1330bfff0555054cf7026059bd9c5c7c2d8bcd913ffb891573c6590ee6688"
+    },
+    {
+      "fichier": "README.md",
+      "octets": 9424,
+      "sha256": "5748f43ebc67d423871f0ac82b51d79d82005eef16aed1e287c42e27bbeb2516"
+    },
+    {
+      "fichier": "sources-originales/atelier-matieres.ts",
+      "octets": 3254,
+      "sha256": "3f345a824b59f231a94ea58ec1989f909183dc7fdb9b78d033917848637c0473"
+    },
+    {
+      "fichier": "sources-originales/boucle-pigments.ts",
+      "octets": 3231,
+      "sha256": "0c187e65b1544bfff2d5623dfe8972ed524726c31bc8385ad3fc514d49c6c2df"
+    },
+    {
+      "fichier": "sources-originales/construire-atelier.cjs",
+      "octets": 4843,
+      "sha256": "380144d1a1a3bde44926e3549f5dc285cd75aff2cf072a542e99b298de5946f2"
+    },
+    {
+      "fichier": "sources-originales/construire-essai.cjs",
+      "octets": 8116,
+      "sha256": "c841798ad583d2c0146f7ce2001419187c0ac0ad8cc6d71efa37761cfdeb1b07"
+    },
+    {
+      "fichier": "sources-originales/essai-builder-prefix.txt",
+      "octets": 1081,
+      "sha256": "3eca15a62b6cf531c15fceb8424e3f850f2cf4081d5318b31d4d2164382beb42"
+    },
+    {
+      "fichier": "sources-originales/essai-builder-suffix.txt",
+      "octets": 175,
+      "sha256": "be29da9ca489623ac6ba0660b028ffeaa1110e0c8c8393b9595622ae23d27b9d"
+    },
+    {
+      "fichier": "sources-originales/essai-html-fragment.txt",
+      "octets": 4747,
+      "sha256": "9a2abcbeadb935fe8fed2945746e768b322655eee278a8e88e0c01e2de0ed020"
+    },
+    {
+      "fichier": "sources-originales/essai-lisibilite.ts",
+      "octets": 6278,
+      "sha256": "911ad73e67e43632cfccc203d0768ecb061ad274e46d7e6995aa96b32b964bfb"
+    },
+    {
+      "fichier": "verification.json",
+      "octets": 1210,
+      "sha256": "f89cde5bea6c7f65ca6fc14c03c8db0a0c1e5f6f79969b8db33d94b3d08cb9f5"
+    }
+  ]
+}

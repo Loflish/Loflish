@@ -1,0 +1,33 @@
+const videoData='data:video/mp4;base64,'+fs.readFileSync(path.join(root,'site/public/hd/fond-explorer-1920.mp4')).toString('base64');
+const html=`<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fond vivant — 00, 81, 95</title><style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f1ec;color:#302d35;font-family:Georgia,serif}
+main{max-width:1100px;margin:auto;padding:28px 20px}
+h1{font-size:clamp(28px,4vw,42px);font-weight:400;margin:0 0 16px}p{line-height:1.6}
+nav{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 20px}
+button{padding:12px 15px;background:#faf8f3;color:#34303c;border:1px solid #aaa1ad;border-radius:4px;font:inherit;cursor:pointer}
+button[aria-pressed=true]{background:#4b6097;color:white}button:focus-visible{outline:3px solid #d17067;outline-offset:3px}
+.scene{--fond:.8;position:relative;isolation:isolate;background:#f3f1ec;border:1px solid #cec8c1;padding:24px 12px;overflow:hidden}
+.peinture{position:absolute;inset:-4%;z-index:0;opacity:var(--fond);animation:derive 140s ease-in-out infinite alternate;animation-play-state:paused;pointer-events:none;background:url('${data('fond-16x9.webp','webp')}') center/cover}
+.peinture video{width:100%;height:100%;object-fit:cover;display:block}
+@keyframes derive{from{transform:scale(1) translate(0,0)}to{transform:scale(1.06) translate(-1.2%,.8%)}}
+.scene section{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:8px 0 24px}
+.scene h2{grid-column:1/-1;font-weight:400;font-size:19px;margin:4px 8px}
+figure{margin:0;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;min-width:0}
+figure img{flex:none;object-fit:contain}figcaption{width:100%;text-align:center;font-size:12px;margin-top:10px}
+.note{font-size:14px;color:#625b67}.label{margin-bottom:4px}#etat{font-weight:bold}
+details{margin-top:20px;line-height:1.6}summary{cursor:pointer}
+@media(max-width:720px){.scene section{grid-template-columns:1fr}main{padding:24px 12px}}
+</style><main>
+<h1>Un fond plus présent, plus vivant</h1>
+<p>Tes matières 00, 81 et 95, sur la peinture animée déjà présente dans le projet. Compare d'abord la présence du fond, puis son mouvement. Les bulles restent identiques.</p>
+<p class="label">Présence de la peinture</p>
+<nav aria-label="Présence du fond"><button data-opacity=".7" aria-pressed="false">Référence · 70 %</button><button data-opacity=".8" aria-pressed="true">Plus présent · 80 %</button><button data-opacity=".85" aria-pressed="false">Plus intense · 85 %</button></nav>
+<p class="label">Mouvement de la peinture et dérive du fond</p>
+<nav aria-label="Mouvement du fond"><button data-motion="actuel" aria-pressed="false">Mouvement actuel</button><button data-motion="vivant" aria-pressed="false">Un peu plus vivant</button><button data-motion="pause" aria-pressed="true">Pause</button></nav>
+<p><span id="etat" aria-live="polite">Plus présent · 80 %</span> — <span id="mouvement-etat" aria-live="polite">Mouvement en pause</span></p>
+<p id="chargement" role="status">Préparation…</p>
+<div class="scene"><div class="peinture" aria-hidden="true"><video muted loop playsinline preload="auto" poster="${data('fond-16x9.webp','webp')}" src="${videoData}"></video></div></div>
+<details><summary>Ce que cet essai permet de comparer</summary><p class="note">Vidéo de fond et moteur des bulles issus du projet. Référence : fond à 70 %, vidéo à vitesse normale et dérive de 140 secondes par trajet. Variante : vidéo accélérée de 15 % et dérive de 90 secondes, sans agrandir l'amplitude du déplacement. Cela accélère le mouvement existant ; aucun nouveau mouvement de pigment n'a été généré.</p><p class="note">Ceci est une planche d'étude animée, pas la constellation complète. Atmosphère, fibres du fond, masque autour du logo et déplacements des bulles ne sont pas reproduits. Les bulles sont à pleine opacité. Les tailles nominales 34 et 38 px viennent des bases mobile et ordinateur ; 64 px sert à examiner les détails. Le recadrage du fond dépend de cette planche.</p><p class="note">L'animation se met en pause lorsque l'onglet est masqué. Si ton système demande moins d'animations, l'essai démarre en pause ; tu peux lancer volontairement un aperçu. La vidéo est proposée ici sur mobile pour la comparaison, alors que le musée actuel privilégie une image fixe sur petit écran.</p></details>
+<p class="note">0 crédit Higgsfield consommé · Aucun changement du site. Point de départ proposé : 80 %. Ta préférence reste à confirmer.</p>
+</main><script type="module">${result.outputFiles[0].text.replace(/<\/script/gi,'<\\/script')}</script></html>`;

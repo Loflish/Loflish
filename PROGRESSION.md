@@ -1,6 +1,25 @@
 # Nos Mots Mémoriaux : état sauvegardé
 
-État du site et de sa progression au 8 octobre 2026.
+## Dernière sauvegarde de progression — 19 octobre 2026
+
+Les comparateurs visuels, leurs sources, neuf captures et les documents de l'étude
+sont conservés dans [le dossier de progression du 19 octobre](design/suivi/2026-10-19/README.md).
+Ce dossier contient le point de reprise, les choix artistiques, les étapes restantes,
+des outils de reconstruction et les empreintes des fichiers copiés.
+
+**Dernier choix : fond à 90 %, mouvements plus rapides et plus amples des taches,
+avec davantage de mouvement global. Cette variante reste à réaliser.** Le prototype
+archivé démarre encore à 100 %, avec une boucle locale de 72 secondes et un cadre fixe.
+Les matières préférées sont 00, 81 et 95. Aucun crédit Higgsfield n'a été consommé
+dans cette étude et aucun changement artistique n'a été intégré au site.
+
+L'audit complet et la préparation de la démonstration pour la famille et les amis
+restent à poursuivre. Le [point de reprise actuel](design/suivi/2026-10-19/README.md)
+prime sur les anciennes orientations ; les historiques restent conservés.
+
+## État historique du site au 8 octobre 2026
+
+La section qui suit décrit la sauvegarde précédente.
 
 Le dépôt contient le code du site, le code du serveur, les ressources visuelles
 et les documents factuels de suivi. Les conversations privées, les identifiants,

@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-19",
+  "copies_originales_verifiees": 23,
+  "copies_integrite": "PASS",
+  "reconstructions": [
+    {
+      "fichier": "Comparateur_des_matieres.html",
+      "compilation": "réussie",
+      "sha256_archive": "eb180309081c53c7113466f49598d6cebf3efabd5810a314a7504b94904dd56d",
+      "sha256_reconstruction": "eb180309081c53c7113466f49598d6cebf3efabd5810a314a7504b94904dd56d",
+      "identique_octet_pour_octet": true
+    },
+    {
+      "fichier": "Essai_lisibilite_00_81_95.html",
+      "compilation": "réussie",
+      "sha256_archive": "ddf5e07ab462eac8a4d9fb9d5367820d540667321ac1b6f8e65d71357c3a048b",
+      "sha256_reconstruction": "ddf5e07ab462eac8a4d9fb9d5367820d540667321ac1b6f8e65d71357c3a048b",
+      "identique_octet_pour_octet": true
+    }
+  ],
+  "nombre_captures": 9,
+  "code_produit_modifie": false,
+  "dernier_reglage_demande": "90 %, mouvement plus rapide et plus ample — encore à réaliser",
+  "limites": [
+    "Vérification de conservation et reconstruction, pas audit du site",
+    "Aucun nouveau contrôle visuel de la reconstruction sur cette étape de sauvegarde",
+    "Les versions anciennes écrasées et les sessions du navigateur ne sont pas recréées"
+  ]
+}

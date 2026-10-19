@@ -4,8 +4,14 @@ Le code, les images et les fichiers de progression sont conservés dans le dép�
 [Loflish/Loflish](https://github.com/Loflish/Loflish), sur la branche
 claude/practical-newton-r1t0oq.
 
-L'[état sauvegardé](PROGRESSION.md) décrit les matières intégrées, les essais
-conservés et les vérifications enregistrées au 8 octobre 2026.
+L'[état sauvegardé](PROGRESSION.md) relie le suivi historique du 8 octobre et
+la [progression du 19 octobre](design/suivi/2026-10-19/README.md), avec les essais
+visuels, leurs sources, les décisions récentes et les étapes restantes.
+
+Les deux nouveaux comparateurs autonomes sont dans
+`design/suivi/2026-10-19/outputs/`. Ils s'ouvrent directement dans un navigateur.
+Les instructions de serveur local et de reconstruction sont dans le
+[guide de cette sauvegarde](design/suivi/2026-10-19/README.md#reprendre-et-reconstruire).
 
 ## Télécharger une copie
 

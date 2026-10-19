@@ -1,0 +1,2 @@
+fs.writeFileSync(path.join(root,'../outputs/Essai_lisibilite_00_81_95.html'),html);console.log('Essai autonome créé');
+})().catch(e=>{console.error(e);process.exitCode=1});

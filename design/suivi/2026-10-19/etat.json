@@ -1,0 +1,42 @@
+{
+  "date_sauvegarde": "2026-10-19",
+  "depot": "Loflish/Loflish",
+  "branche": "claude/practical-newton-r1t0oq",
+  "reference_initiale": "33956a0b7f6a065b5179373d2f4f16d90a44ffdb",
+  "phase": "Essais visuels avant audit complet",
+  "premier_lancement": "Démonstration pour la famille et les amis",
+  "matieres_preferees": [0, 81, 95],
+  "suppression_autres_matieres_demandee": false,
+  "derniere_demande": {
+    "opacite": 0.9,
+    "mouvements": "Boucles plus rapides, mouvement des taches plus ample et davantage de mouvement global du fond",
+    "statut": "Demandé, non appliqué aux fichiers avant la sauvegarde",
+    "vitesse_et_amplitude_validees": null
+  },
+  "prototype_sauvegarde": {
+    "fichier": "outputs/Essai_lisibilite_00_81_95.html",
+    "opacite_par_defaut": 1,
+    "mode_par_defaut": "boucle",
+    "cycle_secondes": 72,
+    "cycle_reglable_secondes": [48, 120],
+    "cadre": "immobile",
+    "reduction_mouvement": "Image fixe initiale si demandée par le système",
+    "nature": "Essai procédural local, sans génération Higgsfield",
+    "integration_au_site": false
+  },
+  "higgsfield": {
+    "credits_consommes_par_cette_etude": 0,
+    "generations_soumises": 0,
+    "plafond_de_depense_approuve": null,
+    "dernier_releve_documente": "2026-10-09",
+    "actualisation_necessaire_avant_depense": true
+  },
+  "reprise": [
+    "Préparer la variante à 90 % avec un mouvement plus rapide et plus ample",
+    "Comparer puis confirmer le rendu dans la constellation complète",
+    "Évaluer si une génération Higgsfield apporte un bénéfice suffisant et obtenir un budget avant dépense",
+    "Effectuer l'audit complet frontend/backend",
+    "Corriger, vérifier et préparer la démonstration"
+  ],
+  "limite": "Archive des fichiers disponibles et décisions consignées ; pas un export intégral du chat ni de chaque ancienne version écrasée."
+}

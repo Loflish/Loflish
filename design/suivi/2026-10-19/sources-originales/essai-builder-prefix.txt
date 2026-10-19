@@ -1,0 +1,6 @@
+const fs=require('node:fs');const path=require('node:path');const esbuild=require('./site/node_modules/esbuild');
+const root=__dirname;const sources={};const png=new Set([15,50,70,81,85,95]);
+function data(file,ext){return `data:image/${ext};base64,${fs.readFileSync(path.join(root,'site/public/hd',file)).toString('base64')}`;}
+for(let n=1;n<=100;n++){const ext=png.has(n)?'png':'webp';sources[n]=data(`taches/tache-${String(n).padStart(2,'0')}.${ext}`,ext);}
+(async()=>{
+const result=await esbuild.build({entryPoints:[path.join(root,'essai-lisibilite.ts')],bundle:true,write:false,format:'esm',minify:true,define:{'import.meta.env.BASE_URL':'"/"'},plugins:[{name:'sources',setup(build){build.onLoad({filter:/[\\/]src[\\/]lib[\\/]hd\.ts$/},args=>{const source=fs.readFileSync(args.path,'utf8');if(!source.includes('img.src = tacheUrl(n);'))throw Error('Source inattendue');return{contents:`const SOURCES:Record<number,string>=${JSON.stringify(sources)};\n`+source.replace('img.src = tacheUrl(n);','img.src = SOURCES[n];'),loader:'ts',resolveDir:path.dirname(args.path)};});}}]});
