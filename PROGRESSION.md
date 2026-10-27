@@ -1,5 +1,14 @@
 # Nos Mots Mémoriaux : état sauvegardé
 
+## Point de reprise — 27 octobre 2026
+
+Toutes les décisions et l'avancement d'octobre (fond feutre, eau, accroche, bulles A/B/C,
+coupe des bulles en duels, crédits Higgsfield) sont dans
+[la mémoire de Claude copiée le 27 octobre](design/suivi/2026-10-27/memoire-claude.md).
+La direction artistique est le skill `.claude/skills/nmm-direction-artistique`.
+Prochaine étape : Tom finit la coupe des bulles (`/#/atelier/coupe`), puis les 48 bulles C
+restantes après le renouvellement des crédits du 29 octobre.
+
 ## Dernière sauvegarde de progression — 19 octobre 2026
 
 Les comparateurs visuels, leurs sources, neuf captures et les documents de l'étude
