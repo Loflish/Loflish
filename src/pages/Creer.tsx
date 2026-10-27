@@ -12,6 +12,7 @@ import { MATIERE_COUSUE, NB_MATIERES, loadCatalogue } from '../lib/hd';
 import { GRIS_PALETTE, colorById } from '../lib/palette';
 import { listePays, PAYS_AUTRE } from '../lib/pays';
 import { useMuseum, useMuseumMode } from '../lib/museum';
+import { useTitre } from '../lib/titre';
 
 /**
  * Créer ma trace : un parcours court pour publier, profond ensuite.
@@ -70,6 +71,7 @@ function matiereAuHasard(): number {
 
 export function Creer() {
   useMuseumMode('creer');
+  useTitre('Créer ma trace');
   const { engine } = useMuseum();
   const navigate = useNavigate();
   const [d, setD] = useState<Draft>(() => {

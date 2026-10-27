@@ -1425,3 +1425,175 @@
 .admin-traits line {
   stroke-width: 0.012;
 }
+
+/* ——— l'atelier des bulles (local seulement) */
+.atelier-barre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: center;
+  margin: 1.5rem 0;
+  font-size: var(--t-s);
+}
+.atelier-filtres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+.atelier-filtres .est-actif {
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+.atelier-grille {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: 1.25rem;
+}
+.atelier-carte {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 0.75rem 0.5rem;
+  border: 1px solid var(--filet);
+  border-radius: var(--rayon);
+  background: var(--papier);
+}
+.atelier-carte.avis-aime {
+  border-color: var(--encre-2);
+}
+.atelier-carte.avis-retirer {
+  opacity: 0.55;
+}
+.atelier-numero {
+  margin: 0;
+  font-size: var(--t-s);
+}
+.atelier-pastille {
+  margin-left: 0.4em;
+  font-size: var(--t-xs);
+  font-style: italic;
+}
+.atelier-rappel {
+  margin: 0;
+  min-height: 1.2em;
+  font-size: var(--t-xs);
+  color: var(--encre-3);
+}
+.atelier-avis {
+  display: flex;
+  gap: 0.25rem;
+}
+.atelier-avis button {
+  font: inherit;
+  font-size: var(--t-xs);
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--filet-fort);
+  border-radius: var(--rayon);
+  background: transparent;
+  color: var(--encre);
+  cursor: pointer;
+}
+.atelier-avis button.est-actif {
+  background: var(--encre);
+  color: var(--lin);
+}
+.atelier-palettes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.4rem;
+  margin: 1.25rem 0 0;
+  font-size: var(--t-s);
+}
+.atelier-palettes .est-actif {
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+/* la coupe des bulles : deux jumelles côte à côte, on en garde une */
+.coupe-etape {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  margin: 1.5rem 0 0;
+  font-size: var(--t-s);
+  color: var(--encre-2);
+}
+.coupe-etape progress {
+  flex: 1;
+  min-width: 8rem;
+  max-width: 18rem;
+  height: 0.35rem;
+  accent-color: var(--encre-2);
+}
+.coupe-duel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(0.75rem, 4vw, 3rem);
+  margin: 1.5rem 0 1rem;
+  animation: coupe-entree 0.35s ease both;
+}
+.coupe-bulle {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.4rem;
+  padding: clamp(0.75rem, 2vw, 1.5rem) 0.5rem;
+  font: inherit;
+  color: var(--encre);
+  border: 1px solid var(--filet);
+  border-radius: var(--rayon);
+  background: var(--papier);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+.coupe-bulle:hover,
+.coupe-bulle:focus-visible {
+  border-color: var(--encre-2);
+  transform: translateY(-2px);
+}
+.coupe-nom {
+  font-size: var(--t-s);
+  text-align: center;
+}
+.coupe-num {
+  font-size: var(--t-xs);
+  color: var(--encre-3);
+}
+.coupe-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  align-items: center;
+  font-size: var(--t-xs);
+  color: var(--encre-3);
+}
+.coupe-actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+@keyframes coupe-entree {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coupe-duel {
+    animation: none;
+  }
+}
+.atelier-note {
+  width: 100%;
+  font: inherit;
+  font-size: var(--t-xs);
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--filet);
+  border-radius: var(--rayon);
+  background: transparent;
+  color: var(--encre);
+}

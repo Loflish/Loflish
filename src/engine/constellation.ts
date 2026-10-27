@@ -83,6 +83,25 @@ const angleDiff = (a: number, b: number) => {
 };
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
+/**
+ * Les bulles mises en beauté telles qu'elles sont (Tom, 26 octobre : « plus visibles », sans effet autour, jamais
+ * noircies) : leurs propres couleurs, un peu plus lumineuses et plus franches, une seule fois quand la bulle est
+ * peinte. Le dessin de la bulle ne change pas. `?eclat=0` les montre telles quelles, pour comparer.
+ */
+const ECLAT = typeof window === 'undefined' || new URLSearchParams(window.location.search).get('eclat') !== '0';
+function embellir(sprite: HTMLCanvasElement): HTMLCanvasElement {
+  if (!ECLAT) return sprite;
+  const c = document.createElement('canvas');
+  c.width = sprite.width;
+  c.height = sprite.height;
+  const x = c.getContext('2d');
+  if (!x) return sprite;
+  // mesuré sur 30 bulles : couleur +20 % environ, clarté +6 % (au-delà, elles s'éloignent des couleurs choisies)
+  x.filter = 'saturate(1.12) brightness(1.06) contrast(1.02)';
+  x.drawImage(sprite, 0, 0);
+  return c;
+}
+
 export class Constellation {
   private ctx: CanvasRenderingContext2D;
   private dpr = 1;
@@ -115,6 +134,7 @@ export class Constellation {
   private modeSpeed = 1;
   private mode: Mode = 'explore';
   private reduced = false;
+  private enPause = false;
   private match: Set<string> | null = null;
   hoverId: string | null = null;
   selectedId: string | null = null;
@@ -153,7 +173,8 @@ export class Constellation {
     const medium = window.innerWidth < 1100;
     // Sur mobile, moins de bulles simultanées : espace, lisibilité, performances.
     const count = Math.min(list.length, small ? 150 : medium ? 260 : 380);
-    this.D = small ? 34 : 38;
+    // un peu plus grandes qu'avant (34 et 38) : plus visibles sur la peinture (Tom, 26 octobre)
+    this.D = small ? 37 : 42;
     // un espace d'environ deux écrans sur deux : on s'y promène tranquillement, sans s'y perdre
     const spacing = small ? 108 : 128;
     this.spriteSize = !small && (window.devicePixelRatio || 1) >= 1.5 ? 208 : 160;
@@ -266,6 +287,11 @@ export class Constellation {
 
   setReducedMotion(v: boolean): void {
     this.reduced = v;
+  }
+
+  /** Le bouton « pause » du visiteur : plus de dérive ni de respiration ; glisser et zoomer restent possibles. */
+  setPause(v: boolean): void {
+    this.enPause = v;
   }
 
   setCalmZones(z: { x: number; y: number; w: number; h: number }[]): void {
@@ -382,6 +408,19 @@ export class Constellation {
     }
     this.events.onSelect?.(id);
   }
+
+  /**
+   * Montrer une bulle sans l'ouvrir (l'entrée du musée) : elle s'arrête et grandit un peu. Ni fiche ni nom
+   * (Tom, 26 octobre : pas de nom pendant la dernière phrase), rien à fermer.
+   */
+  montrer(id: string | null): void {
+    const avant = this.montreeId ? this.byId.get(this.montreeId) : undefined;
+    if (avant && avant.p.id !== this.selectedId) avant.targetScale = 1;
+    this.montreeId = id;
+    const b = id ? this.byId.get(id) : undefined;
+    if (b) b.targetScale = 1.14;
+  }
+  private montreeId: string | null = null;
 
   private setHover(id: string | null): void {
     if (id === this.hoverId) return;
@@ -571,12 +610,12 @@ export class Constellation {
   }
 
   private step(dt: number): void {
-    this.time += dt;
     const spec = MODES[this.mode];
+    this.time += this.enPause ? 0 : dt;
     // en quittant la constellation, les bulles s'effacent un peu plus vite (le moteur s'arrête ensuite)
     this.modeAlpha += (spec.alpha - this.modeAlpha) * Math.min(1, dt * 1.6);
     // « réduire les animations » du système : le mouvement ralentit mais ne s'arrête jamais
-    const targetSpeed = spec.speed * (this.reduced ? 0.35 : 1);
+    const targetSpeed = this.enPause ? 0 : spec.speed * (this.reduced ? 0.35 : 1);
     this.modeSpeed += (targetSpeed - this.modeSpeed) * Math.min(1, dt * 1.2);
 
     // caméra
@@ -614,7 +653,7 @@ export class Constellation {
     this.rebuildGrid();
 
     for (const b of this.bubbles) {
-      const held = b.p.id === this.hoverId || b.p.id === this.selectedId;
+      const held = b.p.id === this.hoverId || b.p.id === this.selectedId || b.p.id === this.montreeId;
       b.slow += ((held ? 0 : 1) - b.slow) * Math.min(1, dt * (held ? 3 : 0.8));
       b.scale += (b.targetScale - b.scale) * Math.min(1, dt * 3);
       const targetAlpha = this.match ? (this.match.has(b.p.id) ? 1 : 0.13) : 1;
@@ -709,7 +748,7 @@ export class Constellation {
     const t0 = performance.now();
     while (this.spritesAllowed && this.spriteQueue.length && performance.now() - t0 < 7) {
       const b = this.spriteQueue.shift()!;
-      b.sprite = bubbleSprite(b.p.id, b.p.hex, { matiere: b.p.matiere, size: this.spriteSize });
+      b.sprite = embellir(bubbleSprite(b.p.id, b.p.hex, { matiere: b.p.matiere, size: this.spriteSize }));
     }
 
     let focusDraw: { x: number; y: number; r: number } | null = null;

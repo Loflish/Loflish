@@ -18,7 +18,8 @@
   /* le fil des broderies (lettres, icônes) */
   --fil: #3a3640;
   --encre-2: #57535c;
-  --encre-3: #85808b;
+  /* le gris le plus discret : 4,5:1 au moins sur tous les fonds clairs (lin, papier, lin profond) */
+  --encre-3: #65606b;
   --filet: rgba(47, 44, 51, 0.14);
   --filet-fort: rgba(47, 44, 51, 0.28);
 

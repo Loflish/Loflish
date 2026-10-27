@@ -9,6 +9,7 @@ import { Signaler } from '../components/Signaler';
 import { allTraces, apercu, TYPE_LABEL } from '../data/store';
 import { shuffle } from '../lib/random';
 import { useMuseumMode } from '../lib/museum';
+import { useTitre } from '../lib/titre';
 
 /**
  * Se perdre : accepter de ne pas savoir qui l'on va rencontrer.
@@ -17,6 +18,7 @@ import { useMuseumMode } from '../lib/museum';
  */
 export function SePerdre() {
   useMuseumMode('perdre');
+  useTitre('Se perdre');
   const order = useMemo(() => shuffle(Math.random, allTraces()), []);
   const [i, setI] = useState(0);
   const [dir, setDir] = useState<1 | -1>(1);
@@ -58,7 +60,7 @@ export function SePerdre() {
   };
 
   return (
-    <div className="perdre">
+    <div className="perdre" role="main">
       <h1 className="sr-only">Se perdre : rencontrer une présence au hasard</h1>
 
       <div className="perdre-scene">

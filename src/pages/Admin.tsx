@@ -55,16 +55,16 @@ export function Admin() {
 
   if (!EN_LIGNE) {
     return (
-      <Page className="admin">
+      <Page className="admin" titre="L’espace du fondateur">
         <h1 className="page-titre">L’espace du fondateur</h1>
         <p className="lead">Cet espace s’ouvre sur le vrai musée, quand le site est relié à son serveur.</p>
       </Page>
     );
   }
-  if (!pret) return <Page className="admin">{null}</Page>;
+  if (!pret) return <Page className="admin" titre="L’espace du fondateur">{null}</Page>;
   if (!compte || compte.role === 'membre') {
     return (
-      <Page className="admin">
+      <Page className="admin" titre="L’espace du fondateur">
         <h1 className="page-titre">L’espace du fondateur</h1>
         <p className="lead">Cette partie est réservée au fondateur du musée.</p>
         <Link to="/compte" className="lien-entrer">
@@ -75,7 +75,7 @@ export function Admin() {
   }
   const admin = compte.role === 'admin';
   return (
-    <Page className="admin">
+    <Page className="admin" titre="L’espace du fondateur">
       <h1 className="page-titre">L’espace du fondateur</h1>
       <p className="muted petit">
         {compte.email}, {admin ? 'administration' : 'modération'}. Chaque décision est écrite dans le journal.

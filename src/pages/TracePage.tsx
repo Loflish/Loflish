@@ -47,6 +47,7 @@ import { EN_LIGNE } from '../lib/api';
 import { CONTACT } from '../lib/contact';
 import { colorById } from '../lib/palette';
 import { useMuseumMode } from '../lib/museum';
+import { useTitre } from '../lib/titre';
 
 const Q_ICONS = ['parole', 'coeur', 'globe', 'plume'];
 
@@ -61,6 +62,7 @@ export function TracePage() {
   useMesTraces(); // se met à jour quand on ajoute un fragment
   // aperçu autonome : tout est déjà là ; en ligne : le profil complet se charge à la demande
   const { trace, chargement } = useTrace(id);
+  useTitre(trace?.nom);
   const erreurServeur = useDerniereErreur();
   const location = useLocation();
   const editable = isMine(id);

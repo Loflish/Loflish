@@ -9,9 +9,11 @@ import { MesTraces } from './MesTraces';
 import { CONTACT } from '../lib/contact';
 import { adresseApi, EN_LIGNE } from '../lib/api';
 import { useMuseumMode } from '../lib/museum';
+import { useTitre } from '../lib/titre';
 
-export function Page({ children, mode = 'texte', className = '' }: { children: ReactNode; mode?: 'texte' | 'minimal'; className?: string }) {
+export function Page({ children, mode = 'texte', className = '', titre }: { children: ReactNode; mode?: 'texte' | 'minimal'; className?: string; titre?: string }) {
   useMuseumMode(mode);
+  useTitre(titre);
   return (
     <main className={`page page-texte ${className}`}>
       <PageTop />
@@ -27,7 +29,7 @@ const photoFondateur = `${import.meta.env.BASE_URL}objets/fondateur.webp`;
 export function Projet() {
   const [photo, setPhoto] = useState(true);
   return (
-    <Page className="projet">
+    <Page className="projet" titre="Le projet">
       <h1 className="page-titre">Le projet</h1>
       <p className="lead">
         Nous mourons trois fois. D’abord notre corps. Puis nos possessions, qui se dispersent. Et enfin l’oubli : la mort la plus fatale, celle
@@ -192,7 +194,7 @@ const LIGNES = [
 
 export function Ressources() {
   return (
-    <Page className="ressources">
+    <Page className="ressources" titre="Ressources & aide">
       <h1 className="page-titre">Ressources & aide</h1>
       <section className="aide-urgente" aria-labelledby="h-aide">
         <h2 id="h-aide" className="intertitre">
@@ -232,7 +234,7 @@ export function Ressources() {
 
 export function Soutenir() {
   return (
-    <Page className="soutenir">
+    <Page className="soutenir" titre="Soutenir">
       <h1 className="page-titre">Soutenir</h1>
       <p className="lead">
         Le musée est et restera gratuit. Les dons permettent de continuer mes projets et de soutenir le site dans son fonctionnement.
@@ -281,7 +283,7 @@ const JURIDIQUE: [string, string][] = [
 
 export function Juridique() {
   return (
-    <Page mode="minimal" className="juridique">
+    <Page mode="minimal" className="juridique" titre="Juridique & confidentialité">
       <h1 className="page-titre">Juridique & confidentialité</h1>
       <p className="lead">L’essentiel, en clair. Les textes complets sont en cours de rédaction et de relecture.</p>
       <ol className="juridique-liste">
@@ -303,7 +305,7 @@ export function Archives() {
   const traces = allTraces();
   const annee = new Date().getFullYear();
   return (
-    <Page className="archives">
+    <Page className="archives" titre="Archives">
       <h1 className="page-titre">Archives</h1>
       <p className="lead">Chaque année, le musée garde une image de lui-même : sa constellation, et son œuvre commune.</p>
       <div className="frise-cadre">
@@ -350,7 +352,7 @@ export function Archives() {
 export function Compte() {
   const { compte, pret } = useCompte();
   return (
-    <Page className="compte-page">
+    <Page className="compte-page" titre="Compte">
       <h1 className="page-titre">Compte</h1>
       {!EN_LIGNE ? (
         <>

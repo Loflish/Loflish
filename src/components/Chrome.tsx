@@ -24,20 +24,21 @@ export function Logo({ size = 'normal' }: { size?: 'normal' | 'petit' }) {
 
 /**
  * File de peinture des bulles : chacune se peint dans un petit budget par
- * image (8 ms), la plus grande d'abord ; un catalogue de cent vignettes ne
- * bloque jamais un clic ni une animation.
+ * image (8 ms), les grandes d'abord ; un catalogue de cent vignettes ne
+ * bloque jamais un clic ni une animation. Dans chaque file, l'ordre d'arrivée
+ * est gardé : une page se remplit de haut en bas.
  */
+const grandes: (() => void)[] = [];
 const file: (() => void)[] = [];
 let planifie = false;
 function vider() {
   const t0 = performance.now();
-  while (file.length && performance.now() - t0 < 8) file.shift()!();
-  if (file.length) requestAnimationFrame(vider);
+  while ((grandes.length || file.length) && performance.now() - t0 < 8) (grandes.shift() ?? file.shift())!();
+  if (grandes.length || file.length) requestAnimationFrame(vider);
   else planifie = false;
 }
 function peindre(job: () => void, prioritaire: boolean) {
-  if (prioritaire) file.unshift(job);
-  else file.push(job);
+  (prioritaire ? grandes : file).push(job);
   if (!planifie) {
     planifie = true;
     requestAnimationFrame(vider);

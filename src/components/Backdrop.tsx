@@ -5,12 +5,18 @@ import { allTraces, apercu, getTrace, TYPE_LABEL, useMesTraces } from '../data/s
 import { Atmosphere, paperTexture } from '../engine/atmosphere';
 import { clearSpriteCache } from '../engine/bubbleSprite';
 import { Encre } from '../engine/encre';
-import { FONDS, HD, HD_FILES, LEGER, loadMatieres, loadTaches, type Fond } from '../lib/hd';
+import { Entree } from './Entree';
+import { FondEau, reglagesEau } from '../engine/eau';
+import { Ornements, varianteOrnements } from '../engine/ornements';
+import { FOND_ESSAI, FOND_FEUTRE, FOND_VIDEO, FONDS, HD, HD_FILES, LEGER, loadMatieres, loadTaches, TOILE_BRUTE, TOILE_PLEINE, type Fond } from '../lib/hd';
 import { Constellation, MODES } from '../engine/constellation';
 import { colorById } from '../lib/palette';
 import { useMuseum } from '../lib/museum';
 import { TexteBrode } from './TexteBrode';
 import { Icon } from './Icon';
+
+// le fond qui coule comme une eau calme : seulement si l'adresse le demande (?eau=1), le temps de le juger
+const EAU = reglagesEau();
 
 // la constellation garde sa peinture vivante ; partout ailleurs, le tissu
 const FOND_BY_MODE: Record<keyof typeof MODES, Fond> = {
@@ -32,6 +38,38 @@ function FondsPeints({ actif }: { actif: Fond }) {
   // la peinture fixe s'affiche d'abord ; la vidéo ne se charge qu'une fois la page prête
   const [pret, setPret] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { enPause, reducedMotion, engine } = useMuseum();
+  const enPauseRef = useRef(enPause);
+  // l'eau : la peinture fixe reste dessous jusqu'à ce que la toile qui coule soit prête
+  const eauRef = useRef<HTMLCanvasElement>(null);
+  const eau = useRef<FondEau | null>(null);
+  const [eauPrete, setEauPrete] = useState(false);
+  useEffect(() => {
+    if (!EAU || actif !== 'explorer' || !eauRef.current) return;
+    const source = window.matchMedia('(max-aspect-ratio: 3/4)').matches ? FONDS.explorer.haut : FONDS.explorer.large;
+    const e = new FondEau(eauRef.current, source, EAU, () => setEauPrete(true), () => engine.current?.cam, FOND_VIDEO ?? undefined);
+    eau.current = e;
+    e.start();
+    const onResize = () => e.resize();
+    window.addEventListener('resize', onResize);
+    ((window as unknown as { __nmmDebug?: Record<string, unknown> }).__nmmDebug ??= {}).eau = e;
+    return () => {
+      window.removeEventListener('resize', onResize);
+      e.stop();
+      eau.current = null;
+    };
+  }, [actif]);
+  useEffect(() => {
+    eau.current?.setPause(enPause);
+    eau.current?.setReduit(reducedMotion);
+  }, [enPause, reducedMotion, eauPrete]);
+  useEffect(() => {
+    enPauseRef.current = enPause;
+    const v = videoRef.current;
+    if (!v) return;
+    if (enPause) v.pause();
+    else if (!document.hidden) void v.play().catch(() => undefined);
+  }, [enPause, pret, actif]);
   useEffect(() => setVus((v) => (v.includes(actif) ? v : [...v, actif])), [actif]);
   useEffect(() => {
     let t = 0;
@@ -43,7 +81,7 @@ function FondsPeints({ actif }: { actif: Fond }) {
     const vis = () => {
       const v = videoRef.current;
       if (!v) return;
-      if (document.hidden) v.pause();
+      if (document.hidden || enPauseRef.current) v.pause();
       else void v.play().catch(() => undefined);
     };
     document.addEventListener('visibilitychange', vis);
@@ -58,7 +96,8 @@ function FondsPeints({ actif }: { actif: Fond }) {
       {vus.map((f) => (
         <div key={f} className={`fond-peint fond-${f}${f === actif ? ' is-on' : ''}`} aria-hidden="true">
           {/* la vidéo ne tourne que dans l'espace actif : ailleurs, l'image fixe suffit */}
-          {f === 'explorer' && f === actif && !LEGER && video && pret ? (
+          {/* la boucle vidéo anime le fond actuel : avec un fond à l'essai, la peinture fixe (le shader la fait respirer) */}
+          {f === 'explorer' && f === actif && !LEGER && video && pret && !FOND_ESSAI && !EAU ? (
             <video ref={videoRef} poster={FONDS.explorer.large} autoPlay muted loop playsInline>
               {HD_FILES.fondVideo.map((s, i, all) => (
                 <source key={s.src} src={s.src} type={s.type} onError={i === all.length - 1 ? () => setVideo(false) : undefined} />
@@ -70,20 +109,28 @@ function FondsPeints({ actif }: { actif: Fond }) {
               <img src={FONDS[f].large} alt="" onError={(e) => ((e.currentTarget.closest('.fond-peint') as HTMLElement).hidden = true)} />
             </picture>
           )}
+          {f === 'explorer' && EAU && <canvas ref={eauRef} className={`fond-eau${eauPrete ? ' est-prete' : ''}`} />}
+          {/* l'entrée du musée : des gouttes déposent cette peinture même sur le papier vierge (à l'essai : ?entree=1) */}
+          {f === 'explorer' && f === actif && EAU && <Entree eau={eau} pret={eauPrete} />}
         </div>
       ))}
     </>
   );
 }
 
+// les ornements de Palerme : seulement si l'adresse les demande, le temps de les juger (?palerme=1)
+const VARIANTE_ORNEMENTS = varianteOrnements();
+
 const ATMOSPHERE_BY_MODE = { explore: 1, perdre: 0.9, trace: 0.7, creer: 0.55, texte: 0.85, minimal: 0.3 } as const;
 
 export function Backdrop() {
-  const { engine, mode, reducedMotion } = useMuseum();
+  const { engine, mode, reducedMotion, enPause } = useMuseum();
   const mesTraces = useMesTraces();
   const atmoRef = useRef<HTMLCanvasElement>(null);
   const cvsRef = useRef<HTMLCanvasElement>(null);
   const atmo = useRef<Atmosphere | null>(null);
+  const ornRef = useRef<HTMLCanvasElement>(null);
+  const orn = useRef<Ornements | null>(null);
   const hoverLabel = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const encreRef = useRef<HTMLCanvasElement>(null);
@@ -132,16 +179,25 @@ export function Backdrop() {
       });
     }
     // accès pour les tests automatisés (captures, mesures de fluidité)
-    (window as unknown as Record<string, unknown>).__nmmDebug = { atmo: a, engine: c };
+    Object.assign(((window as unknown as { __nmmDebug?: Record<string, unknown> }).__nmmDebug ??= {}), { atmo: a, engine: c });
     c.start();
+    if (VARIANTE_ORNEMENTS && ornRef.current) {
+      const o = new Ornements(ornRef.current, VARIANTE_ORNEMENTS, () => engine.current?.cam);
+      orn.current = o;
+      o.start();
+      (window as unknown as { __nmmDebug: Record<string, unknown> }).__nmmDebug.orn = o;
+    }
 
     const onResize = () => {
       place();
       c.resize();
+      orn.current?.resize();
     };
     window.addEventListener('resize', onResize);
     return () => {
       window.removeEventListener('resize', onResize);
+      orn.current?.stop();
+      orn.current = null;
       a.stop();
       c.destroy();
       engine.current = null;
@@ -193,6 +249,7 @@ export function Backdrop() {
       setEntering(false);
     }
     atmo.current?.setIntensity(ATMOSPHERE_BY_MODE[mode]);
+    orn.current?.setActif(mode === 'explore');
     // le shader s'efface avec la constellation (fondu CSS), puis s'arrête
     const t = window.setTimeout(() => atmo.current?.pause(mode !== 'explore'), mode === 'explore' ? 0 : 1900);
     return () => window.clearTimeout(t);
@@ -200,7 +257,15 @@ export function Backdrop() {
 
   useEffect(() => {
     engine.current?.setReducedMotion(reducedMotion);
+    orn.current?.setReduit(reducedMotion);
   }, [reducedMotion, engine]);
+
+  // le visiteur a mis le mouvement en pause : les bulles et la peinture s'arrêtent sur l'image
+  useEffect(() => {
+    engine.current?.setPause(enPause);
+    atmo.current?.setStill(enPause);
+    orn.current?.setPause(enPause);
+  }, [enPause, engine]);
 
   // ta bulle se distingue, uniquement sur ton appareil
   useEffect(() => {
@@ -234,6 +299,9 @@ export function Backdrop() {
     <div className={`backdrop mode-${mode}`} aria-hidden={!interactive}>
       {HD && <FondsPeints actif={FOND_BY_MODE[mode]} />}
       <canvas ref={atmoRef} className={`backdrop-atmosphere${HD ? ' sur-fond-peint' : ''}`} aria-hidden="true" />
+      {VARIANTE_ORNEMENTS && (
+        <canvas ref={ornRef} className={`backdrop-ornements${VARIANTE_ORNEMENTS === 'klimt' ? ' colle-au-fond' : ''}`} aria-hidden="true" />
+      )}
       <canvas
         ref={cvsRef}
         className="backdrop-constellation"
@@ -244,7 +312,10 @@ export function Backdrop() {
       />
       {HD ? (
         <>
-          <div className="lin-hd" aria-hidden="true" style={{ backgroundImage: `url(${HD_FILES.lin})` }} />
+          <div className={`lin-hd${TOILE_BRUTE || FOND_FEUTRE ? ' sous-toile-brute' : ''}`} aria-hidden="true" style={{ backgroundImage: `url(${HD_FILES.lin})` }} />
+          {TOILE_BRUTE && (
+            <div className={`toile-brute${TOILE_PLEINE ? ' toile-pleine' : ''}`} aria-hidden="true" style={{ backgroundImage: `url(${TOILE_BRUTE})` }} />
+          )}
           {/* toutes les pages sauf la constellation : le papier de la carte d'aperçu, ivoire, et ses fibres de chiffon */}
           <div className="papier-page" aria-hidden="true" />
           <div className="fibres" aria-hidden="true" />

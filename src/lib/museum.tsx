@@ -8,14 +8,19 @@ import type { Constellation, Mode } from '../engine/constellation';
  *
  * La constellation et le mouvement sont toujours présents (choix du projet).
  * Si le système demande de réduire les animations, le mouvement ralentit
- * seulement.
+ * seulement. Le visiteur peut aussi mettre tout le mouvement en pause d'un
+ * clic (WCAG 2.2.2) : ce choix est retenu sur son appareil.
  */
+
+const CLE_PAUSE = 'nmm:pause';
 
 interface MuseumCtx {
   engine: React.MutableRefObject<Constellation | null>;
   mode: Mode;
   setMode: (m: Mode) => void;
   reducedMotion: boolean;
+  enPause: boolean;
+  setEnPause: (v: boolean) => void;
 }
 
 const Ctx = createContext<MuseumCtx | null>(null);
@@ -27,6 +32,22 @@ export function MuseumProvider({ children }: { children: ReactNode }) {
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
 
+  const [enPause, setEnPause] = useState(() => {
+    try {
+      return localStorage.getItem(CLE_PAUSE) === '1';
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      if (enPause) localStorage.setItem(CLE_PAUSE, '1');
+      else localStorage.removeItem(CLE_PAUSE);
+    } catch {
+      /* stockage indisponible : le choix vaut pour cette visite */
+    }
+  }, [enPause]);
+
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     const fn = () => setReducedMotion(mq.matches);
@@ -34,7 +55,7 @@ export function MuseumProvider({ children }: { children: ReactNode }) {
     return () => mq.removeEventListener('change', fn);
   }, []);
 
-  const value = useMemo<MuseumCtx>(() => ({ engine, mode, setMode, reducedMotion }), [mode, reducedMotion]);
+  const value = useMemo<MuseumCtx>(() => ({ engine, mode, setMode, reducedMotion, enPause, setEnPause }), [mode, reducedMotion, enPause]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

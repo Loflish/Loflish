@@ -21,12 +21,72 @@ export const NB_MATIERES = 100;
 export const MATIERE_COUSUE = 0;
 const NB_TACHES = NB_MATIERES;
 
+/**
+ * Variantes de Palerme à comparer avec les fonds actuels, le temps que Tom choisisse
+ * (fonds 5K générés le 21 octobre 2026, Seedream 4.5) :
+ * - `?fond=A` ou `?fond=D` : la constellation sur une aquarelle où affleurent des frises d'étoiles dorées ;
+ * - `?fond=m2` : le mélange choisi le 21 octobre (le n° 5, brodé, aux voiles de vert sauge des Nabis, repeint plus
+ *   vif « imbibé dans une toile brute », posé à 62 % sur la peinture actuelle) ; `?fond=m2b` : sa version plus pâle ;
+ * - `?pages=marbre` : les pages sur un marbre ivoire veiné de rose et de vert antique.
+ * Sans paramètre, le site garde exactement ses fonds actuels.
+ */
+const parametres = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+const ESSAIS_FOND: Record<string, string> = {
+  A: 'palerme/fond-A-mosaique',
+  D: 'palerme/fond-D-mosaique',
+  m2: 'essais/fond-m2',
+  // la version d'avant, plus pâle (palette B des Nabis), gardée pour comparer
+  m2b: 'essais/fond-m2b',
+  // la même peinture refaite en feutre de laine (photos de feutres envoyées par Tom le 26 octobre)
+  feutre: 'essais/fond-feutre',
+};
+/** le fond de la constellation à l'essai (chemin sans le format), ou null pour le fond actuel */
+export const FOND_ESSAI: string | null = ESSAIS_FOND[parametres?.get('fond') ?? ''] ?? null;
+/** le fond feutré porte sa propre matière (la laine) : le lin fin ne s'y pose pas */
+export const FOND_FEUTRE = parametres?.get('fond') === 'feutre';
+const PAGES_MARBRE = parametres?.get('pages') === 'marbre';
+/**
+ * La constellation sur une toile plus brute (Tom, 21 octobre au soir : « un tissu encore plus brut »,
+ * dans l'esprit des tissus de Ruth Rae) : `?toile=1` (mousseline de coton écrue) ou `?toile=2` (mousseline voilée
+ * de gaze déchirée, plus brute).
+ * Le relief de la trame seul, sans couleur, posé en lumière douce sur la peinture et les bulles.
+ */
+/**
+ * La peinture vivante tournée par un modèle vidéo (Higgsfield), à comparer avec l'eau du code :
+ * `?video=essai` (Seedance 2.5, 720p) ou `?video=<nom>` pour public/hd/essais/fond-video-<nom>.mp4.
+ */
+const videoDemandee = parametres?.get('video') ?? '';
+export const FOND_VIDEO: string | null = /^[a-z0-9-]{1,40}$/.test(videoDemandee) ? `${base}essais/fond-video-${videoDemandee}.mp4` : null;
+const toileDemandee = parametres?.get('toile');
+export const TOILE_BRUTE: string | null = ['1', '2', '3', '4'].includes(toileDemandee ?? '') ? `${base}essais/toile-${toileDemandee}.webp` : null;
+/**
+ * `?toile=3` : une chemise de coton à fines rayures, froissée de plis souples (Tom, 22 octobre, d'après une chemise
+ * brodée de Ruth Rae ; refusée le 26 octobre). `?toile=4` : du feutre de laine mérinos fait main, duveteux, d'après les
+ * photos de feutres envoyées par Tom le 26 octobre. Ces matières ne se répètent pas : elles couvrent tout l'écran
+ * d'un seul tenant.
+ */
+export const TOILE_PLEINE = toileDemandee === '3' || toileDemandee === '4';
+
+/**
+ * L'entrée du musée, à l'essai (avec le fond qui coule ?eau=1 ; components/Entree.tsx, engine/eau.ts) :
+ * - `?entree=1` : la règle choisie par Tom (22 octobre) — le hook complet (moins de 20 s : les gouttes peignent
+ *   le fond, quelques phrases, les bulles, une bulle qui s'ouvre) aux deux premières visites, puis les gouttes seules ;
+ * - `?entree=toujours` : le hook à chaque chargement ; `?entree=gouttes` : les gouttes seules à chaque chargement.
+ */
+const entreeDemandee = parametres?.get('entree') ?? '';
+export const ENTREE: 'normale' | 'hook' | 'gouttes' | null =
+  entreeDemandee === '1' ? 'normale' : entreeDemandee === 'toujours' ? 'hook' : entreeDemandee === 'gouttes' ? 'gouttes' : null;
+
 /** Les fonds, en format ordinateur (large) et téléphone (haut). */
 export type Fond = 'explorer' | 'tissu';
 export const FONDS: Record<Fond, { large: string; haut: string }> = {
-  explorer: { large: `${base}fond-16x9.webp`, haut: `${base}fond-9x16.webp` },
+  explorer: FOND_ESSAI
+    ? { large: `${base}${FOND_ESSAI}-16x9.webp`, haut: `${base}${FOND_ESSAI}-9x16.webp` }
+    : { large: `${base}fond-16x9.webp`, haut: `${base}fond-9x16.webp` },
   /** Toutes les pages sauf la constellation : un tissu de coton ivoire, plis doux, fibres visibles. */
-  tissu: { large: `${base}fond-tissu-16x9.webp`, haut: `${base}fond-tissu-9x16.webp` },
+  tissu: PAGES_MARBRE
+    ? { large: `${base}palerme/page-marbre-16x9.webp`, haut: `${base}palerme/page-marbre-9x16.webp` }
+    : { large: `${base}fond-tissu-16x9.webp`, haut: `${base}fond-tissu-9x16.webp` },
 };
 
 /** Téléphone ou connexion économe : on garde les images fixes, plus légères. */
@@ -64,7 +124,35 @@ export const HD_FILES = {
 
 /** Lots 02 et 03 validés : six remplacements conservés en PNG sans perte. */
 const matieresSansPerte = new Set([15, 50, 70, 81, 85, 95]);
-const tacheUrl = (n: number) => `${base}taches/tache-${String(n).padStart(2, '0')}.${matieresSansPerte.has(n) ? 'png' : 'webp'}`;
+
+/**
+ * Les palettes de matières (26 octobre, design/bulles-vie.md) : A = les 100 taches d'aquarelle (1 à 100) ;
+ * B = 100 éléments de la vie à l'aquarelle et à l'encre (101 à 200) ; C = 52 bulles de la direction artistique
+ * (201 à 252 ; 68 prévues de plus au renouvellement des crédits). Tom compose ses 100 bulles en piochant dans les trois ;
+ * la constellation tire toujours dans A.
+ */
+export const PALETTES = {
+  A: { debut: 1, fin: NB_MATIERES, dossier: 'taches', prefixe: 'tache' },
+  B: { debut: 101, fin: 200, dossier: 'taches-vie', prefixe: 'vie' },
+  C: { debut: 201, fin: 252, dossier: 'taches-da', prefixe: 'da' },
+} as const;
+const NB_TOUTES = PALETTES.C.fin;
+/** le numéro affiché dans sa palette (B 14 pour la matière 114) */
+export function numeroDansPalette(n: number): { palette: 'A' | 'B' | 'C'; numero: number } {
+  if (n >= PALETTES.C.debut) return { palette: 'C', numero: n - PALETTES.C.debut + 1 };
+  if (n >= PALETTES.B.debut) return { palette: 'B', numero: n - PALETTES.B.debut + 1 };
+  return { palette: 'A', numero: n };
+}
+const tacheUrl = (n: number) => {
+  const { palette, numero } = numeroDansPalette(n);
+  const p = PALETTES[palette];
+  const ext = palette === 'A' && matieresSansPerte.has(n) ? 'png' : 'webp';
+  return `${base}${p.dossier}/${p.prefixe}-${String(numero).padStart(2, '0')}.${ext}`;
+};
+/** une matière des palettes B et C n'existe que si son image est déjà faite */
+export function matiereDisponible(n: number): boolean {
+  return taches.has(n);
+}
 
 /**
  * Surfaces HD des pages : les papiers faits main (calques translucides de
@@ -85,7 +173,7 @@ const enCours = new Map<number, Promise<void>>();
 let loading: Promise<void> | null = null;
 
 function charger(n: number): Promise<void> {
-  if (!HD || n < 1 || n > NB_TACHES) return Promise.resolve();
+  if (!HD || n < 1 || n > NB_TOUTES) return Promise.resolve();
   let p = enCours.get(n);
   if (!p) {
     p = new Promise<void>((res) => {
@@ -133,6 +221,19 @@ export function loadCatalogue(): Promise<void> {
   return loadMatieres(Array.from({ length: NB_TACHES }, (_, i) => i + 1));
 }
 
+/**
+ * Les palettes B et C (l'atelier seulement) : seules les matières déjà faites sont chargées, d'après la liste que
+ * tient design/hd/taches_vie.cjs (index.json de chaque dossier).
+ */
+export function loadPalettes(): Promise<void> {
+  const une = (p: (typeof PALETTES)['B' | 'C']) =>
+    fetch(`${base}${p.dossier}/index.json`)
+      .then((r) => (r.ok ? (r.json() as Promise<number[]>) : []))
+      .catch(() => [] as number[])
+      .then((liste) => Promise.all(liste.map((k) => charger(p.debut + k - 1))));
+  return Promise.all([une(PALETTES.B), une(PALETTES.C)]).then(() => undefined);
+}
+
 /** Sans choix, la matière d'une personne est tirée de son identifiant : au hasard, mais fixe. */
 export function matiereFor(seed: number): number {
   // l'aquarelle cousue (0) fait partie du tirage, comme chacune des taches
@@ -147,6 +248,8 @@ export function tacheFor(n: number): HTMLImageElement | HTMLCanvasElement | null
   if (!taches.size) return null;
   const hit = taches.get(n);
   if (hit) return hit;
+  // une matière des palettes B et C n'est jamais remplacée par une voisine : elle est faite, ou absente
+  if (n > NB_TACHES) return null;
   for (let d = 1; d < NB_TACHES; d++) {
     const a = taches.get(n - d) ?? taches.get(n + d);
     if (a) return a;

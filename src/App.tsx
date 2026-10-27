@@ -10,6 +10,9 @@ import { TracePage } from './pages/TracePage';
 
 // l'espace de l'équipe n'est téléchargé que par celles et ceux qui l'ouvrent
 const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin })));
+// l'atelier des bulles : un outil de travail local, absent du site publié
+const AtelierBulles = import.meta.env.DEV ? lazy(() => import('./pages/AtelierBulles')) : null;
+const CoupeBulles = import.meta.env.DEV ? lazy(() => import('./pages/CoupeBulles')) : null;
 
 export function App() {
   const location = useLocation();
@@ -42,6 +45,26 @@ export function App() {
               </Suspense>
             }
           />
+          {AtelierBulles && (
+            <Route
+              path="/atelier/bulles"
+              element={
+                <Suspense fallback={null}>
+                  <AtelierBulles />
+                </Suspense>
+              }
+            />
+          )}
+          {CoupeBulles && (
+            <Route
+              path="/atelier/coupe"
+              element={
+                <Suspense fallback={null}>
+                  <CoupeBulles />
+                </Suspense>
+              }
+            />
+          )}
           <Route path="*" element={<Explorer />} />
         </Routes>
       </div>

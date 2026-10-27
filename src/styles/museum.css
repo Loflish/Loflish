@@ -13,6 +13,24 @@
   height: 100%;
   background: var(--lin);
 }
+/* les ornements de Palerme (frises d'étoiles, tesselles d'or), entre la peinture et les bulles */
+.backdrop-ornements {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 1800ms var(--doux);
+}
+.backdrop:not(.mode-explore) .backdrop-ornements {
+  opacity: 0;
+}
+/* la touche de Klimt est posée dans les taches : même cadre et même respiration que la peinture */
+.backdrop-ornements.colle-au-fond {
+  inset: -4%;
+  width: 108%;
+  height: 108%;
+  animation: fond-respire 140s ease-in-out infinite alternate;
+}
 .backdrop-constellation {
   position: absolute;
   inset: 0;
@@ -172,6 +190,12 @@
   left: clamp(1rem, 2.4vw, 2.2rem);
   top: clamp(1rem, 2.4vw, 2rem);
   z-index: 4;
+}
+/* le fil bordeaux accroche la lumière : un liseré clair, serré contre les lettres, le garde lisible sur la
+   peinture et sur les bulles qui passent dessous, sans halo blanc derrière */
+.explorer-logo .logo img {
+  filter: drop-shadow(0 0 0.6px rgba(246, 243, 236, 1)) drop-shadow(0 0 1.4px rgba(246, 243, 236, 0.75))
+    drop-shadow(0 0 4px rgba(246, 243, 236, 0.22));
 }
 .logo {
   display: block;
@@ -602,9 +626,10 @@
   overflow: hidden;
   opacity: 0;
   transition: opacity 1800ms var(--doux);
-  /* le fond reste calme et clair autour du logo brodé */
-  -webkit-mask-image: radial-gradient(ellipse 34% 22% at 16% 7%, transparent 35%, #000 100%);
-  mask-image: radial-gradient(ellipse 34% 22% at 16% 7%, transparent 35%, #000 100%);
+  /* autour du logo brodé, la peinture s'éclaircit à peine (Tom, 26 octobre : pas de halo blanc derrière) ;
+     c'est le liseré clair du fil (.explorer-logo) qui le garde lisible */
+  -webkit-mask-image: radial-gradient(ellipse 30% 18% at 16% 7%, rgba(0, 0, 0, 0.8) 35%, #000 100%);
+  mask-image: radial-gradient(ellipse 30% 18% at 16% 7%, rgba(0, 0, 0, 0.8) 35%, #000 100%);
 }
 .fond-peint video,
 .fond-peint img {
@@ -615,6 +640,19 @@
 }
 .fond-peint.is-on {
   opacity: 0.5;
+}
+/* le fond qui coule (?eau=1) : posé sur la peinture fixe, il apparaît en fondu une fois prêt, et respire avec elle */
+.fond-peint canvas.fond-eau {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1200ms var(--doux);
+  animation: fond-respire 140s ease-in-out infinite alternate;
+}
+.fond-peint canvas.fond-eau.est-prete {
+  opacity: 1;
 }
 /* Explorer : la peinture vivante (boucle 4K) est plus présente, les nappes du shader s'effacent un peu */
 .fond-peint.fond-explorer.is-on {
@@ -686,4 +724,105 @@
 .fond-peint.fond-tissu {
   -webkit-mask-image: none;
   mask-image: none;
+}
+
+
+/*
+ * L'entrée du musée (?entree=…) : des gouttes déposent la peinture du fond sur le papier vierge (dans
+ * la toile qui coule). Pendant ce temps, la peinture fixe dessous reste cachée ; les bulles arrivent
+ * quand la peinture est posée (le hook) ou à la fin, et l'interface en dernier, toujours en fondu.
+ */
+html.entree-en-cours .fond-peint.fond-explorer picture {
+  opacity: 0;
+}
+html.entree-sans-bulles .backdrop-constellation,
+html.entree-en-cours #contenu {
+  opacity: 0;
+}
+#contenu {
+  transition: opacity 2400ms var(--doux);
+}
+html.entree-douce .backdrop-constellation {
+  transition-duration: 2600ms;
+}
+/* les phrases du hook : les mots en italique, comme ceux des personnes, et un point de couture
+   bordeaux (le fil du logo, #64303d prélevé sur le logo brodé) qui se coud dessous */
+.entree-phrase {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  max-width: min(90vw, 30ch);
+  text-align: center;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.6rem, 3.4vw, 2.7rem);
+  line-height: 1.25;
+  color: var(--encre);
+  text-shadow: 0 0 22px rgba(243, 241, 236, 0.95), 0 0 6px rgba(243, 241, 236, 0.9);
+  opacity: 0;
+  transition: opacity 900ms var(--doux);
+  pointer-events: none;
+}
+.entree-phrase.est-visible {
+  opacity: 1;
+}
+.entree-phrase::after {
+  content: '';
+  display: block;
+  height: 2px;
+  width: 0;
+  margin: 0.5em auto 0;
+  background: repeating-linear-gradient(90deg, #64303d 0 9px, transparent 9px 15px);
+  transition: width 1600ms var(--doux) 250ms;
+}
+.entree-phrase.est-visible::after {
+  width: 62%;
+}
+.entree-ecran {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  cursor: pointer;
+}
+.entree-passer {
+  position: absolute;
+  right: 24px;
+  bottom: 20px;
+  color: var(--encre-2);
+  background: var(--papier);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+/*
+ * La toile brute (?toile=1|2) : dans la constellation, la trame grossière d'une toile non préparée
+ * remplace le lin fin. Seul son relief compte (image en gris neutre) : posée en lumière douce, elle
+ * creuse la peinture et les bulles sans changer leurs couleurs. Les autres pages gardent le lin.
+ */
+.toile-brute {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* une grande tuile sans couture de mousseline écrue (comme les tissus de Ruth Rae) : environ 5 px par fil */
+  background-size: 900px auto;
+  background-repeat: repeat;
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  transition: opacity 1800ms var(--doux);
+}
+.backdrop.mode-explore .toile-brute {
+  opacity: 0.5;
+}
+/* ?toile=3 : la chemise rayée et froissée, d'un seul tenant (ses plis ne doivent pas se répéter) */
+.toile-brute.toile-pleine {
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.backdrop.mode-explore .lin-hd.sous-toile-brute {
+  opacity: 0;
+  transition: opacity 1800ms var(--doux);
 }

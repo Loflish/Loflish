@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Dock, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { useMuseumMode } from '../lib/museum';
+import { useTitre } from '../lib/titre';
 import { arrivee as arriveeDuFil, COEUR, dansLOeuvre, ecouterOeuvre, MONDE, traitsExemple, type Oeuvre, type Trait } from '../lib/oeuvre';
 import { DEMO } from '../lib/api';
 import { hashString, rng } from '../lib/random';
@@ -93,6 +94,7 @@ function noeud(ctx: CanvasRenderingContext2D, x: number, y: number, v: Vue) {
 
 export function OeuvreCommune() {
   useMuseumMode('texte');
+  useTitre('L’œuvre commune');
   const base = useRef<HTMLCanvasElement>(null);
   const dessus = useRef<HTMLCanvasElement>(null);
   // des traits d'exemple, en pâle, seulement dans l'aperçu (jamais dans le vrai musée)
@@ -297,7 +299,7 @@ export function OeuvreCommune() {
           : 'Clique pour poser le début de ton trait.';
 
   return (
-    <div className="oeuvre">
+    <main className="oeuvre">
       <div className="oeuvre-haut">
         <PageTop />
       </div>
@@ -350,6 +352,6 @@ export function OeuvreCommune() {
         Glisse pour te déplacer, approche-toi avec la molette ou en pinçant.
       </p>
       <Dock />
-    </div>
+    </main>
   );
 }

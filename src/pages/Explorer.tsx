@@ -7,6 +7,7 @@ import { RUBRIQUES, type RubriqueId, type Trace } from '../data/types';
 import { Dock, Logo } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { useMuseum, useMuseumMode } from '../lib/museum';
+import { useTitre } from '../lib/titre';
 import { appel, EN_LIGNE } from '../lib/api';
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -19,10 +20,11 @@ function searchable(t: Trace): string {
 
 export function Explorer() {
   useMuseumMode('explore');
-  const { engine } = useMuseum();
+  const { engine, enPause, setEnPause } = useMuseum();
   // une édition des archives : la même constellation, avec les présences de cette édition seulement
   const params = useParams();
   const edition = editionParId(params.edition);
+  useTitre(edition ? `Archives, ${edition.titre}` : undefined);
   const traces = useMemo(() => (edition ? tracesDeLEdition(allTraces(), edition) : allTraces()), [edition]);
   useEffect(() => {
     const c = engine.current;
@@ -113,7 +115,7 @@ export function Explorer() {
   }, []);
 
   return (
-    <div className="explorer">
+    <div className="explorer" role="main">
       <h1 className="sr-only">Nos Mots Mémoriaux, {edition ? `archives, édition ${edition.titre}` : 'la constellation des présences'}</h1>
       <div className="explorer-logo" ref={logoRef}>
         <Logo />
@@ -130,6 +132,9 @@ export function Explorer() {
       <div className="explorer-actions">
         <button className="lien-discret" onClick={() => setSearchOpen(true)} aria-expanded={searchOpen}>
           <Icon name="recherche" size={18} /> Rechercher
+        </button>
+        <button className="lien-discret" onClick={() => setEnPause(!enPause)}>
+          <Icon name={enPause ? 'play' : 'pause'} size={18} /> {enPause ? 'Reprendre le mouvement' : 'Mettre en pause'}
         </button>
         {maTrace && (
           <button className="lien-discret" onClick={() => engine.current?.focusOn(maTrace.id)}>
