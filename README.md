@@ -1,8 +1,9 @@
 # Nos mots mémoriaux
 
-**État sauvegardé au 8 octobre 2026 : [PROGRESSION.md](PROGRESSION.md).**
-Le site contient les six matières validées des lots 02 et 03. Les trois essais du
-lot 04, les avis et les fichiers de suivi sont conservés dans `design/suivi/2026-10-08/`.
+**État sauvegardé : [PROGRESSION.md](PROGRESSION.md).**
+Depuis le 30 octobre 2026, la version par défaut est le fond feutre peint, l'eau du code (`src/engine/eau.ts`) et
+l'entrée du musée (`src/components/Entree.tsx`). Les essais visuels restent dans `public/hd/essais/`, derrière des
+options d'adresse, en développement seulement : le site publié ne les emporte pas (`vite.config.ts`).
 
 Un musée vivant où chacun peut laisser sa trace : ses dernières volontés, ses mots, ses souvenirs.
 Ce dépôt contient **le site** (React + Vite, construit à partir du cahier des charges maître et de

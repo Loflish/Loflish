@@ -1,5 +1,13 @@
 # Nos Mots Mémoriaux : état sauvegardé
 
+## Point de reprise — 30 octobre 2026
+
+La version préférée de Tom (fond feutre, eau, entrée) est devenue la version par défaut du site.
+Audit complet fait et corrigé : tests du serveur exécutables sur Windows (28 réussis), parcours en ligne
+essayé de bout en bout sur une base locale, site publié réduit de 96 à 17 Mo. L'abonnement Higgsfield est
+terminé : les images et vidéos se génèrent maintenant avec fal, payé à l'usage.
+Prochaine étape : Tom finit la coupe des bulles (`/#/atelier/coupe`), puis les 48 bulles C restantes.
+
 ## Point de reprise — 27 octobre 2026
 
 Toutes les décisions et l'avancement d'octobre (fond feutre, eau, accroche, bulles A/B/C,

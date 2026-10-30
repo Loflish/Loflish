@@ -258,9 +258,10 @@ npm run dev:en-ligne                     # le site sur http://localhost:5173, re
 Sans SMTP, le code s'affiche sur la page (« Serveur de développement : le code est … ») et dans le
 terminal du serveur. `npm run dev` (sans « en-ligne ») lance le prototype autonome.
 
-Les tests du serveur (`npm run serveur:test`) créent une base jetable : ils ont besoin des
-programmes PostgreSQL 16 (`initdb`, `pg_ctl`) ; indique leur dossier avec `PG_BIN` s'ils ne sont
-pas dans `/usr/lib/postgresql/16/bin`.
+Les tests du serveur (`npm run serveur:test`) créent une base jetable. Sous Windows, ils utilisent
+PGlite (déjà installé avec le serveur). Sous Linux, ils ont besoin des programmes PostgreSQL 16
+(`initdb`, `pg_ctl`) ; indique leur dossier avec `PG_BIN` s'ils ne sont pas dans
+`/usr/lib/postgresql/16/bin`.
 
 ---
 

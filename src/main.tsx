@@ -24,6 +24,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import { App } from './App';
+import { Panne } from './components/Panne';
 import { MuseumProvider } from './lib/museum';
 import { installSurfaces, loadTaches } from './lib/hd';
 import { chargerMusee } from './data/store';
@@ -41,7 +42,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HashRouter>
       <MuseumProvider>
-        <App />
+        <Panne>
+          <App />
+        </Panne>
       </MuseumProvider>
     </HashRouter>
   </StrictMode>,

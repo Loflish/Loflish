@@ -43,11 +43,29 @@ function atelierBulles(): Plugin {
   };
 }
 
+/**
+ * Le site publié n'emporte que ce qu'il montre (96 Mo → 17 Mo) : les essais visuels (?fond=, ?video=, ?toile=,
+ * ?palerme=, l'ancienne boucle Kling) et les palettes de l'atelier restent dans public/, pour le développement.
+ */
+function sansEssais(): Plugin {
+  const hd = path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist', 'hd');
+  const retirer = (f: string) => fs.rmSync(path.join(hd, f), { recursive: true, force: true });
+  return {
+    name: 'sans-essais',
+    apply: 'build',
+    closeBundle() {
+      ['taches-vie', 'taches-da', 'palerme'].forEach(retirer);
+      fs.readdirSync(hd).filter((f) => f.startsWith('fond-explorer-')).forEach(retirer);
+      fs.readdirSync(path.join(hd, 'essais')).filter((f) => !f.startsWith('fond-feutre-')).forEach((f) => retirer(path.join('essais', f)));
+    },
+  };
+}
+
 // base './' : le build fonctionne sur n'importe quel hébergement statique (chemins relatifs).
 // En développement « en ligne » (npm run dev:en-ligne), /api est renvoyé vers le serveur local.
 export default defineConfig({
   base: './',
-  plugins: [react(), atelierBulles()],
+  plugins: [react(), atelierBulles(), sansEssais()],
   server: {
     proxy: { '/api': { target: 'http://localhost:8787', changeOrigin: false } },
   },

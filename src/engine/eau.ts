@@ -161,11 +161,11 @@ export interface ReglagesEau {
   fluxVideo: number;
 }
 
-/** Le fond qui coule est-il demandé par l'adresse ? (?eau=1, avec réglages facultatifs) */
+/** Le fond qui coule, avec ses réglages facultatifs dans l'adresse ; `?eau=0` le retire. */
 export function reglagesEau(): ReglagesEau | null {
   if (typeof window === 'undefined') return null;
   const q = new URLSearchParams(window.location.search);
-  if (q.get('eau') !== '1') return null;
+  if (q.get('eau') === '0') return null;
   const nombre = (k: string, d: number, min: number, max: number) => {
     const v = Number(q.get(k) ?? NaN);
     return Number.isFinite(v) && v >= min && v <= max ? v : d;
@@ -198,6 +198,10 @@ const RETOUR = 3;
 const ECLOSION = 3200;
 /** l'entrée : nombre de gouttes au plus (garder égal au tableau du shader) */
 const NB_GOUTTES = 20;
+/** sous ce rythme (images par seconde), deux mesures de suite, l'eau s'arrête : mieux vaut la peinture fixe qu'un musée qui rame */
+const RYTHME_MIN = 20;
+/** durée d'une mesure du rythme, en millisecondes */
+const MESURE = 3000;
 
 /** Une goutte de l'entrée : où elle touche le papier (coordonnées de l'image), quand (s), jusqu'où elle s'étend. */
 type Goutte = { x: number; y: number; t: number; r: number };
@@ -253,6 +257,8 @@ function lirePeinture(img: CanvasImageSource, largeur: number, hauteur: number):
 
 export class FondEau {
   private gl: WebGLRenderingContext | null;
+  private programme: WebGLProgram | null = null;
+  private texture: WebGLTexture | null = null;
   private u: Record<string, WebGLUniformLocation | null> = {};
   /** la taille de la peinture (image fixe, ou vidéo quand la peinture vivante vient de Seedance) */
   private image: { naturalWidth: number; naturalHeight: number } | null = null;
@@ -273,6 +279,8 @@ export class FondEau {
   private zoomEclosion = 1;
   /** l'entrée : son temps écoulé (s), sa durée, sa vitesse (accélérée si on la passe), et ce qu'on fait à la fin */
   private apparition: { t: number; duree: number; vitesse: number; fin?: () => void } | null = null;
+  /** la mesure du rythme : son début, ses images, et combien de mesures de suite ont été trop lentes */
+  private rythme = { debut: 0, images: 0, lentes: 0 };
   /** prête quand l'image est posée : la peinture fixe reste visible dessous jusque-là */
   pret = false;
 
@@ -288,7 +296,7 @@ export class FondEau {
     this.gl = canvas.getContext('webgl', { alpha: false, antialias: false, premultipliedAlpha: false });
     if (!this.gl) return;
     const gl = this.gl;
-    const prog = gl.createProgram()!;
+    const prog = (this.programme = gl.createProgram()!);
     for (const [type, code] of [
       [gl.VERTEX_SHADER, VERT],
       [gl.FRAGMENT_SHADER, FRAG],
@@ -321,7 +329,8 @@ export class FondEau {
     const poser = (img: TexImageSource & CanvasImageSource, largeur: number, hauteur: number) => {
       if (!this.gl) return;
       const g = this.gl;
-      g.bindTexture(g.TEXTURE_2D, g.createTexture());
+      this.texture = g.createTexture();
+      g.bindTexture(g.TEXTURE_2D, this.texture);
       g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR);
       g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
       g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
@@ -392,12 +401,11 @@ export class FondEau {
     else void v.play().catch(() => undefined);
   }
 
-  /** La toile prend la taille de son cadre (un peu moins de pixels sur téléphone) ; l'image la couvre. */
+  /** La toile prend la taille de son cadre, sur 1,5 pixel par point au plus ; l'image la couvre. */
   resize(): void {
     const gl = this.gl;
     if (!gl || !this.image) return;
-    const petit = window.matchMedia('(max-width: 700px)').matches;
-    const echelle = Math.min(window.devicePixelRatio || 1, petit ? 1 : 1.5) * (petit ? 0.75 : 1);
+    const echelle = Math.min(window.devicePixelRatio || 1, 1.5);
     const w = Math.max(1, Math.round(this.canvas.clientWidth * echelle));
     const h = Math.max(1, Math.round(this.canvas.clientHeight * echelle));
     this.canvas.width = w;
@@ -477,24 +485,51 @@ export class FondEau {
         return;
       }
       // une trentaine d'images par seconde suffisent à une eau calme
-      if (now - this.dernier < 33) return;
+      const ecart = now - this.dernier;
+      if (ecart < 33) return;
       const dt = Math.min(0.1, (now - (this.dernier || now)) / 1000);
       this.dernier = now;
       // la profondeur suit la caméra même en pause : c'est le visiteur qui bouge, pas l'eau
       const bouge = this.suivreCamera(dt);
       if (this.enPause) {
+        this.rythme.debut = 0;
         if (bouge) this.dessiner();
         return;
       }
       // « réduire les animations » : l'eau ralentit beaucoup, sans s'arrêter
       this.t += dt * (this.reduit ? 0.3 : 1);
       this.dessiner();
+      this.surveiller(now, ecart);
     };
     this.raf = requestAnimationFrame(boucle);
   }
 
+  /** La toile resservira au retour dans la constellation : la mémoire de la carte graphique lui est rendue. */
   stop(): void {
     cancelAnimationFrame(this.raf);
+    this.gl?.deleteTexture(this.texture);
+    this.gl?.deleteProgram(this.programme);
+    this.gl = null;
+  }
+
+  /** Un appareil trop lent rend la main : la toile s'efface, la peinture fixe et nette est dessous. */
+  private surveiller(now: number, ecart: number): void {
+    const r = this.rythme;
+    // une pause, une fenêtre en arrière-plan ou un onglet qui revient ne disent rien de l'appareil
+    if (!r.debut || ecart > 1000 || !document.hasFocus()) {
+      r.debut = now;
+      r.images = 0;
+      return;
+    }
+    r.images++;
+    if (now - r.debut < MESURE) return;
+    r.lentes = (r.images * 1000) / (now - r.debut) < RYTHME_MIN ? r.lentes + 1 : 0;
+    r.debut = now;
+    r.images = 0;
+    if (r.lentes >= 2) {
+      this.canvas.hidden = true;
+      this.stop();
+    }
   }
 
   /** La peinture glisse un peu avec la caméra, en retard, puis revient au centre. Rend vrai si elle a bougé. */

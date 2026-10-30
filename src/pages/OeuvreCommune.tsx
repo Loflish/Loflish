@@ -287,13 +287,13 @@ export function OeuvreCommune() {
 
   const n = traits.length;
   const consigne = oeuvre.mien
-    ? 'Ton trait est cousu. Il fait partie de l’œuvre, pour toujours. Merci.'
+    ? 'Ton trait est cousu. Il fait partie de l’œuvre. Merci.'
     : oeuvre.connexion
       ? 'Pour coudre ton trait, entre d’abord dans le musée avec ton adresse e-mail : un seul trait par personne.'
     : !oeuvre.peutCoudre
       ? 'Ton accès à cette page permet de regarder l’œuvre, pas d’y coudre.'
       : arrivee
-        ? 'Ce trait sera le tien, pour toujours : un seul par personne, et il ne s’efface pas.'
+        ? 'Ce trait sera le tien : un seul par personne, et il ne s’efface pas.'
         : depart
           ? 'Clique dans la direction où tu veux mener ton fil.'
           : 'Clique pour poser le début de ton trait.';

@@ -59,7 +59,7 @@ export function MediaThumb({ m, size = 'm' }: { m: Media; size?: 's' | 'm' | 'l'
   return (
     <figure className={`media media-${m.kind} media-${size}`}>
       {ouvrir ? (
-        <button type="button" className="media-ouvrir" onClick={() => ouvrir(m)} aria-label={`Ouvrir : ${LABEL[m.kind]}, ${m.titre}`}>
+        <button type="button" className="media-ouvrir" onClick={() => ouvrir(m)} aria-label={`Ouvrir : ${LABEL[m.kind]}, ${m.titre}${m.duree ? `, ${m.duree}` : ''}`}>
           {surface}
         </button>
       ) : (

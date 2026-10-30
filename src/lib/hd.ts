@@ -28,9 +28,11 @@ const NB_TACHES = NB_MATIERES;
  * - `?fond=m2` : le mélange choisi le 21 octobre (le n° 5, brodé, aux voiles de vert sauge des Nabis, repeint plus
  *   vif « imbibé dans une toile brute », posé à 62 % sur la peinture actuelle) ; `?fond=m2b` : sa version plus pâle ;
  * - `?pages=marbre` : les pages sur un marbre ivoire veiné de rose et de vert antique.
- * Sans paramètre, le site garde exactement ses fonds actuels.
+ * Sans paramètre, le site montre la version choisie par Tom (27 et 30 octobre) : le fond feutré, l'eau et l'entrée.
+ * `?fond=ancien&eau=0&entree=0` rouvre la version d'avant, pour comparer.
  */
 const parametres = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+const fondDemande = parametres?.get('fond') ?? 'feutre';
 const ESSAIS_FOND: Record<string, string> = {
   A: 'palerme/fond-A-mosaique',
   D: 'palerme/fond-D-mosaique',
@@ -41,9 +43,9 @@ const ESSAIS_FOND: Record<string, string> = {
   feutre: 'essais/fond-feutre',
 };
 /** le fond de la constellation à l'essai (chemin sans le format), ou null pour le fond actuel */
-export const FOND_ESSAI: string | null = ESSAIS_FOND[parametres?.get('fond') ?? ''] ?? null;
+export const FOND_ESSAI: string | null = ESSAIS_FOND[fondDemande] ?? null;
 /** le fond feutré porte sa propre matière (la laine) : le lin fin ne s'y pose pas */
-export const FOND_FEUTRE = parametres?.get('fond') === 'feutre';
+export const FOND_FEUTRE = fondDemande === 'feutre';
 const PAGES_MARBRE = parametres?.get('pages') === 'marbre';
 /**
  * La constellation sur une toile plus brute (Tom, 21 octobre au soir : « un tissu encore plus brut »,
@@ -68,12 +70,13 @@ export const TOILE_BRUTE: string | null = ['1', '2', '3', '4'].includes(toileDem
 export const TOILE_PLEINE = toileDemandee === '3' || toileDemandee === '4';
 
 /**
- * L'entrée du musée, à l'essai (avec le fond qui coule ?eau=1 ; components/Entree.tsx, engine/eau.ts) :
- * - `?entree=1` : la règle choisie par Tom (22 octobre) — le hook complet (moins de 20 s : les gouttes peignent
+ * L'entrée du musée, avec le fond qui coule (components/Entree.tsx, engine/eau.ts) :
+ * - sans paramètre : la règle choisie par Tom (22 octobre) — le hook complet (moins de 20 s : les gouttes peignent
  *   le fond, quelques phrases, les bulles, une bulle qui s'ouvre) aux deux premières visites, puis les gouttes seules ;
- * - `?entree=toujours` : le hook à chaque chargement ; `?entree=gouttes` : les gouttes seules à chaque chargement.
+ * - `?entree=toujours` : le hook à chaque chargement ; `?entree=gouttes` : les gouttes seules à chaque chargement ;
+ * - `?entree=0` : aucune entrée.
  */
-const entreeDemandee = parametres?.get('entree') ?? '';
+const entreeDemandee = parametres?.get('entree') ?? '1';
 export const ENTREE: 'normale' | 'hook' | 'gouttes' | null =
   entreeDemandee === '1' ? 'normale' : entreeDemandee === 'toujours' ? 'hook' : entreeDemandee === 'gouttes' ? 'gouttes' : null;
 

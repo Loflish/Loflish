@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocation } from 'react-router-dom';
 import { allTraces } from '../data/store';
 import type { FondEau } from '../engine/eau';
 import { ENTREE, LEGER } from '../lib/hd';
 import { useMuseum } from '../lib/museum';
 
 /**
- * L'entrée du musée (à l'essai, ?entree=… avec ?eau=1).
+ * L'entrée du musée.
  *
  * Le hook (aux deux premières visites, moins de 20 s) : sur le papier vierge, des gouttes tombent et
  * déposent exactement la peinture du fond, pendant que deux phrases se cousent ; puis l'eau se met à
@@ -63,10 +64,11 @@ function ecrire(stockage: Storage, cle: string, valeur: string): void {
 }
 
 /** Quelle entrée jouer ? Décidé une seule fois, au chargement ; chaque visite n'est comptée qu'une fois. */
-function quelleEntree(reducedMotion: boolean, enPause: boolean): Sorte | null {
+function quelleEntree(reducedMotion: boolean, enPause: boolean, accueil: boolean): Sorte | null {
   if (!ENTREE || LEGER || reducedMotion || enPause) return null;
   if (ENTREE === 'hook' || ENTREE === 'gouttes') return ENTREE;
-  if (lire(sessionStorage, CLE_VUE) === '1') return null;
+  // qui arrive par un lien partagé vient voir quelqu'un : il n'attend pas l'entrée
+  if (!accueil || lire(sessionStorage, CLE_VUE) === '1') return null;
   let visite = Number(lire(localStorage, CLE_VISITES) ?? 0);
   if (lire(sessionStorage, CLE_VISITE_COMPTEE) !== '1') {
     visite += 1;
@@ -78,8 +80,9 @@ function quelleEntree(reducedMotion: boolean, enPause: boolean): Sorte | null {
 
 export function Entree({ eau, pret }: { eau: React.MutableRefObject<FondEau | null>; pret: boolean }) {
   const { reducedMotion, enPause, engine } = useMuseum();
+  const { pathname } = useLocation();
   const [sorte, setSorte] = useState<Sorte | null>(() => {
-    const s = quelleEntree(reducedMotion, enPause);
+    const s = quelleEntree(reducedMotion, enPause, pathname === '/');
     // dès le premier rendu, avant que rien ne s'affiche : sinon les bulles apparaîtraient un instant
     if (s) document.documentElement.classList.add('entree-en-cours', 'entree-sans-bulles', 'entree-douce');
     return s;

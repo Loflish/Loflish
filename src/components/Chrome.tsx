@@ -167,9 +167,9 @@ export function Dock() {
 export function PageTop({ back = true }: { back?: boolean }) {
   return (
     <header className="page-top">
-      <Link to="/" className="page-top-logo" aria-label="Nos Mots Mémoriaux, retour au musée">
+      <span className="page-top-logo">
         <Logo size="petit" />
-      </Link>
+      </span>
       {back && (
         <Link to="/" className="lien-discret">
           <Icon name="retour" size={16} /> Retour au musée

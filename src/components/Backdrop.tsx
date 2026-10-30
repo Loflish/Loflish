@@ -15,7 +15,7 @@ import { useMuseum } from '../lib/museum';
 import { TexteBrode } from './TexteBrode';
 import { Icon } from './Icon';
 
-// le fond qui coule comme une eau calme : seulement si l'adresse le demande (?eau=1), le temps de le juger
+// le fond qui coule comme une eau calme (?eau=0 le retire, pour comparer)
 const EAU = reglagesEau();
 
 // la constellation garde sa peinture vivante ; partout ailleurs, le tissu
@@ -110,7 +110,7 @@ function FondsPeints({ actif }: { actif: Fond }) {
             </picture>
           )}
           {f === 'explorer' && EAU && <canvas ref={eauRef} className={`fond-eau${eauPrete ? ' est-prete' : ''}`} />}
-          {/* l'entrée du musée : des gouttes déposent cette peinture même sur le papier vierge (à l'essai : ?entree=1) */}
+          {/* l'entrée du musée : des gouttes déposent cette peinture même sur le papier vierge */}
           {f === 'explorer' && f === actif && EAU && <Entree eau={eau} pret={eauPrete} />}
         </div>
       ))}
