@@ -16,6 +16,10 @@ import { routesAdmin } from './routes/admin';
 import { routesAuteur } from './routes/auteur';
 import { routesPubliques } from './routes/public';
 
+/** Seuls les scripts du site s'exécutent ; les médias peuvent venir du stockage S3 (https), les vidéos liées de YouTube et Vimeo (lecteurIntegre). */
+const POLITIQUE =
+  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; font-src 'self' data:; connect-src 'self'; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
+
 /** Le serveur du musée, assemblé (utilisé par index.ts, et par les tests). */
 export async function creerApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -41,6 +45,7 @@ export async function creerApp(): Promise<FastifyInstance> {
       // l'adresse (son empreinte) de qui écrit dans le musée : c'est elle que le fondateur peut bannir
       if (req.compte) void requete('update comptes set derniere_ip = $2 where id = $1 and derniere_ip is distinct from $2', [req.compte.id, empreinteIp(req.ip)]).catch(() => undefined);
     }
+    rep.header('content-security-policy', POLITIQUE);
     rep.header('x-content-type-options', 'nosniff');
     rep.header('referrer-policy', 'strict-origin-when-cross-origin');
     rep.header('x-frame-options', 'SAMEORIGIN');

@@ -1,6 +1,6 @@
 import { createReadStream } from 'node:fs';
 import { mkdir, rm, stat, copyFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import type { Readable } from 'node:stream';
 import { DeleteObjectCommand, GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
@@ -38,7 +38,7 @@ function disque(dossier: string): Stockage {
   const racine = resolve(dossier);
   const chemin = (cle: string) => {
     const p = resolve(join(racine, cle));
-    if (!p.startsWith(racine + '/')) throw new Error('clé invalide');
+    if (!p.startsWith(racine + sep)) throw new Error('clé invalide');
     return p;
   };
   return {

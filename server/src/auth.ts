@@ -33,6 +33,7 @@ export const COOKIE = 'nmm_session';
 const DUREE_SESSION_JOURS = 90;
 const DUREE_CODE_MIN = 15;
 const ESSAIS_MAX = 5;
+const CODES_PAR_HEURE = 6;
 
 export class Refus extends Error {
   constructor(
@@ -69,7 +70,8 @@ export async function chargerCompte(req: FastifyRequest) {
   {
     req.compte = null;
     const brut = req.cookies[COOKIE];
-    if (!brut) return;
+    // les images et les fichiers du site n'ont pas besoin de la base
+    if (!brut || !req.url.startsWith('/api/')) return;
     const c = await une<Compte & { expire_le: Date }>(
       `select c.id, c.email, c.role, c.majeur_le, c.suspendu, s.expire_le
          from sessions s join comptes c on c.id = s.compte_id
@@ -88,6 +90,10 @@ function nouveauCode(email: string): { code: string; empreinte: string } {
 
 /** Garde un code en attente pour cette adresse (et, pour un changement d'adresse, pour ce compte). */
 async function garderCode(email: string, compteId: string | null): Promise<string> {
+  // par adresse, quelle que soit l'IP : ni boîte mail bombardée, ni essais sans fin sur un même compte
+  // shortcut: un tiers qui connaît l'adresse peut la bloquer une heure (les sessions ouvertes continuent), revoir si cela arrive
+  const recents = await une<{ n: string }>(`select count(*) n from liens_connexion where email = $1 and cree_le > now() - interval '1 hour'`, [email]);
+  if (Number(recents!.n) >= CODES_PAR_HEURE) throw new Refus(429, 'Doucement : trop de codes demandés pour cette adresse. Réessaie dans une heure.', 'trop');
   const { code, empreinte: e } = nouveauCode(email);
   // un nouveau code remplace les précédents
   await requete('update liens_connexion set utilise_le = now() where email = $1 and utilise_le is null and compte_id is not distinct from $2', [email, compteId]);

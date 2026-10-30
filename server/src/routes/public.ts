@@ -196,7 +196,7 @@ export async function routesPubliques(app: FastifyInstance) {
 <meta name="twitter:card" content="summary_large_image">
 <meta http-equiv="refresh" content="0; url=${e(cible)}">
 <link rel="canonical" href="${e(cible)}">
-</head><body><p><a href="${e(cible)}">${e(titre)}</a></p><script>location.replace(${JSON.stringify(cible)})</script></body></html>`);
+</head><body><p><a href="${e(cible)}">${e(titre)}</a></p></body></html>`);
   });
 
   // ——— l'œuvre commune : un seul trait par personne et par appareil
@@ -228,9 +228,8 @@ export async function routesPubliques(app: FastifyInstance) {
       brut = jeton(18);
       rep.setCookie(APPAREIL, brut, { path: '/', httpOnly: true, sameSite: 'lax', secure: config.production, maxAge: 10 * 365 * 24 * 3600 });
     }
-    const deja = await une('select id from traits where compte_id = $1 or appareil = $2', [c.id, empreinte(brut)]);
-    if (deja) throw new Refus(409, 'Tu as déjà cousu ton trait. Il fait partie de l’œuvre, pour toujours.', 'deja');
-    const t = await une<{ id: string }>('insert into traits (compte_id, appareil, x1, y1, x2, y2) values ($1, $2, $3, $4, $5, $6) returning id', [
+    // la base garde l'unicité : deux clics simultanés ne cousent qu'un trait
+    const t = await une<{ id: string }>('insert into traits (compte_id, appareil, x1, y1, x2, y2) values ($1, $2, $3, $4, $5, $6) on conflict do nothing returning id', [
       c.id,
       empreinte(brut),
       p.x1,
@@ -238,7 +237,8 @@ export async function routesPubliques(app: FastifyInstance) {
       p.x2,
       p.y2,
     ]);
-    await journaliser(c.id, 'trait.cousu', t!.id);
-    return { trait: { id: t!.id, ...p, moi: true } };
+    if (!t) throw new Refus(409, 'Tu as déjà cousu ton trait. Il fait partie de l’œuvre.', 'deja');
+    await journaliser(c.id, 'trait.cousu', t.id);
+    return { trait: { id: t.id, ...p, moi: true } };
   });
 }

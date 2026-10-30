@@ -203,7 +203,7 @@ export async function routesAdmin(app: FastifyInstance) {
     const c = exigerRole(req, 'admin');
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const d = z.object({ role: z.enum(['membre', 'moderation', 'admin']).optional(), suspendu: z.boolean().optional() }).parse(req.body);
-    if (id === c.id && (d.role && d.role !== 'admin')) throw new Refus(400, 'Tu ne peux pas retirer ton propre rôle d’administration.', 'soi');
+    if (id === c.id && (d.suspendu || (d.role && d.role !== 'admin'))) throw new Refus(400, 'Tu ne peux pas retirer ton propre accès d’administration.', 'soi');
     await requete('update comptes set role = coalesce($2, role), suspendu = coalesce($3, suspendu) where id = $1', [id, d.role ?? null, d.suspendu ?? null]);
     if (d.suspendu) await requete('delete from sessions where compte_id = $1', [id]);
     await journaliser(c.id, 'compte.modifie', id, d);

@@ -89,23 +89,27 @@ async function lireFormulaire(req: FastifyRequest): Promise<{ donnees: unknown; 
   if (!req.isMultipart()) return { donnees: req.body };
   let donnees: unknown = {};
   let fichier: { chemin: string; nom: string; dossier: string } | undefined;
-  for await (const part of req.parts({ limits: { fileSize: TAILLES_MAX.video, files: 1 } })) {
-    if (part.type === 'file') {
-      const dossier = await mkdtemp(join(tmpdir(), 'nmm-'));
-      const chemin = join(dossier, 'f');
-      await pipeline(part.file, createWriteStream(chemin));
-      if (part.file.truncated) {
-        await rm(dossier, { recursive: true, force: true });
-        throw new Refus(413, 'Ce fichier est trop lourd (200 Mo au plus).', 'lourd');
-      }
-      fichier = { chemin, nom: part.filename, dossier };
-    } else if (part.fieldname === 'donnees') {
-      try {
-        donnees = JSON.parse(String(part.value));
-      } catch {
-        throw new Refus(400, 'Certaines informations ne conviennent pas.', 'invalide');
+  let dossier: string | undefined;
+  try {
+    for await (const part of req.parts({ limits: { fileSize: TAILLES_MAX.video, files: 1 } })) {
+      if (part.type === 'file') {
+        dossier = await mkdtemp(join(tmpdir(), 'nmm-'));
+        const chemin = join(dossier, 'f');
+        await pipeline(part.file, createWriteStream(chemin));
+        if (part.file.truncated) throw new Refus(413, 'Ce fichier est trop lourd (200 Mo au plus).', 'lourd');
+        fichier = { chemin, nom: part.filename, dossier };
+      } else if (part.fieldname === 'donnees') {
+        try {
+          donnees = JSON.parse(String(part.value));
+        } catch {
+          throw new Refus(400, 'Certaines informations ne conviennent pas.', 'invalide');
+        }
       }
     }
+  } catch (e) {
+    // envoi interrompu ou formulaire illisible : rien ne reste sur le disque du serveur
+    if (dossier) await rm(dossier, { recursive: true, force: true });
+    throw e;
   }
   return { donnees, fichier };
 }

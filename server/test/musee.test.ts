@@ -1,3 +1,5 @@
+import { readdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { deflateSync } from 'node:zlib';
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -134,6 +136,21 @@ describe('comptes', () => {
     const c2 = (await v.post('/api/auth/code', { email: 'patiente@exemple.fr' })).json().code;
     if (c1 !== c2) expect((await v.post('/api/auth/verifier', { email: 'patiente@exemple.fr', code: c1 })).statusCode).toBe(400);
     expect((await v.post('/api/auth/verifier', { email: 'patiente@exemple.fr', code: c2 })).statusCode).toBe(200);
+  });
+
+  it('une adresse ne reçoit pas plus de six codes par heure, d’où qu’ils soient demandés', async () => {
+    const email = 'bombardee@exemple.fr';
+    for (let i = 0; i < 6; i++) expect((await visiteur().post('/api/auth/code', { email })).statusCode).toBe(200);
+    const r = await visiteur().post('/api/auth/code', { email });
+    expect(r.statusCode).toBe(429);
+    expect(r.json().code).toBe('trop');
+  });
+
+  it('le fondateur ne peut pas se suspendre lui-même', async () => {
+    const admin = visiteur();
+    const moi = await admin.connecter('admin@musee.test');
+    expect((await admin.post(`/api/admin/comptes/${moi.id}`, { suspendu: true })).statusCode).toBe(400);
+    expect((await admin.get('/api/moi')).json().compte.id).toBe(moi.id);
   });
 });
 
@@ -279,6 +296,14 @@ describe('traces', () => {
     expect((await visiteur().get('/b/inconnue')).body).toContain('Nos Mots Mémoriaux');
   });
 
+  it('chaque réponse interdit les scripts étrangers ; le lien partagé n’a besoin d’aucun script', async () => {
+    const r = await visiteur().get(`/b/${id}`);
+    expect(r.headers['content-security-policy']).toContain("script-src 'self'");
+    expect(r.headers['content-security-policy']).toContain('https://www.youtube-nocookie.com');
+    expect(r.body).not.toContain('<script');
+    expect(r.body).toContain('http-equiv="refresh"');
+  });
+
   it('les archives : une édition, puis figée', async () => {
     const admin = visiteur();
     await admin.connecter('admin@musee.test');
@@ -315,6 +340,14 @@ describe('l’œuvre commune', () => {
     expect((await visiteur().get('/api/traits')).json().traits.some((t: any) => t.id === mien)).toBe(false);
     expect((await admin.post(`/api/admin/traits/${mien}/reafficher`, {})).statusCode).toBe(200);
     expect((await visiteur().get('/api/traits')).json().traits.some((t: any) => t.id === mien)).toBe(true);
+  });
+
+  it('deux clics simultanés ne cousent qu’un trait, et le second reçoit une réponse claire', async () => {
+    const v = visiteur();
+    await v.connecter('presse@exemple.fr');
+    const p = { x1: 1, y1: 1, x2: 1.16, y2: 1 };
+    const [a, b] = await Promise.all([v.post('/api/traits', p), v.post('/api/traits', p)]);
+    expect([a.statusCode, b.statusCode].sort()).toEqual([200, 409]);
   });
 });
 
@@ -409,6 +442,19 @@ describe('rapidité et lecture des médias', () => {
     await intrus.connecter('intrus@exemple.fr');
     const f = formulaire({ rubrique: 'voir', texte: 'x' }, { nom: 'i.png', contenu: png(), type: 'image/png' });
     expect((await intrus.post(`/api/traces/${id}/fragments`, f.corps, f.entetes)).statusCode).toBe(404);
+  });
+
+  it('un formulaire illisible ne laisse aucun fichier temporaire sur le serveur', async () => {
+    const temporaires = () => readdirSync(tmpdir()).filter((n) => n.startsWith('nmm-')).sort();
+    const avant = temporaires();
+    const limite = '----nmmt';
+    const corps = Buffer.concat([
+      Buffer.from(`--${limite}\r\nContent-Disposition: form-data; name="fichier"; filename="i.png"\r\nContent-Type: image/png\r\n\r\n`),
+      png(),
+      Buffer.from(`\r\n--${limite}\r\nContent-Disposition: form-data; name="donnees"\r\n\r\n{pas du json\r\n--${limite}--\r\n`),
+    ]);
+    expect((await v.post(`/api/traces/${id}/fragments`, corps, { 'content-type': `multipart/form-data; boundary=${limite}` })).statusCode).toBe(400);
+    expect(temporaires()).toEqual(avant);
   });
 
   it('la recherche passe par ses index (rapide même avec des milliers de traces)', async () => {
