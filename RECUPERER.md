@@ -2,7 +2,7 @@
 
 Le code, les images et les fichiers de progression sont conservés dans le dépôt
 [Loflish/Loflish](https://github.com/Loflish/Loflish), sur la branche
-claude/practical-newton-r1t0oq.
+refonte-octobre.
 
 L'[état sauvegardé](PROGRESSION.md) relie le suivi historique du 8 octobre et
 la [progression du 19 octobre](design/suivi/2026-10-19/README.md), avec les essais
@@ -15,17 +15,17 @@ Les instructions de serveur local et de reconstruction sont dans le
 
 ## Télécharger une copie
 
-Le [ZIP du dépôt](https://github.com/Loflish/Loflish/archive/refs/heads/claude/practical-newton-r1t0oq.zip)
+Le [ZIP du dépôt](https://github.com/Loflish/Loflish/archive/refs/heads/refonte-octobre.zip)
 contient les fichiers de cette branche. Le dépôt étant public, sa lecture et son
 téléchargement ne nécessitent pas de connexion à un compte.
 
 Une copie avec l'historique est également accessible par Git :
 
 ~~~sh
-git clone -b claude/practical-newton-r1t0oq https://github.com/Loflish/Loflish.git nos-mots-memoriaux
+git clone -b refonte-octobre https://github.com/Loflish/Loflish.git nos-mots-memoriaux
 ~~~
 
-L'[historique des versions](https://github.com/Loflish/Loflish/commits/claude/practical-newton-r1t0oq)
+L'[historique des versions](https://github.com/Loflish/Loflish/commits/refonte-octobre)
 conserve les enregistrements précédents.
 
 ## Aperçu local
