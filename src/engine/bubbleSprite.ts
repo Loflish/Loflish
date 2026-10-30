@@ -1,5 +1,5 @@
 import { hexToRgb, hsl, rgbToHsl } from '../lib/palette';
-import { MATIERE_COUSUE, matiereFor, tacheFor } from '../lib/hd';
+import { MATIERE_COUSUE, MATIERE_ENCRE, matiereFor, tacheFor } from '../lib/hd';
 import { gaussian, hashString, rng } from '../lib/random';
 
 /**
@@ -98,7 +98,7 @@ export function bubbleSprite(seedKey: string, hex: string, opts: SpriteOptions =
 
   const tache = matiere === MATIERE_COUSUE ? null : tacheFor(matiere);
   if (tache) {
-    paintTache(ctx, tache, hex, c, R, r);
+    paintTache(ctx, tache, hex, c, R, r, matiere >= MATIERE_ENCRE);
   } else {
     // 0. léger halo : le pigment qui a « bu » dans la fibre autour de la tache
     for (let i = 0; i < 6; i++) {
@@ -261,7 +261,7 @@ export function bubbleSprite(seedKey: string, hex: string, opts: SpriteOptions =
  * matière. Elle est teintée exactement dans la couleur GRIS de la personne ;
  * ses variations de densité, sa granulation et son bord séché sont conservés.
  */
-function paintTache(ctx: CanvasRenderingContext2D, tache: CanvasImageSource, hex: string, c: number, R: number, r: () => number): void {
+function paintTache(ctx: CanvasRenderingContext2D, tache: CanvasImageSource, hex: string, c: number, R: number, r: () => number, encre: boolean): void {
   const size = ctx.canvas.width;
   const side = (2 * R) / 0.82; // la tache occupe ~82 % de sa vignette
   const angle = r() * Math.PI * 2;
@@ -270,11 +270,15 @@ function paintTache(ctx: CanvasRenderingContext2D, tache: CanvasImageSource, hex
   tmp.width = tmp.height = size;
   const t = tmp.getContext('2d', { willReadFrequently: true });
   if (!t) return;
+  // l'encre garde son sens (une voûte monte), et ses fils ne doivent pas s'émietter en réduction
+  if (encre) t.imageSmoothingQuality = 'high';
   const place = () => {
     t.setTransform(1, 0, 0, 1, 0, 0);
     t.translate(c, c);
-    t.rotate(angle);
-    t.scale(flip, 1);
+    if (!encre) {
+      t.rotate(angle);
+      t.scale(flip, 1);
+    }
     t.drawImage(tache, -side / 2, -side / 2, side, side);
     t.setTransform(1, 0, 0, 1, 0, 0);
   };
@@ -285,7 +289,7 @@ function paintTache(ctx: CanvasRenderingContext2D, tache: CanvasImageSource, hex
   t.fillRect(0, 0, size, size);
   // 2. la densité : la tache assombrit là où elle était plus chargée
   t.globalCompositeOperation = 'multiply';
-  t.globalAlpha = 0.28;
+  t.globalAlpha = encre ? 1 : 0.28;
   place();
   ctx.drawImage(tmp, 0, 0);
 }

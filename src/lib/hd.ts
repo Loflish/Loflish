@@ -19,6 +19,8 @@ export const NB_MATIERES = 100;
  * bulle du musée, gardée telle quelle et proposée en tête du catalogue.
  */
 export const MATIERE_COUSUE = 0;
+/** à partir de ce numéro, la matière est une encre (design/hd/taches_gothique.py) : son gris vaut pleinement, et elle garde son sens */
+export const MATIERE_ENCRE = 5000;
 const NB_TACHES = NB_MATIERES;
 
 /**
@@ -171,6 +173,10 @@ export function installSurfaces(): void {
   r.style.setProperty('--papier-washi', abs('papier-washi.webp'));
 }
 
+/** Essai, en développement seulement : ?gothique=1 donne à toutes les bulles une matière de la planche 4. */
+const GOTHIQUE = import.meta.env.DEV && parametres?.get('gothique') === '1';
+const planche4 = Array.from({ length: 100 }, (_, i) => i + 1);
+
 const taches = new Map<number, HTMLImageElement | HTMLCanvasElement>();
 const enCours = new Map<number, Promise<void>>();
 let loading: Promise<void> | null = null;
@@ -210,7 +216,9 @@ function charger(n: number): Promise<void> {
 /** Charge une seule fois les taches d'aquarelle de base (toutes sur ordinateur, 30 sur téléphone). */
 export function loadTaches(): Promise<void> {
   if (!HD) return Promise.resolve();
-  loading ??= Promise.all(indices.map(charger)).then(() => undefined);
+  loading ??= Promise.all([...indices.map(charger), ...(GOTHIQUE ? planche4 : []).map((n) => chargerMatiere(MATIERE_ENCRE + n, `${base}taches-gothique/gothique-${String(n).padStart(3, '0')}.webp`))]).then(
+    () => undefined,
+  );
   return loading;
 }
 
@@ -257,6 +265,7 @@ export function chargerMatiere(n: number, src: string): Promise<void> {
 
 /** Sans choix, la matière d'une personne est tirée de son identifiant : au hasard, mais fixe. */
 export function matiereFor(seed: number): number {
+  if (GOTHIQUE) return MATIERE_ENCRE + planche4[seed % planche4.length]!;
   // l'aquarelle cousue (0) fait partie du tirage, comme chacune des taches
   return seed % (NB_TACHES + 1);
 }

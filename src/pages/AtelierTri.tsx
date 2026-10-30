@@ -4,10 +4,10 @@ import { BubbleImage } from '../components/Chrome';
 import { GRIS_PALETTE } from '../lib/palette';
 import { rng } from '../lib/random';
 import { Page } from './Pages';
-import { chargerPlanches, CLAUDE, MELANGE } from './planches';
+import { chargerPlanches, CLAUDE, GOTHIQUE, MELANGE } from './planches';
 
 /**
- * Le tri façon Tinder (local seulement, jamais publié) : les bulles des planches 2 et 3, mêlées, une à une.
+ * Le tri façon Tinder (local seulement, jamais publié) : les bulles des planches 2, 3 et 4, mêlées, une à une, la planche 4 d'abord.
  * À droite je garde, à gauche je retire. Chaque geste est écrit dans design/tri-bulles.json (vite.config.ts) :
  * un navigateur qui perd sa mémoire ne perd aucun geste.
  */
@@ -20,12 +20,15 @@ const OBJECTIF = 100;
 
 interface Carte {
   id: string;
-  planche: 2 | 3;
+  planche: Planche;
   n: number;
   matiere: number;
   nom: string;
   famille: string;
 }
+
+type Planche = 2 | 3 | 4;
+const PLANCHES: Planche[] = [2, 3, 4];
 
 /** la carte, et si elle est gardée */
 type Geste = [string, boolean];
@@ -43,13 +46,14 @@ export default function AtelierTri() {
 
   useEffect(() => {
     void (async () => {
-      const [{ melange, claude }, f] = await Promise.all([
+      const [{ melange, claude, gothique }, f] = await Promise.all([
         chargerPlanches(),
         fetch('/__tri-bulles').then((r) => r.json() as Promise<{ gestes?: Geste[] }>),
       ]);
       const paquet: Carte[] = [
         ...melange.map((d) => ({ id: `m${d.n}`, planche: 2 as const, n: d.n, matiere: MELANGE + d.n, nom: d.fr, famille: d.famille })),
         ...claude.map((d) => ({ id: `c${d.n}`, planche: 3 as const, n: d.n, matiere: CLAUDE + d.n, nom: d.nom, famille: d.groupe })),
+        ...gothique.map((d) => ({ id: `g${d.n}`, planche: 4 as const, n: d.n, matiere: GOTHIQUE + d.n, nom: d.nom, famille: d.famille })),
       ];
       // mêlées, mais dans le même ordre à chaque visite
       const r = rng(7);
@@ -57,7 +61,7 @@ export default function AtelierTri() {
         const j = Math.floor(r() * (i + 1));
         [paquet[i], paquet[j]] = [paquet[j]!, paquet[i]!];
       }
-      setCartes(paquet);
+      setCartes(paquet.sort((a, b) => Number(b.planche === 4) - Number(a.planche === 4)));
       setGestes(f.gestes ?? []);
     })();
   }, []);
@@ -65,13 +69,13 @@ export default function AtelierTri() {
   const choix = new Map(gestes ?? []);
   const reste = gestes ? cartes.filter((c) => !choix.has(c.id)) : [];
   const carte = reste[0];
-  const compte = (garde: boolean, planche?: 2 | 3) => cartes.filter((c) => choix.get(c.id) === garde && (!planche || c.planche === planche)).length;
-  const gardees = (planche: 2 | 3) => cartes.filter((c) => choix.get(c.id) && c.planche === planche);
+  const compte = (garde: boolean, planche?: Planche) => cartes.filter((c) => choix.get(c.id) === garde && (!planche || c.planche === planche)).length;
+  const gardees = (planche: Planche) => cartes.filter((c) => choix.get(c.id) && c.planche === planche);
 
   useEffect(() => {
     if (!gestes) return;
-    const garde = (p: 2 | 3) => cartes.filter((c) => c.planche === p && gestes.some(([id, g]) => g && id === c.id)).map((c) => c.n).sort((a, b) => a - b);
-    const corps = JSON.stringify({ gestes, planche2: garde(2), planche3: garde(3), maj: new Date().toISOString() });
+    const garde = (p: Planche) => cartes.filter((c) => c.planche === p && gestes.some(([id, g]) => g && id === c.id)).map((c) => c.n).sort((a, b) => a - b);
+    const corps = JSON.stringify({ gestes, planche2: garde(2), planche3: garde(3), planche4: garde(4), maj: new Date().toISOString() });
     fetch('/__tri-bulles', { method: 'POST', body: corps })
       .then((r) => setPanne(!r.ok))
       .catch(() => setPanne(true));
@@ -133,7 +137,7 @@ export default function AtelierTri() {
             <strong>{compte(true)} gardées</strong> · {compte(false)} retirées · {reste.length} à voir · objectif {OBJECTIF}
           </p>
           <p className="tri-planches">
-            Planche 2 : {compte(true, 2)} gardées, {compte(false, 2)} retirées · Planche 3 : {compte(true, 3)} gardées, {compte(false, 3)} retirées
+            Planche 2 : {compte(true, 2)} gardées, {compte(false, 2)} retirées · Planche 3 : {compte(true, 3)} gardées, {compte(false, 3)} retirées · Planche 4 : {compte(true, 4)} gardées, {compte(false, 4)} retirées
           </p>
         </>
       )}
@@ -187,7 +191,7 @@ export default function AtelierTri() {
         <>
           <h2 className="intertitre">Tu gardes {compte(true)} bulles</h2>
           <p className="tri-planches">C’est enregistré : dis-moi « c’est fait ».</p>
-          {([2, 3] as const).map((p) => (
+          {PLANCHES.map((p) => (
             <section key={p} aria-label={`Planche ${p}`}>
               <h3 className="melange-nom">
                 Planche {p} : {compte(true, p)} gardées
