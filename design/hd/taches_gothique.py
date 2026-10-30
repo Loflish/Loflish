@@ -20,6 +20,8 @@ OUT = Path(__file__).resolve().parents[2] / 'public' / 'hd' / 'taches-gothique'
 S = 768
 DISQUE = 0.82  # paintTache : la tache occupe ~82 % de sa vignette
 ENCRE = 0.1  # gris le plus sombre : la couleur de la personne tombe à 10 %
+MASSE = 0.6  # force des grandes masses d'encre
+FIL = 1.3  # force des fils, par-dessus les masses
 VOILE = 0.36  # alpha minimal dans le disque : même le plus pâle reste de la couleur (presque double au passage multiply) ; plus bas, le côté pâle fait un reflet et la bulle devient une bille
 
 
@@ -45,6 +47,9 @@ def matiere(chemin):
     garde = ndi.gaussian_filter(recadre(disque * 255, 0, Image.BILINEAR) / 255, 2)
 
     a = np.clip(v / np.percentile(v[garde > 0.9], 99.5), 0, 1)
+    # Tom trouvait la planche sombre : seules les grandes masses s'allègent, les fils gardent leur force
+    masses = ndi.gaussian_filter(a, S / 40)
+    a = np.clip(masses * MASSE + (a - masses) * FIL, 0, 1)
     gris = 1 - (1 - ENCRE) * a ** 0.9
     alpha = np.clip(VOILE + (1 - VOILE) * a ** 0.7, 0, 1) * garde
     return Image.fromarray(np.dstack([gris * 255, gris * 255, gris * 255, alpha * 255]).astype(np.uint8), 'RGBA')

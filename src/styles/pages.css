@@ -1656,6 +1656,16 @@
 .comparer-noms .comparer-nom {
   display: block;
 }
+.comparer-trios {
+  grid-template-columns: repeat(var(--colonnes), auto);
+  justify-content: center;
+  max-width: none;
+}
+/* le blanc qui sépare un groupe de trois du suivant */
+.comparer-trios li:nth-child(3n) {
+  width: calc(var(--taille) + 1.25rem);
+  padding-right: 1.25rem;
+}
 .tri-compte {
   margin-top: 0.5rem;
   font-size: var(--t-l);

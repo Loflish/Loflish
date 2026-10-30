@@ -63,6 +63,7 @@ Wols apporte aussi une idée pour *La couture* : pour la Menil, ses griffures [�
 - `paintTache` écrasait les noirs (mélange à 28 %) et tournait chaque bulle au hasard. Pour les matières à partir de 5000 (`MATIERE_ENCRE`) : gris à pleine force, sens conservé, réduction de haute qualité pour que les fils ne s'émiettent pas. Les autres bulles ne changent pas.
 - `VOILE = 0,36` : même le plus pâle reste de la couleur. À 0,17, le côté pâle faisait un reflet.
 - `ENCRE = 0,1` : la couleur de la personne tombe à 10 % dans les noirs. C'est là que naît le contraste avec les couleurs.
+- `MASSE = 0,6` et `FIL = 1,3` : Tom trouvait la planche un peu sombre. Seules les grandes masses s'allègent, les fils gardent leur force. Clarté moyenne de 0,42 à 0,57 (planches 2 et 3 : 0,71 et 0,73), part de noir de 38 % à 3 %.
 
 ## Ce qui a été écarté
 

@@ -15,28 +15,36 @@ const TAILLES = [
 interface Case {
   matiere: number;
   nom: string;
+  /** sa place dans sa planche, qui fixe sa couleur et sa couture */
+  rang: number;
 }
 
 interface Planche {
   nom: string;
   cases: Case[];
+  /** par groupes de trois bulles de même couleur, une par planche */
+  trios?: boolean;
 }
 
 export default function AtelierComparer() {
   const [planches, setPlanches] = useState<Planche[]>([]);
-  const [vue, setVue] = useState(3);
+  const [vue, setVue] = useState(4);
   // une planche ne se peint qu'à sa première visite : 400 bulles d'un coup font attendre celle qu'on regarde
-  const [vues, setVues] = useState(new Set([3]));
+  const [vues, setVues] = useState(new Set([4]));
   const [px, setPx] = useState(92);
 
   useEffect(() => {
     void (async () => {
       const { melange, claude, gothique } = await chargerPlanches();
+      const details = melange.map((d, rang) => ({ matiere: MELANGE + d.n, nom: d.fr, rang }));
+      const autres = claude.map((d, rang) => ({ matiere: CLAUDE + d.n, nom: d.nom, rang }));
+      const filaments = gothique.map((d, rang) => ({ matiere: GOTHIQUE + d.n, nom: d.nom, rang }));
       setPlanches([
-        { nom: 'Tes originaux', cases: melange.map((d) => ({ matiere: d.tache, nom: `Tache ${d.tache}` })) },
-        { nom: 'Mes détails dans tes taches', cases: melange.map((d) => ({ matiere: MELANGE + d.n, nom: d.fr })) },
-        { nom: 'L’autre conversation', cases: claude.map((d) => ({ matiere: CLAUDE + d.n, nom: d.nom })) },
-        { nom: 'Les filaments gothiques', cases: gothique.map((d) => ({ matiere: GOTHIQUE + d.n, nom: d.nom })) },
+        { nom: 'Tes originaux', cases: melange.map((d, rang) => ({ matiere: d.tache, nom: `Tache ${d.tache}`, rang })) },
+        { nom: 'Mes détails dans tes taches', cases: details },
+        { nom: 'L’autre conversation', cases: autres },
+        { nom: 'Les filaments gothiques', cases: filaments },
+        { nom: 'Côte à côte', cases: filaments.flatMap((f, k) => [details[k]!, autres[k]!, f]), trios: true },
       ]);
     })();
   }, []);
@@ -67,13 +75,19 @@ export default function AtelierComparer() {
           ))}
         </span>
       </div>
+      {planches[vue]?.trios && <p className="tri-planches">Dans chaque groupe de trois, une seule couleur : mes détails, l’autre conversation, les filaments.</p>}
       {planches.map(
         (p, i) =>
           vues.has(i) && (
-            <ul key={p.nom} className={`comparer-grille${px === 190 ? ' comparer-noms' : ''}`} hidden={i !== vue} style={{ '--taille': `${px}px` } as CSSProperties}>
+            <ul
+              key={p.nom}
+              className={`comparer-grille${px === 190 ? ' comparer-noms' : ''}${p.trios ? ' comparer-trios' : ''}`}
+              hidden={i !== vue}
+              style={{ '--taille': `${px}px`, '--colonnes': px === 190 ? 3 : px === 92 ? 9 : 18 } as CSSProperties}
+            >
               {p.cases.map((c, k) => (
                 <li key={k} title={c.nom}>
-                  <BubbleImage id={`comparer-${k}`} couleur={GRIS_PALETTE[(k + 1) % GRIS_PALETTE.length]!.id} matiere={c.matiere} size={190} />
+                  <BubbleImage id={`comparer-${c.rang}`} couleur={GRIS_PALETTE[(c.rang + 1) % GRIS_PALETTE.length]!.id} matiere={c.matiere} size={190} />
                   <span className="comparer-nom">{c.nom}</span>
                 </li>
               ))}
