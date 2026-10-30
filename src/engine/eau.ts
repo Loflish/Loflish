@@ -18,6 +18,7 @@
  * pigment s'étire un peu plus puis se pose (l'éclosion).
  *
  * Réglages par l'adresse, le temps de juger : ?eau=1 (&ampleur=0.034 &periode=30 &lumiere=1 &flotte=1.3).
+ * Essai du 30 octobre, `?laine=0.9` : la laine reste, le pigment passe (une laine ne coule pas).
  */
 
 const VERT = `attribute vec2 position; varying vec2 vUv;
@@ -37,6 +38,7 @@ uniform float eclosion;
 uniform float melange;
 uniform float vivacite;
 uniform float colore;
+uniform float laine;
 // l'entrée : des gouttes tombent sur le papier vierge et y déposent exactement la peinture du fond
 uniform vec4 gouttes[20];
 uniform float tApparition;
@@ -59,6 +61,11 @@ vec3 couleur(vec2 p){ return texture2D(peinture, clamp(p, texel, 1. - texel)).rg
 vec3 doux(vec2 p){
   vec2 d = texel * 2.5;
   return (couleur(p) * 4. + couleur(p + d) + couleur(p - d) + couleur(p + vec2(d.x, -d.y)) + couleur(p + vec2(-d.x, d.y))) / 8.;
+}
+vec3 anneau(vec2 p, float r){
+  vec2 d = texel * r;
+  return (couleur(p + vec2(d.x, 0.)) + couleur(p - vec2(d.x, 0.)) + couleur(p + vec2(0., d.y)) + couleur(p - vec2(0., d.y))
+    + couleur(p + d * .7) + couleur(p - d * .7) + couleur(p + vec2(d.x, -d.y) * .7) + couleur(p + vec2(-d.x, d.y) * .7)) * .125;
 }
 void main(){
   vec2 p = (vec2(vUv.x, 1. - vUv.y) - .5) * cadre + .5 + derive;
@@ -83,6 +90,11 @@ void main(){
   vec2 dep = ((r - .5) + (g + g2 * .7 + tourbillon + souffle) * flotte) * ampleur * encre * eclosion * vie;
   vec3 grain = couleur(p) - bas;
   vec3 res = doux(p + dep) + grain;
+  // la laine reste, le pigment passe : tout ce qui est plus fin qu'un flou large (fibres, points cousus) ne suit pas le courant
+  if (laine > 0.) {
+    grain = vec3(dot(couleur(p) - (anneau(p, 4.) + anneau(p, 9.)) * .5, vec3(.3, .59, .11))) * laine;
+    res = (anneau(p + dep, 4.) + anneau(p + dep, 9.)) * .5 + grain;
+  }
   // les taches se mêlent : par endroits, le pigment encore humide se fond avec ses voisines, puis se reprend
   float humide = smoothstep(.34, .7, fbm(p * 1.3 + vec2(2.7, 4.1), .8)) * melange * vie;
   vec2 e = texel * 14.;
@@ -152,6 +164,8 @@ export interface ReglagesEau {
   vivacite: number;
   /** combien les couleurs voisines se glissent dans les blancs (0 = jamais ; à 1, il reste toujours du blanc) */
   colore: number;
+  /** force de la laine qui ne coule pas (0 = la peinture bouge d'un seul bloc, comme aujourd'hui) */
+  laine: number;
   /**
    * avec une peinture vivante (vidéo) : la part du courant du code qui la porte en plus (1 = tout le courant de la
    * version de base). Mesuré le 26 octobre (écart moyen d'une seconde à l'autre) : base 13,6 ; premier essai
@@ -179,6 +193,7 @@ export function reglagesEau(): ReglagesEau | null {
     flotte: nombre('flotte', 2, 0, 3.5),
     melange: nombre('melange', 1.05, 0, 1.5),
     colore: nombre('colore', 0.75, 0, 1),
+    laine: nombre('laine', 0, 0, 1.5),
     // la peinture est déjà plus vive (repeinte « imbibée dans la toile ») : une pointe suffit
     vivacite: nombre('vivacite', 1.1, 0.6, 1.6),
     fluxVideo: nombre('fluxvideo', 0.5, 0, 1.5),
@@ -319,7 +334,7 @@ export class FondEau {
     const pos = gl.getAttribLocation(prog, 'position');
     gl.enableVertexAttribArray(pos);
     gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
-    for (const n of ['texel', 'cadre', 'derive', 'phase', 'ampleur', 'lumiere', 'flotte', 'eclosion', 'melange', 'vivacite', 'colore', 'gouttes', 'tApparition', 'apparition', 'vie', 'aspectImage', 'papier'])
+    for (const n of ['texel', 'cadre', 'derive', 'phase', 'ampleur', 'lumiere', 'flotte', 'eclosion', 'melange', 'vivacite', 'colore', 'laine', 'gouttes', 'tApparition', 'apparition', 'vie', 'aspectImage', 'papier'])
       this.u[n] = gl.getUniformLocation(prog, n);
     canvas.addEventListener('webglcontextlost', () => {
       this.pret = false;
@@ -346,6 +361,7 @@ export class FondEau {
       g.uniform1f(this.u.melange!, this.reglages.melange);
       g.uniform1f(this.u.vivacite!, this.reglages.vivacite);
       g.uniform1f(this.u.colore!, this.reglages.colore);
+      g.uniform1f(this.u.laine!, this.reglages.laine);
       g.uniform1f(this.u.apparition!, 1);
       g.uniform1f(this.u.vie!, 1);
       g.uniform2f(this.u.aspectImage!, largeur / hauteur, 1);

@@ -59,6 +59,8 @@ interface Bubble {
   breathSpeed: number;
   alpha: number;
   sprite: HTMLCanvasElement | null;
+  /** le banc de la bulle (essai `?bancs=1`) */
+  foyer?: number;
 }
 
 interface Cam {
@@ -89,6 +91,8 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
  * peinte. Le dessin de la bulle ne change pas. `?eclat=0` les montre telles quelles, pour comparer.
  */
 const ECLAT = typeof window === 'undefined' || new URLSearchParams(window.location.search).get('eclat') !== '0';
+/** Essai du 30 octobre, `?bancs=1` : des bancs lâches portés par un courant commun, pour que le feutre respire entre eux. */
+const BANCS = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('bancs') === '1';
 function embellir(sprite: HTMLCanvasElement): HTMLCanvasElement {
   if (!ECLAT) return sprite;
   const c = document.createElement('canvas');
@@ -156,6 +160,8 @@ export class Constellation {
   spritesAllowed = true;
   /** Zones calmes à l'écran (logo…) : les bulles s'y effacent doucement. */
   private calmZones: { x: number; y: number; w: number; h: number }[] = [];
+  private foyers: { x: number; y: number; ph: number }[] = [];
+  private rayonBanc = 0;
 
   constructor(private canvas: HTMLCanvasElement, presences: Presence[]) {
     const ctx = canvas.getContext('2d');
@@ -215,11 +221,28 @@ export class Constellation {
       };
       return b;
     });
+    if (BANCS) this.formerBancs(r, keep);
     this.byId = new Map(this.bubbles.map((b) => [b.p.id, b]));
     this.spriteQueue = this.visiblesDabord(this.bubbles);
     this.cell = this.D * 2.8;
     this.cols = Math.max(1, Math.floor(this.worldW / this.cell));
     this.rows = Math.max(1, Math.floor(this.worldH / this.cell));
+  }
+
+  /** Neuf foyers semés au nombre d'or ; chaque nouvelle bulle naît autour du sien, en nuage lâche. */
+  private formerBancs(r: () => number, keep: Map<string, Bubble>): void {
+    const nb = 9;
+    this.foyers = Array.from({ length: nb }, (_, i) => ({ x: ((i * 0.618034) % 1) * this.worldW, y: ((i * 0.381966 + 0.13) % 1) * this.worldH, ph: i * 2.4 }));
+    this.rayonBanc = Math.min(this.worldW, this.worldH) * 0.2;
+    for (const b of this.bubbles) {
+      if (keep.has(b.p.id)) continue;
+      b.foyer = hashString(b.p.id) % nb;
+      const f = this.foyers[b.foyer]!;
+      const a = r() * TAU;
+      const d = Math.sqrt(-2 * Math.log(Math.max(1e-4, r()))) * this.rayonBanc;
+      b.x = (f.x + Math.cos(a) * d + this.worldW) % this.worldW;
+      b.y = (f.y + Math.sin(a) * d + this.worldH) % this.worldH;
+    }
   }
 
   /**
@@ -664,6 +687,14 @@ export class Constellation {
 
       // 1. errance : une courbure qui change sans cesse, jamais périodique
       let turn = drift(t * 0.11 + b.sa) * 0.95;
+      if (b.foyer !== undefined) {
+        // le banc rappelle doucement ses bulles égarées ; son centre dérive, lui aussi
+        const f = this.foyers[b.foyer]!;
+        const ddx = this.wrapD(f.x + Math.sin(t * 0.021 + f.ph) * this.worldW * 0.09 - b.x, this.worldW);
+        const ddy = this.wrapD(f.y + Math.cos(t * 0.017 + f.ph * 1.3) * this.worldH * 0.09 - b.y, this.worldH);
+        const rappel = Math.min(1, Math.max(0, (Math.hypot(ddx, ddy) - this.rayonBanc * 0.9) / (this.rayonBanc * 1.2)));
+        turn += angleDiff(Math.atan2(ddy, ddx), b.th) * 0.55 * rappel;
+      }
       // 2. intentions : régulièrement, la bulle « décide » d'aller ailleurs
       b.prefTimer -= dt;
       if (b.prefTimer < 0) {
@@ -698,8 +729,10 @@ export class Constellation {
             ay += (dy / d) * wgt;
             crowd += wgt;
             // superposés presque exactement : on se sépare, très lentement
-            if (d < this.D * 0.3) {
-              const push = (this.D * 0.3 - d) * 0.3 * dt;
+            // (dans un banc, plus tôt et plus franchement : serrées, elles se chevaucheraient plus qu'aujourd'hui)
+            const ecart = this.D * (BANCS ? 1.25 : 0.3);
+            if (d < ecart) {
+              const push = (ecart - d) * (BANCS ? 1.3 : 0.3) * dt;
               b.x += (dx / d) * push;
               b.y += (dy / d) * push;
             }
@@ -719,6 +752,14 @@ export class Constellation {
       b.v += (target - b.v) * Math.min(1, dt * 0.6);
 
       const sp = b.v * b.slow * this.modeSpeed;
+      if (BANCS) {
+        // un courant commun, large et lent, emporte les bancs
+        const cx = b.x * 0.0016;
+        const cy = b.y * 0.0016;
+        const ct = t * 0.018;
+        b.x += (Math.sin(cy * 1.7 + ct) + 0.5 * Math.sin(cy * 3.1 - ct * 0.6 + 1.3)) * 7 * b.slow * this.modeSpeed * dt;
+        b.y += (Math.sin(cx * 1.5 - ct * 0.8 + 2.1) + 0.5 * Math.sin(cx * 2.9 + ct * 0.5)) * 7 * b.slow * this.modeSpeed * dt;
+      }
       b.x += Math.cos(b.th) * sp * dt;
       b.y += Math.sin(b.th) * sp * dt;
       b.x = ((b.x % this.worldW) + this.worldW) % this.worldW;
