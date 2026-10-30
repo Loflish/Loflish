@@ -14,6 +14,7 @@ const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin
 const AtelierBulles = import.meta.env.DEV ? lazy(() => import('./pages/AtelierBulles')) : null;
 const CoupeBulles = import.meta.env.DEV ? lazy(() => import('./pages/CoupeBulles')) : null;
 const AtelierMelange = import.meta.env.DEV ? lazy(() => import('./pages/AtelierMelange')) : null;
+const AtelierComparer = import.meta.env.DEV ? lazy(() => import('./pages/AtelierComparer')) : null;
 
 export function App() {
   const location = useLocation();
@@ -72,6 +73,16 @@ export function App() {
               element={
                 <Suspense fallback={null}>
                   <AtelierMelange />
+                </Suspense>
+              }
+            />
+          )}
+          {AtelierComparer && (
+            <Route
+              path="/atelier/comparer"
+              element={
+                <Suspense fallback={null}>
+                  <AtelierComparer />
                 </Suspense>
               }
             />

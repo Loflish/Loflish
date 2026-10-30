@@ -242,6 +242,19 @@ export function poserMatiere(n: number, image: HTMLImageElement | HTMLCanvasElem
   taches.set(n, image);
 }
 
+/** Une matière d'un atelier, lue dans son fichier, au numéro choisi. */
+export function chargerMatiere(n: number, src: string): Promise<void> {
+  return new Promise((fini) => {
+    const image = new Image();
+    image.onload = () => {
+      poserMatiere(n, image);
+      fini();
+    };
+    image.onerror = () => fini();
+    image.src = src;
+  });
+}
+
 /** Sans choix, la matière d'une personne est tirée de son identifiant : au hasard, mais fixe. */
 export function matiereFor(seed: number): number {
   // l'aquarelle cousue (0) fait partie du tirage, comme chacune des taches

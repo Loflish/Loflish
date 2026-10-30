@@ -22,7 +22,9 @@ S = 512
 
 
 def contour(tache):
-    alpha = Image.open(HD / 'taches' / f'tache-{tache:02d}.webp').convert('RGBA').getchannel('A')
+    # les six taches remplacées et validées sont en PNG, leur ancien WebP n'est plus affiché (matieresSansPerte, src/lib/hd.ts)
+    png = HD / 'taches' / f'tache-{tache:02d}.png'
+    alpha = Image.open(png if png.exists() else png.with_suffix('.webp')).convert('RGBA').getchannel('A')
     a = np.asarray(alpha.resize((S, S), Image.LANCZOS)).astype(float) / 255
     return np.clip(ndi.gaussian_filter(a, 3) * 5, 0, 1)
 

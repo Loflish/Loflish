@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BubbleImage } from '../components/Chrome';
-import { loadMatieres, loadPalettes, numeroDansPalette, PALETTES, poserMatiere, tacheFor } from '../lib/hd';
+import { chargerMatiere, loadMatieres, loadPalettes, numeroDansPalette, PALETTES, poserMatiere, tacheFor } from '../lib/hd';
 import { GRIS_PALETTE } from '../lib/palette';
 import { NOMS_B, NOMS_C } from '../lib/palettesNoms';
 import { Page } from './Pages';
@@ -33,18 +33,6 @@ interface Detail {
   n: number;
   fr: string;
   famille: string;
-}
-
-function chargerDetail(d: Detail): Promise<void> {
-  return new Promise((fini) => {
-    const image = new Image();
-    image.onload = () => {
-      poserMatiere(PLANCHE_2 + d.n, image);
-      fini();
-    };
-    image.onerror = () => fini();
-    image.src = `/hd/taches-melange/melange-${String(d.n).padStart(3, '0')}.webp`;
-  });
 }
 
 function toile(): [HTMLCanvasElement, CanvasRenderingContext2D] {
@@ -81,7 +69,7 @@ export default function AtelierMelange() {
   useEffect(() => {
     void (async () => {
       const liste = (await fetch('/hd/taches-melange/index.json').then((r) => r.json()).catch(() => [])) as Detail[];
-      await Promise.all(liste.map(chargerDetail));
+      await Promise.all(liste.map((d) => chargerMatiere(PLANCHE_2 + d.n, `/hd/taches-melange/melange-${String(d.n).padStart(3, '0')}.webp`)));
       setDetails(liste);
       const f = (await (await fetch('/__coupe-bulles')).json()) as { finale?: number[] };
       const gardees = f.finale ?? [];

@@ -54,7 +54,7 @@ function sansEssais(): Plugin {
     name: 'sans-essais',
     apply: 'build',
     closeBundle() {
-      ['taches-vie', 'taches-da', 'taches-melange', 'palerme'].forEach(retirer);
+      ['taches-vie', 'taches-da', 'taches-melange', 'taches-claude', 'palerme'].forEach(retirer);
       fs.readdirSync(hd).filter((f) => f.startsWith('fond-explorer-')).forEach(retirer);
       fs.readdirSync(path.join(hd, 'essais')).filter((f) => !f.startsWith('fond-feutre-')).forEach((f) => retirer(path.join('essais', f)));
     },

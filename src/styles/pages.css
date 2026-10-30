@@ -1602,6 +1602,60 @@
   font-size: var(--t-xl);
   font-weight: 400;
 }
+.comparer-barre {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding: 0.75rem 0;
+  background: var(--papier-dense);
+}
+.comparer-tailles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+.comparer-barre .bouton[aria-pressed='false'] {
+  background: transparent;
+  color: var(--encre);
+  box-shadow: inset 0 0 0 1px var(--filet-fort);
+}
+.comparer-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--taille), 1fr));
+  gap: 1rem 0.75rem;
+  justify-items: center;
+  max-width: calc(10 * var(--taille) + 9 * 0.75rem);
+  margin: 1.5rem auto 0;
+  padding: 0;
+  list-style: none;
+}
+.comparer-grille[hidden] {
+  display: none;
+}
+.comparer-grille li {
+  width: var(--taille);
+}
+/* une seule peinture à 190 px, réduite ici : changer de taille ne repeint pas les 300 bulles */
+.comparer-grille .bubble-image {
+  display: block;
+  width: var(--taille) !important;
+  height: var(--taille) !important;
+}
+.comparer-nom {
+  display: none;
+  margin-top: 0.5rem;
+  color: var(--encre-2);
+  font-size: var(--t-xs);
+  text-align: center;
+}
+.comparer-noms .comparer-nom {
+  display: block;
+}
 .coupe-aucune {
   display: flex;
   flex-wrap: wrap;
