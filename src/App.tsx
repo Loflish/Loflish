@@ -13,6 +13,7 @@ const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin
 // l'atelier des bulles : un outil de travail local, absent du site publié
 const AtelierBulles = import.meta.env.DEV ? lazy(() => import('./pages/AtelierBulles')) : null;
 const CoupeBulles = import.meta.env.DEV ? lazy(() => import('./pages/CoupeBulles')) : null;
+const AtelierMelange = import.meta.env.DEV ? lazy(() => import('./pages/AtelierMelange')) : null;
 
 export function App() {
   const location = useLocation();
@@ -61,6 +62,16 @@ export function App() {
               element={
                 <Suspense fallback={null}>
                   <CoupeBulles />
+                </Suspense>
+              }
+            />
+          )}
+          {AtelierMelange && (
+            <Route
+              path="/atelier/melange"
+              element={
+                <Suspense fallback={null}>
+                  <AtelierMelange />
                 </Suspense>
               }
             />

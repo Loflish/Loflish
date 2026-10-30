@@ -237,6 +237,11 @@ export function loadPalettes(): Promise<void> {
   return Promise.all([une(PALETTES.B), une(PALETTES.C)]).then(() => undefined);
 }
 
+/** Une matière fabriquée à la volée (l'atelier du mélange), au numéro choisi. */
+export function poserMatiere(n: number, image: HTMLCanvasElement): void {
+  taches.set(n, image);
+}
+
 /** Sans choix, la matière d'une personne est tirée de son identifiant : au hasard, mais fixe. */
 export function matiereFor(seed: number): number {
   // l'aquarelle cousue (0) fait partie du tirage, comme chacune des taches

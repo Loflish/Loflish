@@ -1573,6 +1573,29 @@
   font-size: var(--t-xs);
   color: var(--encre-3);
 }
+.melange-ligne {
+  margin-top: 2.5rem;
+}
+.melange-nom {
+  font-size: var(--t-sm);
+  font-weight: 500;
+}
+.melange-bulles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+.melange-bulles figure {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+.melange-bulles figcaption {
+  color: var(--encre-2);
+  font-size: var(--t-xs);
+}
 .coupe-aucune {
   display: flex;
   flex-wrap: wrap;
