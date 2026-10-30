@@ -8,12 +8,13 @@ import { Page } from './Pages';
 /**
  * L'atelier du mélange (local seulement, jamais publié) : un détail de vie glissé dans une tache d'aquarelle, à comparer
  * avec la tache seule, à la taille de la constellation et de près. Les matières viennent des choix de la coupe des bulles.
- * shortcut: le détail est superposé à la tache, pas repeint avec elle ; passer par un modèle d'image si l'idée plaît.
+ * Planche 1 : le détail est superposé à la tache. Planche 2 : Flow repeint la tache avec son détail (design/hd/taches_melange.py).
  */
 
 const TAILLE = 512;
 /** numéros des matières fabriquées ici, loin du catalogue */
 const PREMIERE = 2000;
+const PLANCHE_2 = 3000;
 const FORCES = [
   { nom: 'discret', force: 0.6 },
   { nom: 'visible de près', force: 1 },
@@ -26,6 +27,24 @@ interface Essai {
   nom: string;
   couleur: string;
   melanges: number[];
+}
+
+interface Detail {
+  n: number;
+  fr: string;
+  famille: string;
+}
+
+function chargerDetail(d: Detail): Promise<void> {
+  return new Promise((fini) => {
+    const image = new Image();
+    image.onload = () => {
+      poserMatiere(PLANCHE_2 + d.n, image);
+      fini();
+    };
+    image.onerror = () => fini();
+    image.src = `/hd/taches-melange/melange-${String(d.n).padStart(3, '0')}.webp`;
+  });
 }
 
 function toile(): [HTMLCanvasElement, CanvasRenderingContext2D] {
@@ -57,9 +76,13 @@ function nomDe(n: number): string {
 
 export default function AtelierMelange() {
   const [essais, setEssais] = useState<Essai[]>([]);
+  const [details, setDetails] = useState<Detail[]>([]);
 
   useEffect(() => {
     void (async () => {
+      const liste = (await fetch('/hd/taches-melange/index.json').then((r) => r.json()).catch(() => [])) as Detail[];
+      await Promise.all(liste.map(chargerDetail));
+      setDetails(liste);
       const f = (await (await fetch('/__coupe-bulles')).json()) as { finale?: number[] };
       const gardees = f.finale ?? [];
       const taches = gardees.filter((n) => n > 0 && n <= PALETTES.A.fin);
@@ -86,6 +109,27 @@ export default function AtelierMelange() {
   return (
     <Page className="melange" titre="L’atelier du mélange">
       <h1 className="page-titre">L’atelier du mélange</h1>
+      {details.length > 0 && (
+        <>
+          <h2 className="melange-planche">Planche 2 : {details.length} détails peints dans tes taches</h2>
+          <p className="lead">Chaque tache a été repeinte avec son détail. La petite bulle montre la taille dans la constellation.</p>
+          {[...new Set(details.map((d) => d.famille))].map((famille) => (
+            <section key={famille} className="melange-ligne" aria-label={famille}>
+              <h3 className="melange-nom">{famille}</h3>
+              <div className="melange-bulles">
+                {details.filter((d) => d.famille === famille).map((d) => (
+                  <figure key={d.n}>
+                    <BubbleImage id={`detail-${d.n}`} couleur={GRIS_PALETTE[d.n % GRIS_PALETTE.length]!.id} matiere={PLANCHE_2 + d.n} size={230} />
+                    <BubbleImage id={`detail-${d.n}`} couleur={GRIS_PALETTE[d.n % GRIS_PALETTE.length]!.id} matiere={PLANCHE_2 + d.n} size={48} />
+                    <figcaption>{d.fr}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            </section>
+          ))}
+          <h2 className="melange-planche">Planche 1 : le détail posé sur la tache</h2>
+        </>
+      )}
       <p className="lead">À gauche, ta tache seule. À droite, la même tache avec un détail caché dedans. La petite bulle montre la taille dans la constellation.</p>
       {essais.map((e) => (
         <section key={e.detail} className="melange-ligne" aria-label={e.nom}>

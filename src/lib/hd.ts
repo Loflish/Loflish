@@ -238,7 +238,7 @@ export function loadPalettes(): Promise<void> {
 }
 
 /** Une matière fabriquée à la volée (l'atelier du mélange), au numéro choisi. */
-export function poserMatiere(n: number, image: HTMLCanvasElement): void {
+export function poserMatiere(n: number, image: HTMLImageElement | HTMLCanvasElement): void {
   taches.set(n, image);
 }
 

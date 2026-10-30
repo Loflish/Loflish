@@ -1577,7 +1577,7 @@
   margin-top: 2.5rem;
 }
 .melange-nom {
-  font-size: var(--t-sm);
+  font-size: var(--t-m);
   font-weight: 500;
 }
 .melange-bulles {
@@ -1595,6 +1595,12 @@
 .melange-bulles figcaption {
   color: var(--encre-2);
   font-size: var(--t-xs);
+  text-align: center;
+}
+.melange-planche {
+  margin-top: 3rem;
+  font-size: var(--t-xl);
+  font-weight: 400;
 }
 .coupe-aucune {
   display: flex;
