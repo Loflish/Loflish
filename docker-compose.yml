@@ -58,8 +58,10 @@ services:
       - '443:443'
     environment:
       DOMAINE: ${DOMAINE}
+      ACCES_NOM: ${ACCES_NOM:-}
+      ACCES_EMPREINTE: ${ACCES_EMPREINTE:-}
     volumes:
-      - ./deploiement/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploiement/${CADDYFILE:-Caddyfile}:/etc/caddy/Caddyfile:ro
       - caddy_donnees:/data
       - caddy_config:/config
 

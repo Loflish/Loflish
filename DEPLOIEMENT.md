@@ -81,6 +81,22 @@ Les prix changent souvent : compare sur les sites des fournisseurs au moment de 
    (`docker compose logs musee | grep "code de connexion"`) tant que `SMTP_URL` est vide.
 5. **Vérifier** : `https://ton-domaine/api/sante` doit répondre `{"ok":true}`.
 
+### Une démo privée
+
+Pour montrer le musée à quelques proches avant de l'ouvrir, tout le site peut passer derrière un
+nom et un mot de passe partagés : le navigateur les demande avant d'afficher quoi que ce soit.
+
+1. Crée l'empreinte du mot de passe :
+   `docker run --rm caddy:2-alpine caddy hash-password --plaintext 'le-mot-de-passe'`
+2. Dans `.env`, ajoute `CADDYFILE=Caddyfile.prive`, `ACCES_NOM=famille` et
+   `ACCES_EMPREINTE='…'` (avec les guillemets simples).
+3. Contrôle, puis applique :
+   `docker compose run --rm web caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile`,
+   puis `docker compose up -d web`.
+
+Pour ouvrir le musée, retire ces trois lignes et relance `docker compose up -d web`.
+Tant que le mot de passe est actif, les liens partagés n'affichent pas d'aperçu dans les messageries.
+
 ### Mettre à jour le musée
 
 ```bash
