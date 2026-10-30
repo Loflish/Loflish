@@ -1,18 +1,11 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { BubbleImage } from '../components/Chrome';
-import { chargerMatiere } from '../lib/hd';
 import { GRIS_PALETTE } from '../lib/palette';
 import { Page } from './Pages';
+import { chargerPlanches, CLAUDE, MELANGE } from './planches';
 
-/**
- * Comparer les planches (local seulement, jamais publié) : mêmes places, mêmes couleurs, même couture, seule la matière change.
- * public/hd/taches-melange vient de design/hd/taches_melange.py ; public/hd/taches-claude, ce sont les 100 bulles de
- * research_notes/Goût constellation/bulles-claude, réduites à 512 px.
- */
+/** Comparer les planches (local seulement, jamais publié) : mêmes places, mêmes couleurs, même couture, seule la matière change. */
 
-/** numéros des matières fabriquées ici, loin du catalogue */
-const MELANGE = 3000;
-const CLAUDE = 4000;
 const TAILLES = [
   { nom: 'Dans la constellation', px: 42 },
   { nom: 'Zoom', px: 92 },
@@ -36,14 +29,7 @@ export default function AtelierComparer() {
 
   useEffect(() => {
     void (async () => {
-      const [melange, claude] = (await Promise.all([
-        fetch('/hd/taches-melange/index.json').then((r) => r.json()),
-        fetch('/hd/taches-claude/index.json').then((r) => r.json()),
-      ])) as [{ n: number; tache: number; fr: string }[], { n: number; nom: string; f: string }[]];
-      await Promise.all([
-        ...melange.map((d) => chargerMatiere(MELANGE + d.n, `/hd/taches-melange/melange-${String(d.n).padStart(3, '0')}.webp`)),
-        ...claude.map((d) => chargerMatiere(CLAUDE + d.n, `/hd/taches-claude/${d.f}`)),
-      ]);
+      const { melange, claude } = await chargerPlanches();
       setPlanches([
         { nom: 'Tes originaux', cases: melange.map((d) => ({ matiere: d.tache, nom: `Tache ${d.tache}` })) },
         { nom: 'Mes détails dans tes taches', cases: melange.map((d) => ({ matiere: MELANGE + d.n, nom: d.fr })) },

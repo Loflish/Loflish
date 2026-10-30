@@ -1656,6 +1656,79 @@
 .comparer-noms .comparer-nom {
   display: block;
 }
+.tri-compte {
+  margin-top: 0.5rem;
+  font-size: var(--t-l);
+}
+.tri-planches {
+  margin-top: 0.25rem;
+  color: var(--encre-2);
+  font-size: var(--t-s);
+}
+.tri-pile {
+  position: relative;
+  width: min(100%, 420px);
+  height: calc(var(--taille) + 190px);
+  margin: 1.5rem auto 0;
+}
+.tri-carte {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.6rem;
+  padding: 1.25rem;
+  background: var(--papier-dense);
+  background-image: var(--papier-chiffon);
+  background-size: 520px 520px;
+  border: 1px solid var(--filet);
+  border-radius: var(--rayon);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition: transform 240ms var(--doux);
+}
+.tri-carte:active {
+  cursor: grabbing;
+}
+.tri-dessous {
+  transform: translateY(10px) scale(0.96);
+  pointer-events: none;
+}
+.tri-cachee {
+  visibility: hidden;
+}
+.tri-tampon {
+  position: absolute;
+  top: 1rem;
+  z-index: 1;
+  padding: 0.3em 0.7em;
+  background: var(--papier-dense);
+  border: 2px solid var(--encre);
+  border-radius: var(--rayon);
+  font-weight: 600;
+  opacity: 0;
+}
+.tri-tampon-garde {
+  left: 1rem;
+  transform: rotate(-8deg);
+}
+.tri-tampon-retire {
+  right: 1rem;
+  transform: rotate(8deg);
+}
+.tri-nom {
+  color: var(--encre-2);
+  font-size: var(--t-s);
+  text-align: center;
+}
+.tri-boutons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
 .coupe-aucune {
   display: flex;
   flex-wrap: wrap;

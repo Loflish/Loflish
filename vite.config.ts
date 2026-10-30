@@ -14,6 +14,7 @@ function atelierBulles(): Plugin {
   const fichiers: Record<string, string> = {
     '/__atelier-bulles': path.join(dossier, 'atelier-bulles.json'),
     '/__coupe-bulles': path.join(dossier, 'coupe-bulles.json'),
+    '/__tri-bulles': path.join(dossier, 'tri-bulles.json'),
   };
   return {
     name: 'atelier-bulles',

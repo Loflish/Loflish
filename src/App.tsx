@@ -15,6 +15,7 @@ const AtelierBulles = import.meta.env.DEV ? lazy(() => import('./pages/AtelierBu
 const CoupeBulles = import.meta.env.DEV ? lazy(() => import('./pages/CoupeBulles')) : null;
 const AtelierMelange = import.meta.env.DEV ? lazy(() => import('./pages/AtelierMelange')) : null;
 const AtelierComparer = import.meta.env.DEV ? lazy(() => import('./pages/AtelierComparer')) : null;
+const AtelierTri = import.meta.env.DEV ? lazy(() => import('./pages/AtelierTri')) : null;
 
 export function App() {
   const location = useLocation();
@@ -83,6 +84,16 @@ export function App() {
               element={
                 <Suspense fallback={null}>
                   <AtelierComparer />
+                </Suspense>
+              }
+            />
+          )}
+          {AtelierTri && (
+            <Route
+              path="/atelier/tri"
+              element={
+                <Suspense fallback={null}>
+                  <AtelierTri />
                 </Suspense>
               }
             />
