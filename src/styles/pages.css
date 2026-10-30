@@ -1573,6 +1573,15 @@
   font-size: var(--t-xs);
   color: var(--encre-3);
 }
+.coupe-aucune {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  color: var(--encre-2);
+  font-size: var(--t-xs);
+}
 .coupe-actions {
   display: flex;
   flex-wrap: wrap;

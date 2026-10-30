@@ -9,12 +9,13 @@ import { Page } from './Pages';
 
 /**
  * La coupe des bulles (local seulement, jamais publiée) : deux bulles qui se ressemblent, Tom garde l'une, l'autre
- * part, jusqu'à ce qu'il en reste 100 (src/data/coupeBulles.ts). Chaque choix est gardé dans ce navigateur et dans
- * design/coupe-bulles.json, que Claude relit ensuite.
+ * part, jusqu'à ce qu'il en reste 100 (src/data/coupeBulles.ts). S'il n'aime aucune des deux, les deux partent : il en
+ * restera un peu moins. Chaque choix est gardé dans ce navigateur et dans design/coupe-bulles.json, que Claude relit ensuite.
  */
 
-type Choix = Record<string, number>; // duel → matière gardée
+type Choix = Record<string, number>; // duel → matière gardée, ou AUCUNE
 const CLE = 'nmm:coupe-bulles';
+const AUCUNE = -1;
 
 interface Duel {
   id: string;
@@ -38,8 +39,10 @@ function paireDe(d: Duel, choix: Choix): [number, number] | null {
 /** un choix ne compte que s'il désigne l'une des deux bulles du duel tel qu'il se présente */
 const choisi = (d: Duel, choix: Choix) => {
   const p = paireDe(d, choix);
+  // au 2e tour, sans adversaire, la bulle restante passe sans duel
+  if (p?.includes(AUCUNE)) return p[0] === AUCUNE ? p[1] : p[0];
   const v = choix[d.id];
-  return p && v !== undefined && p.includes(v) ? v : undefined;
+  return p && v !== undefined && (v === AUCUNE || p.includes(v)) ? v : undefined;
 };
 
 function finale(choix: Choix): number[] | null {
@@ -50,8 +53,8 @@ function finale(choix: Choix): number[] | null {
     ...TOUR1.map((_, k) => k)
       .filter((k) => !auTour2.has(k))
       .map((k) => choix[`t1-${k}`]!),
-    ...TOUR2.map((_, k) => choix[`t2-${k}`]!),
-  ];
+    ...DUELS.filter((d) => d.tour === 2).map((d) => choisi(d, choix)!),
+  ].filter((m) => m !== AUCUNE);
 }
 
 function nom(n: number): string {
@@ -118,7 +121,7 @@ export default function CoupeBulles() {
     [duel],
   );
   const annuler = useCallback(() => {
-    const dernier = [...DUELS].reverse().find((d) => choisi(d, choix) !== undefined);
+    const dernier = [...DUELS].reverse().find((d) => choix[d.id] !== undefined && choisi(d, choix) !== undefined);
     if (!dernier) return;
     setChoix((o) => {
       const n = { ...o };
@@ -138,6 +141,7 @@ export default function CoupeBulles() {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === 'ArrowLeft' && paire) garder(paire[0]);
       else if (e.key === 'ArrowRight' && paire) garder(paire[1]);
+      else if (e.key === 'ArrowDown' && paire) garder(AUCUNE);
       else if (e.key === 'Backspace') annuler();
       else return;
       e.preventDefault();
@@ -147,11 +151,12 @@ export default function CoupeBulles() {
   }, [paire, garder, annuler]);
 
   const parPalette = cent && (['A', 'B', 'C'] as const).map((p) => `${cent.filter((n) => numeroDansPalette(n).palette === p).length} ${p}`).join(' · ');
+  const refus = Object.values(choix).filter((v) => v === AUCUNE).length;
 
   return (
     <Page className="coupe" titre="La coupe des bulles">
       <h1 className="page-titre">La coupe des bulles</h1>
-      <p className="lead">Deux bulles qui se ressemblent : garde celle que tu préfères, l’autre s’en va. À la fin, il en restera 100.</p>
+      <p className="lead">Deux bulles qui se ressemblent : garde celle que tu préfères, l’autre s’en va. À la fin, il en restera 100 au plus.</p>
 
       {duel && paire && (
         <>
@@ -168,12 +173,18 @@ export default function CoupeBulles() {
               </button>
             ))}
           </div>
+          <p className="coupe-aucune">
+            <button className="bouton" onClick={() => garder(AUCUNE)}>
+              Je n’aime aucune des deux
+            </button>
+            {refus > 0 && <span>{refus === 1 ? '1 refus noté' : `${refus} refus notés`}</span>}
+          </p>
         </>
       )}
 
       {fini && cent && (
         <>
-          <h2 className="intertitre">Tes 100 bulles</h2>
+          <h2 className="intertitre">Tes {cent.length} bulles</h2>
           <p className="coupe-etape">
             {parPalette}. C’est enregistré : dis-moi « c’est fait ».
           </p>
@@ -193,7 +204,7 @@ export default function CoupeBulles() {
         <button className="lien-discret" onClick={annuler} disabled={rang === 0}>
           Annuler le dernier choix
         </button>
-        <span>au clavier : ← ou → pour garder, retour arrière pour annuler</span>
+        <span>au clavier : ← ou → pour garder, ↓ pour aucune des deux, retour arrière pour annuler</span>
         <Link className="lien-discret" to="/atelier/bulles">
           L’atelier des bulles
         </Link>
