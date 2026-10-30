@@ -251,7 +251,7 @@ jamais restaurée n'est qu'un espoir.
   les sessions, l'identifiant d'appareil de l'œuvre commune et l'adresse IP de qui écrit (pour
   pouvoir bannir) ne sont gardés que sous forme d'empreinte.
 - **Écrire au fondateur** : partout sur le site, la même adresse (`VITE_CONTACT` au moment de
-  construire le site, `nosmots@memoriaux.org` par défaut) pour consulter, modifier ou supprimer
+  construire le site, `contact@nosmotsmemoriaux.org` par défaut) pour consulter, modifier ou supprimer
   ses données.
 - À compléter par toi : les mentions légales et la politique de confidentialité (page Juridique),
   avec le nom de l'hébergeur, du service d'e-mail et, s'il y en a un, du stockage S3.
