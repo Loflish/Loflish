@@ -61,6 +61,9 @@ interface Bubble {
   sprite: HTMLCanvasElement | null;
   /** le banc de la bulle (essai `?bancs=1`) */
   foyer?: number;
+  /** la compression au contact (essai `?toucher=1`) : force 0 à 1, et l'angle de la rencontre */
+  sq?: number;
+  sqA?: number;
 }
 
 interface Cam {
@@ -95,6 +98,11 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
 const ECLAT = typeof window === 'undefined' || new URLSearchParams(window.location.search).get('eclat') !== '0';
 /** Essai du 30 octobre, `?bancs=1` : des bancs lâches portés par un courant commun, pour que le feutre respire entre eux. */
 const BANCS = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('bancs') === '1';
+/**
+ * Essai du 3 novembre, `?toucher=1` (cahier §54.4 et §54.6) : au contact, une bulle se comprime à peine dans le sens
+ * de la rencontre puis reprend sa forme ; et les bulles proches du curseur s'écartent d'un rien, « presque douteux ».
+ */
+const TOUCHER = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('toucher') === '1';
 function embellir(sprite: HTMLCanvasElement): HTMLCanvasElement {
   if (!ECLAT) return sprite;
   const c = document.createElement('canvas');
@@ -167,7 +175,10 @@ export class Constellation {
   /** le dernier clic sur une bulle : deux clics rapprochés sur la même ouvrent sa mémoire */
   private dernierClic: { id: string; t: number } | null = null;
 
-  constructor(private canvas: HTMLCanvasElement, presences: Presence[]) {
+  constructor(
+    private canvas: HTMLCanvasElement,
+    presences: Presence[],
+  ) {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D indisponible');
     this.ctx = ctx;
@@ -178,7 +189,16 @@ export class Constellation {
 
   // ————————————————————————————————— population
 
+  /** la liste et la classe d'écran (téléphone, moyen, grand) avec lesquelles le monde a été dimensionné */
+  private liste: Presence[] = [];
+  private classe = -1;
+  private static classeEcran(): number {
+    return window.innerWidth < 700 ? 0 : window.innerWidth < 1100 ? 1 : 2;
+  }
+
   setPresences(list: Presence[]): void {
+    this.liste = list;
+    this.classe = Constellation.classeEcran();
     const small = window.innerWidth < 700;
     const medium = window.innerWidth < 1100;
     // Sur mobile, moins de bulles simultanées : espace, lisibilité, performances.
@@ -366,10 +386,15 @@ export class Constellation {
     this.canvas.height = Math.round(this.h * this.dpr);
     this.canvas.style.width = `${this.w}px`;
     this.canvas.style.height = `${this.h}px`;
-    if (this.bubbles.length) {
-      this.minZoom = Math.max(this.w / (this.worldW * 0.92), this.h / (this.worldH * 0.92));
-      this.cam.zoom = Math.max(this.cam.zoom, this.minZoom);
+    if (!this.bubbles.length) return;
+    // l'écran change de classe (fenêtre agrandie, téléphone tourné, écran partagé) : le monde est redimensionné,
+    // chaque bulle garde sa place ; sinon, dans un monde taillé pour un téléphone, un grand écran forcerait un zoom énorme
+    if (this.classe !== Constellation.classeEcran()) {
+      this.setPresences(this.liste);
+      return;
     }
+    this.minZoom = Math.max(this.w / (this.worldW * 0.92), this.h / (this.worldH * 0.92));
+    this.cam.zoom = Math.max(this.cam.zoom, this.minZoom);
   }
 
   private animateCam(to: Partial<Cam>, dur: number, done?: () => void): void {
@@ -762,6 +787,14 @@ export class Constellation {
             ax += (dx / d) * wgt;
             ay += (dy / d) * wgt;
             crowd += wgt;
+            // au contact, la bulle se comprime à peine dans le sens de la rencontre (essai `?toucher=1`)
+            if (TOUCHER && d < this.D * 1.02) {
+              const force = (1 - d / (this.D * 1.02)) * 0.6;
+              if (force > (b.sq ?? 0)) {
+                b.sq = force;
+                b.sqA = Math.atan2(dy, dx);
+              }
+            }
             // superposés presque exactement : on se sépare, très lentement
             // (dans un banc, plus tôt et plus franchement : serrées, elles se chevaucheraient plus qu'aujourd'hui)
             const ecart = this.D * (BANCS ? 1.25 : 0.3);
@@ -786,6 +819,24 @@ export class Constellation {
       b.v += (target - b.v) * Math.min(1, dt * 0.6);
 
       const sp = b.v * b.slow * this.modeSpeed;
+      if (TOUCHER) {
+        // la compression se relâche d'elle-même
+        if (b.sq) b.sq *= Math.exp(-dt * 3.5);
+        // les bulles proches du curseur s'écartent d'un rien, comme une nappe qu'on effleure
+        if (this.pointer.inside && !this.drag) {
+          const px = this.cam.x + (this.pointer.x - this.w / 2) / this.cam.zoom;
+          const py = this.cam.y + (this.pointer.y - this.h / 2) / this.cam.zoom;
+          const dx = this.wrapD(b.x - px, this.worldW);
+          const dy = this.wrapD(b.y - py, this.worldH);
+          const d = Math.hypot(dx, dy);
+          const R = this.D * 2.6;
+          if (d > 1 && d < R) {
+            const k = (1 - d / R) ** 2 * 14 * dt;
+            b.x += (dx / d) * k;
+            b.y += (dy / d) * k;
+          }
+        }
+      }
       if (BANCS) {
         // un courant commun, large et lent, emporte les bancs
         const cx = b.x * 0.0016;
@@ -845,7 +896,15 @@ export class Constellation {
         ctx.drawImage(b.sprite, x - size * 0.68, y - size * 0.68, size * 1.36, size * 1.36);
         ctx.globalAlpha = Math.min(1, a);
       }
-      ctx.drawImage(b.sprite, x - size / 2, y - size / 2, size, size);
+      if (TOUCHER && b.sq && b.sq > 0.01) {
+        // comprimée dans le sens de la rencontre, un peu plus large en travers : le volume se garde
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(b.sqA ?? 0);
+        ctx.scale(1 - b.sq * 0.14, 1 + b.sq * 0.09);
+        ctx.drawImage(b.sprite, -size / 2, -size / 2, size, size);
+        ctx.restore();
+      } else ctx.drawImage(b.sprite, x - size / 2, y - size / 2, size, size);
       if (b.p.id === this.focusId) focusDraw = { x, y, r: (this.D * z * b.scale) / 2 + 7 };
       if (this.own.has(b.p.id)) ownDraw.push({ x, y, r: (this.D * z * b.scale) / 2, a });
     }

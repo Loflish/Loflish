@@ -18,6 +18,9 @@ function searchable(t: Trace): string {
   return ' ' + norm(parts.join(' ')).replace(/[^a-z0-9]+/g, ' ');
 }
 
+/** L'année de création, lue dans la date en toutes lettres (« 12 juin 2024 »). */
+const anneeDe = (t: Trace) => /(\d{4})/.exec(t.creeLe)?.[1] ?? '';
+
 /** Chaque caractère ramené à sa base (sans accent, en minuscule), un pour un : les positions restent celles du texte d'origine. */
 const base = (chars: string[]) => chars.map((ch) => ch.normalize('NFD')[0]!.toLowerCase()).join('');
 
@@ -240,17 +243,21 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
   const [type, setType] = useState<'tous' | Trace['type']>('tous');
   const [rubs, setRubs] = useState<RubriqueId[]>([]);
   const [pays, setPays] = useState('');
+  // la période de création (cahier §12.4) : l'année où la trace a rejoint le musée
+  const [annee, setAnnee] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const traces = useMemo(() => source.map((t) => ({ t, text: searchable(t) })), [source]);
+  const traces = useMemo(() => source.map((t) => ({ t, text: searchable(t), annee: anneeDe(t) })), [source]);
   const allPays = useMemo(() => [...new Set(traces.map((x) => x.t.pays).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b, 'fr')), [traces]);
+  const annees = useMemo(() => [...new Set(traces.map((x) => x.annee).filter(Boolean))].sort((a, b) => b.localeCompare(a)), [traces]);
 
-  const active = q.trim() !== '' || type !== 'tous' || rubs.length > 0 || pays !== '';
+  const active = q.trim() !== '' || type !== 'tous' || rubs.length > 0 || pays !== '' || annee !== '';
   const vider = () => {
     setQ('');
     setType('tous');
     setRubs([]);
     setPays('');
+    setAnnee('');
     input.current?.focus();
   };
 
@@ -282,15 +289,17 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
     if (!active) return [];
     const nq = norm(q.trim());
     return traces
-      .filter(({ t, text }) =>
-        (serveur
-          ? serveur.has(t.id) || (rubs.length === 0 && !!nq && text.includes(' ' + nq))
-          : (!nq || text.includes(' ' + nq)) && rubs.every((r) => (t.rubriques[r]?.length ?? 0) > 0)) &&
-        (type === 'tous' || t.type === type) &&
-        (!pays || t.pays === pays),
+      .filter(
+        ({ t, text, annee: a }) =>
+          (serveur
+            ? serveur.has(t.id) || (rubs.length === 0 && !!nq && text.includes(' ' + nq))
+            : (!nq || text.includes(' ' + nq)) && rubs.every((r) => (t.rubriques[r]?.length ?? 0) > 0)) &&
+          (type === 'tous' || t.type === type) &&
+          (!pays || t.pays === pays) &&
+          (!annee || a === annee),
       )
       .map((x) => x.t);
-  }, [traces, q, type, rubs, pays, active, serveur]);
+  }, [traces, q, type, rubs, pays, annee, active, serveur]);
 
   useEffect(() => {
     input.current?.focus();
@@ -375,6 +384,22 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
         </div>
       </fieldset>
 
+      {annees.length > 1 && (
+        <fieldset className="filter filter-annees">
+          <legend>Arrivée dans le musée</legend>
+          <div className="chips">
+            <button className="chip" aria-pressed={annee === ''} onClick={() => setAnnee('')}>
+              Toutes les années
+            </button>
+            {annees.map((a) => (
+              <button key={a} className="chip" aria-pressed={annee === a} onClick={() => setAnnee(annee === a ? '' : a)}>
+                {a}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      )}
+
       <label className="field">
         <span className="field-label">Pays associé</span>
         <select value={pays} onChange={(e) => setPays(e.target.value)}>
@@ -388,7 +413,9 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
       {active && (
         <div className="search-results" aria-live="polite">
           <p className="muted">
-            {results.length === 0 ? 'Aucune présence ne correspond, pour l’instant.' : `${results.length} présence${results.length > 1 ? 's' : ''} correspond${results.length > 1 ? 'ent' : ''}.`}
+            {results.length === 0
+              ? 'Aucune présence ne correspond, pour l’instant.'
+              : `${results.length} présence${results.length > 1 ? 's' : ''} correspond${results.length > 1 ? 'ent' : ''}.`}
           </p>
           <button className="lien-discret petit search-vider" onClick={vider}>
             <Icon name="fermer" size={14} /> Effacer la recherche

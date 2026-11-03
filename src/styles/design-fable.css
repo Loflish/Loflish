@@ -1,0 +1,345 @@
+/*
+ * Design du 3 novembre 2026 (« Fable ») : une seule feuille, chargée en dernier, retirable d'un import.
+ * Elle applique le cahier des charges maître v1.1 là où le site s'en écartait :
+ *   §58.1 « le monde réagit avec douceur ; l'interface répond immédiatement » : une spécification de mouvement ;
+ *   §58.3 « surfaces qui semblent se poser dans le monde » ; §58.4 hover et sélection : couleur-signature en petit accent ;
+ *   §55.6 les quatre réponses : largeur de lecture contrôlée, question discrète, réponse plus présente ;
+ *   §56.7 loader : une petite bulle qui respire ; §59.3 chargement : blocs neutres, pulsation faible ;
+ *   §56.10 micro-ornements autorisés : fil et broderie, papier, trait dessiné.
+ * Aucune couleur dans l'interface (la couleur-signature de la trace seule, en accent), Newsreader seule, rien de brillant.
+ * `?fable=0` rend le site d'avant, pour comparer.
+ */
+
+:root {
+  /* spécification de mouvement : trois durées, deux courbes */
+  --instant: 120ms; /* l'interface répond : survol, pression, bascule */
+  --pose: 420ms; /* une surface se pose : fiche, salle, menu, recherche */
+  --monde: var(--lent); /* le monde respire : fonds, bulles (inchangé) */
+  --sortie: cubic-bezier(0.4, 0, 0.9, 0.6); /* une surface qui part s'efface plus vite qu'elle n'est venue */
+  /* le fil : un point avant, sept points de fil pour quatre de vide */
+  --fil-point: 7px;
+  --fil-vide: 4px;
+}
+
+/* la toute première peinture se montre sans fondu (Backdrop.tsx) : rien à attendre avant de voir le musée */
+.fond-peint.sans-fondu {
+  transition: none;
+}
+
+/* ——— l'interface répond immédiatement */
+html:not(.sans-fable) .lien-discret,
+html:not(.sans-fable) .bouton,
+html:not(.sans-fable) .chip,
+html:not(.sans-fable) .icon-btn,
+html:not(.sans-fable) .dock-item,
+html:not(.sans-fable) .couleur,
+html:not(.sans-fable) .choix-item,
+html:not(.sans-fable) .segmented button {
+  transition-duration: var(--instant);
+}
+/* un bouton se presse comme un cartel de papier : il s'enfonce d'un pixel */
+html:not(.sans-fable) .bouton {
+  transition:
+    background var(--instant) var(--doux),
+    transform var(--instant) var(--doux),
+    box-shadow var(--instant) var(--doux);
+  box-shadow: 0 1px 0 rgba(47, 44, 51, 0.18);
+}
+html:not(.sans-fable) .bouton:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+html:not(.sans-fable) .couleur {
+  transition:
+    border-color var(--instant) var(--doux),
+    transform var(--instant) var(--doux);
+}
+html:not(.sans-fable) .couleur:active {
+  transform: scale(0.94);
+}
+html:not(.sans-fable) .choix-item:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* ——— le fil se coud au survol : une ligne de points avant qui avance de gauche à droite sur le filet */
+html:not(.sans-fable) .lien-entrer {
+  position: relative;
+  transition: color var(--instant) var(--doux);
+}
+html:not(.sans-fable) .lien-entrer::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--encre) 0 var(--fil-point), transparent var(--fil-point) calc(var(--fil-point) + var(--fil-vide)));
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 320ms var(--doux);
+  pointer-events: none;
+}
+html:not(.sans-fable) .lien-entrer:hover::after,
+html:not(.sans-fable) .lien-entrer:focus-visible::after {
+  clip-path: inset(0 0 0 0);
+}
+html:not(.sans-fable) .lien-entrer .icon {
+  transition-duration: 320ms;
+}
+
+/* ——— les surfaces se posent (§58.3) : un déplacement minuscule, une arrivée courte, une sortie plus courte encore */
+html:not(.sans-fable) .apercu {
+  animation: fable-pose var(--pose) var(--doux) both;
+}
+html:not(.sans-fable) .apercu.is-leaving {
+  animation: apercu-out 260ms var(--sortie) forwards;
+}
+html:not(.sans-fable) .menu-panel {
+  animation: menu-in var(--pose) var(--doux) both;
+}
+html:not(.sans-fable) .search-panel,
+html:not(.sans-fable) .salle {
+  animation: fable-glisse var(--pose) var(--doux) both;
+}
+html:not(.sans-fable) .salle-scrim,
+html:not(.sans-fable) .menu-scrim {
+  animation-duration: var(--pose);
+}
+html:not(.sans-fable) .perdre-carte.entre-droite,
+html:not(.sans-fable) .perdre-carte.entre-gauche {
+  animation-duration: 520ms;
+}
+@keyframes fable-pose {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fable-glisse {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* la fiche d'une bulle est posée par le moteur (transform) : son arrivée garde la position, seule l'opacité joue */
+html:not(.sans-fable) .apercu {
+  animation-name: apercu-in;
+}
+
+/* ——— hover et sélection (§58.4) : très faible variation, bord modifié, et la couleur-signature en petit accent */
+html:not(.sans-fable) .fragment {
+  transition:
+    border-color 240ms var(--doux),
+    background-color 240ms var(--doux);
+}
+html:not(.sans-fable) .fragment:hover:not(:disabled) {
+  border-top-color: color-mix(in oklab, var(--bulle, var(--encre)) 60%, var(--encre));
+  background: linear-gradient(to bottom, rgba(243, 241, 236, 0.45), transparent 60%);
+}
+html:not(.sans-fable) .fragment:hover:not(:disabled) .fragment-titre {
+  text-decoration-color: color-mix(in oklab, var(--bulle, var(--encre)) 60%, var(--encre));
+}
+/* la salle d'une rubrique : un fil cousu sous son titre, dans la couleur-signature de la personne */
+html:not(.sans-fable) .trace .salle-titre {
+  padding-bottom: 0.55rem;
+  background: repeating-linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--bulle, var(--encre)) 70%, var(--encre)) 0 var(--fil-point),
+      transparent var(--fil-point) calc(var(--fil-point) + var(--fil-vide))
+    )
+    no-repeat 0 100% / 0 2px;
+  animation: fable-coudre 900ms var(--doux) 150ms both;
+}
+@keyframes fable-coudre {
+  to {
+    background-size: 38% 2px;
+  }
+}
+/* les bulles choisies : l'anneau du choix prend la couleur de la bulle elle-même, pas un cadre gris */
+html:not(.sans-fable) .couleur[aria-checked='true'] {
+  border-color: var(--encre);
+  box-shadow: 0 0 0 1px rgba(243, 241, 236, 0.9) inset;
+}
+
+/* ——— les quatre réponses (§55.6) : largeur de lecture contrôlée, question discrète, réponse plus présente */
+html:not(.sans-fable) .questions-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(2.4rem, 6vw, 6rem);
+  row-gap: clamp(2rem, 4vw, 3.2rem);
+}
+html:not(.sans-fable) .question-titre {
+  font-size: var(--t-xs);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--encre-2);
+  min-height: 0;
+}
+html:not(.sans-fable) .question-titre .icon,
+html:not(.sans-fable) .question-titre .icon-brodee {
+  width: 22px;
+  height: 22px;
+}
+html:not(.sans-fable) .question-reponse p {
+  font-size: 1.2rem;
+  line-height: 1.62;
+  max-width: 36rem;
+}
+/* la réponse en 200 caractères, l'essentiel : en épigraphe, sur toute la largeur, un peu plus grande */
+html:not(.sans-fable) .question.question-200 {
+  grid-column: 1 / -1;
+  padding-top: clamp(1rem, 2vw, 1.6rem);
+  border-top: 1px solid var(--filet);
+}
+html:not(.sans-fable) .question-200 .question-reponse p {
+  font-size: clamp(1.3rem, 1.1rem + 0.7vw, 1.6rem);
+  line-height: 1.5;
+  max-width: 40rem;
+}
+@media (max-width: 760px) {
+  html:not(.sans-fable) .questions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* le profil (§55.7) : sur grand écran, la colonne de lecture ne s'étire pas ; l'air va autour */
+html:not(.sans-fable) .trace > .questions,
+html:not(.sans-fable) .trace > .provenance {
+  max-width: 1120px;
+}
+
+/* ——— mode lecture : une colonne, les mots seuls */
+.trace.lecture .questions-grid {
+  grid-template-columns: 1fr;
+  max-width: 38rem;
+  margin: 0 auto;
+}
+.trace.lecture .question.question-200 {
+  border-top: 0;
+}
+.trace.lecture .question-reponse p,
+.trace.lecture .question-200 .question-reponse p {
+  font-size: 1.3rem;
+  line-height: 1.7;
+  max-width: none;
+}
+.trace.lecture .questions .bloc-titre,
+.trace.lecture .fragments,
+.trace.lecture .trace-bas,
+.trace.lecture .trace-meta {
+  display: none;
+}
+.trace.lecture .trace-head {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  text-align: center;
+  padding-bottom: 1rem;
+}
+.trace.lecture .trace-bulle {
+  align-items: center;
+}
+.trace.lecture .provenance-corps {
+  margin: 0 auto;
+}
+.lecture-fin {
+  text-align: center;
+  padding: 1.5rem 0 2.5rem;
+}
+
+/* ——— chargement (§56.7, §59.3) : une petite bulle pigmentée qui respire, des blocs neutres sans brillance */
+.chargement-bulle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 42% 38%, rgba(101, 96, 107, 0.22), rgba(101, 96, 107, 0.38) 70%, rgba(101, 96, 107, 0) 72%);
+  animation: fable-respire 2.8s ease-in-out infinite;
+  margin: 0 auto 0.9rem;
+}
+@keyframes fable-respire {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+.squelette {
+  display: grid;
+  gap: 0.9rem;
+  width: min(36rem, 100%);
+}
+.squelette span {
+  display: block;
+  height: 1rem;
+  border-radius: 2px;
+  background: rgba(47, 44, 51, 0.07);
+  animation: fable-pulse 2.2s ease-in-out infinite;
+}
+.squelette span:nth-child(1) {
+  width: 46%;
+  height: 2rem;
+}
+.squelette span:nth-child(3) {
+  width: 82%;
+}
+.squelette span:nth-child(4) {
+  width: 64%;
+}
+@keyframes fable-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* ——— la recherche : la période de création (§12.4) */
+.filter-annees .chips {
+  gap: 0.3rem;
+}
+
+/* ——— mouvement réduit : les surfaces se posent sans glisser, le fil est cousu d'avance */
+@media (prefers-reduced-motion: reduce) {
+  html:not(.sans-fable) .apercu,
+  html:not(.sans-fable) .search-panel,
+  html:not(.sans-fable) .salle,
+  html:not(.sans-fable) .menu-panel {
+    animation-duration: 1ms !important;
+  }
+  html:not(.sans-fable) .trace .salle-titre {
+    animation: none;
+    background-size: 38% 2px;
+  }
+  .chargement-bulle,
+  .squelette span {
+    animation: none;
+  }
+  html:not(.sans-fable) .lien-entrer::after {
+    transition: none;
+  }
+}
+
+/* ——— la navigation d'une trace sur téléphone : les actions passent à la ligne sans se couper (vu sur la planche à 390 px) */
+html:not(.sans-fable) .trace-nav-right {
+  flex-wrap: wrap;
+  row-gap: 0.1rem;
+  column-gap: 1rem;
+}
+html:not(.sans-fable) .trace-nav-right .lien-discret {
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  html:not(.sans-fable) .trace-nav {
+    gap: 0.4rem;
+  }
+  html:not(.sans-fable) .trace-nav-right {
+    width: 100%;
+    column-gap: 0.8rem;
+  }
+}

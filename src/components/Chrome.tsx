@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { bubbleDataUrl } from '../engine/bubbleSprite';
 import { colorById } from '../lib/palette';
 import { getTrace } from '../data/store';
-import { loadMatieres } from '../lib/hd';
+import { loadMatieres, matiereFor } from '../lib/hd';
+import { hashString } from '../lib/random';
 import { Icon } from './Icon';
 
 // Logo sur une ligne, recomposé à partir des lettres brodées du tableau (design/logo/logo_ligne.py).
@@ -61,13 +62,12 @@ export function BubbleImage({
   className?: string;
 }) {
   const [src, setSrc] = useState('');
-  const m = matiere ?? getTrace(id)?.matiere;
+  // la matière de cette bulle, choisie ou tirée de son identifiant : la seule image à attendre
+  const m = matiere ?? getTrace(id)?.matiere ?? matiereFor(hashString(id));
   useEffect(() => {
     let alive = true;
-    // attend les taches HD (si elles existent) pour être identique à la constellation
-    loadMatieres([m]).then(() =>
-      peindre(() => alive && setSrc(bubbleDataUrl(id, colorById(couleur).hex, Math.round(size * 2.2), m)), size >= 120),
-    );
+    // attend sa tache HD (si elle existe) pour être identique à la constellation
+    loadMatieres([m]).then(() => peindre(() => alive && setSrc(bubbleDataUrl(id, colorById(couleur).hex, Math.round(size * 2.2), m)), size >= 120));
     return () => {
       alive = false;
     };
@@ -146,13 +146,7 @@ export function Dock() {
             {x.label}
           </Link>
         ))}
-        <button
-          ref={btnRef}
-          className="dock-item dock-menu"
-          aria-label="Menu"
-          aria-expanded={open}
-          onClick={() => setOpen((o) => !o)}
-        >
+        <button ref={btnRef} className="dock-item dock-menu" aria-label="Menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           <Icon name={open ? 'fermer' : 'menu'} size={18} />
           <span>Menu</span>
         </button>

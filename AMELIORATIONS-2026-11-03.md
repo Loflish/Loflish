@@ -174,3 +174,35 @@ Le 3 novembre : tout vert, 24 tests du site, 32 tests du serveur, build 17 Mo.
 - Les textes ajoutés (« Une bulle au hasard », « Revenir au centre », « Sa bulle », l'aide de Se perdre, le bandeau du brouillon) sont provisoires : Tom réécrit tous les textes.
 - Tout retirer d'un coup : `git switch refonte-octobre`. Retirer un point : supprimer son bloc (chaque point est commenté dans le code avec sa raison).
 - L'adresse `nosmotsmemoriaux.org` est écrite dans `index.html` (aperçu de partage) : à changer si le nom de domaine change.
+
+---
+
+## Second commit du même jour : « Design Fable »
+
+Mesures d'abord, retouches ensuite, remesures : tout est dans `Desktop/Claude Code/reports/Design Fable 2026-11-03.md`
+(planches avant/après, Lighthouse, axe-core, images par seconde, cahier des charges confronté au site). En bref :
+
+| N° | Amélioration | Où | Vérifier |
+| --- | --- | --- | --- |
+| 101 | Spécification de mouvement : l'interface répond en 120 ms, une surface se pose en 420 ms, part en 260 ms (cahier §58.1 et §58.3) | `src/styles/design-fable.css` | survoler, ouvrir une salle |
+| 102 | Les quatre réponses en deux colonnes de lecture, question discrète, l'essentiel en épigraphe (§55.6) | `design-fable.css` | une trace à 1920 px |
+| 103 | Le fil se coud au survol de « Entrer dans sa mémoire », et sous le titre d'une salle, dans la couleur de la bulle (§56.10, §58.4) | `design-fable.css` | survol, salle |
+| 104 | Boutons de papier : ombre d'un pixel, s'enfoncent à la pression (§55.8) | `design-fable.css` | presser « Continuer » |
+| 105 | Mode Lecture sur une trace : une colonne, les mots seuls, retenu sur l'appareil | `src/pages/TracePage.tsx` | bouton « Lecture » |
+| 106 | Loader : une bulle de pigment qui respire ; squelette beige sur une trace qui arrive du serveur (§56.7, §59.3) | `App.tsx`, `TracePage.tsx` | connexion lente |
+| 107 | Filtre « Arrivée dans le musée » (année) dans la recherche (§12.4) | `src/pages/Explorer.tsx` | ouvrir la recherche |
+| 108 | Les deux shaders (fond vivant, eau) compilent en parallèle : 2,5 s de blocage en moins au premier lancement | `src/engine/atmosphere.ts`, `eau.ts` | `performance.getEntriesByType('measure')` |
+| 109 | L'eau se prépare après les deux premières images : la peinture fixe est déjà là | `src/components/Backdrop.tsx` | onglet Performance |
+| 110 | Les taches des bulles (jusqu'à 3 Mo) ne se téléchargent que dans la constellation, et après la peinture | `Backdrop.tsx` | onglet Réseau sur une trace |
+| 111 | Une bulle n'attend que sa propre matière, plus les 30 ou 100 taches | `src/lib/hd.ts`, `Chrome.tsx` | trace sur téléphone |
+| 112 | Six matières PNG servies en WebP sans perte : 1,8 → 0,8 Mo, pixels identiques (vérifié) | `public/hd/taches/*-sans-perte.webp` | `python scripts/planches.py` n'y touche pas ; voir le rapport |
+| 113 | Le lin (410 Ko) arrive quand le navigateur est libre, jamais devant la peinture | `Backdrop.tsx` | onglet Réseau |
+| 114 | Le papier des pages est préchargé dès l'adresse lue (1,2 s plus tôt sur une trace) | `src/main.tsx` | onglet Réseau |
+| 115 | La première peinture apparaît sans fondu | `Backdrop.tsx`, `design-fable.css` | recharger l'accueil |
+| 116 | Le monde de la constellation se redimensionne quand l'écran change de classe (fenêtre agrandie, téléphone tourné) | `src/engine/constellation.ts` | réduire puis agrandir la fenêtre |
+| 117 | Essai `?toucher=1` : compression au contact et micro-réaction au curseur (§54.4, §54.6), inactif sans l'adresse | `constellation.ts` | `/?toucher=1` |
+| 118 | Les changements de page passent par `startTransition` (React Router v7) | `main.tsx` | — |
+| 119 | Marques de performance au démarrage (`nmm:atmosphere`, `nmm:constellation`, `nmm:eau`) | `Backdrop.tsx` | onglet Performance |
+| 120 | Trois juges rejouables : `scripts/lighthouse.mjs` (`HEADLESS=0` avec la carte graphique), `scripts/mesures.mjs` (images par seconde, latence, axe), `scripts/planches.py` | `scripts/` | les lancer |
+
+`?fable=0` rend le site d'avant ces retouches, pour comparer.

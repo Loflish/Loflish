@@ -226,7 +226,8 @@ type Goutte = { x: number; y: number; t: number; r: number };
  * colorées d'abord) et de quelle couleur est le papier vierge (la médiane des pixels les plus clairs).
  */
 function lirePeinture(img: CanvasImageSource, largeur: number, hauteur: number): { gouttes: Goutte[]; papier: [number, number, number] } {
-  const W = 96, H = Math.max(1, Math.round((96 * hauteur) / largeur));
+  const W = 96,
+    H = Math.max(1, Math.round((96 * hauteur) / largeur));
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
@@ -236,7 +237,9 @@ function lirePeinture(img: CanvasImageSource, largeur: number, hauteur: number):
   const d = x.getImageData(0, 0, W, H).data;
   const cases: { i: number; chroma: number; lum: number }[] = [];
   for (let i = 0; i < W * H; i++) {
-    const r = d[i * 4]!, g = d[i * 4 + 1]!, b = d[i * 4 + 2]!;
+    const r = d[i * 4]!,
+      g = d[i * 4 + 1]!,
+      b = d[i * 4 + 2]!;
     cases.push({ i, chroma: (Math.max(r, g, b) - Math.min(r, g, b)) / 255, lum: (r * 0.3 + g * 0.59 + b * 0.11) / 255 });
   }
   const clairs = [...cases].sort((a, b) => b.lum - a.lum).slice(0, Math.round(cases.length * 0.1));
@@ -248,14 +251,16 @@ function lirePeinture(img: CanvasImageSource, largeur: number, hauteur: number):
   // d'abord au cœur des grandes taches, les plus colorées en premier…
   for (const o of [...cases].sort((a, b) => b.chroma - a.chroma)) {
     if (choisies.length >= 12 || o.chroma < 0.05) break;
-    const px = ((o.i % W) + 0.5) / W, py = (Math.floor(o.i / W) + 0.5) / H;
+    const px = ((o.i % W) + 0.5) / W,
+      py = (Math.floor(o.i / W) + 0.5) / H;
     if (loin(px, py) > 0.2) choisies.push({ x: px, y: py, chroma: o.chroma });
   }
   // …puis là où il reste le plus de papier vide, pour que les taches finissent par tout couvrir
   while (choisies.length < NB_GOUTTES) {
     let mieux = { x: 0.5, y: 0.5, d: 0 };
     for (let i = 0; i < W * H; i += 3) {
-      const px = ((i % W) + 0.5) / W, py = (Math.floor(i / W) + 0.5) / H;
+      const px = ((i % W) + 0.5) / W,
+        py = (Math.floor(i / W) + 0.5) / H;
       const d = loin(px, py);
       if (d > mieux.d) mieux = { x: px, y: py, d };
     }
@@ -312,6 +317,7 @@ export class FondEau {
     if (!this.gl) return;
     const gl = this.gl;
     const prog = (this.programme = gl.createProgram()!);
+    const shaders: WebGLShader[] = [];
     for (const [type, code] of [
       [gl.VERTEX_SHADER, VERT],
       [gl.FRAGMENT_SHADER, FRAG],
@@ -319,30 +325,64 @@ export class FondEau {
       const s = gl.createShader(type)!;
       gl.shaderSource(s, code);
       gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-        console.warn(gl.getShaderInfoLog(s));
-        this.gl = null;
-        return;
-      }
       gl.attachShader(prog, s);
+      shaders.push(s);
     }
     gl.linkProgram(prog);
-    gl.useProgram(prog);
-    const tampon = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, tampon);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
-    const pos = gl.getAttribLocation(prog, 'position');
-    gl.enableVertexAttribArray(pos);
-    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
-    for (const n of ['texel', 'cadre', 'derive', 'phase', 'ampleur', 'lumiere', 'flotte', 'eclosion', 'melange', 'vivacite', 'colore', 'laine', 'gouttes', 'tApparition', 'apparition', 'vie', 'aspectImage', 'papier'])
-      this.u[n] = gl.getUniformLocation(prog, n);
+    /**
+     * La compilation du shader (390 ms mesurés sur une carte AMD, bien plus sur un téléphone) se fait en parallèle, hors du
+     * fil principal, quand le navigateur le permet (KHR_parallel_shader_compile) : la page reste réactive, la peinture fixe
+     * est visible, et l'eau arrive en fondu dès qu'elle est prête. Sans l'extension, l'attente est la même qu'avant.
+     */
+    const parallele = gl.getExtension('KHR_parallel_shader_compile') as { COMPLETION_STATUS_KHR: number } | null;
+    const programmePret = new Promise<boolean>((fini) => {
+      const verifier = () => {
+        if (!this.gl) return fini(false);
+        if (parallele && !gl.getProgramParameter(prog, parallele.COMPLETION_STATUS_KHR)) return void requestAnimationFrame(verifier);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+          for (const s of shaders) if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s));
+          this.gl = null;
+          return fini(false);
+        }
+        gl.useProgram(prog);
+        const tampon = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, tampon);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+        const pos = gl.getAttribLocation(prog, 'position');
+        gl.enableVertexAttribArray(pos);
+        gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+        for (const n of [
+          'texel',
+          'cadre',
+          'derive',
+          'phase',
+          'ampleur',
+          'lumiere',
+          'flotte',
+          'eclosion',
+          'melange',
+          'vivacite',
+          'colore',
+          'laine',
+          'gouttes',
+          'tApparition',
+          'apparition',
+          'vie',
+          'aspectImage',
+          'papier',
+        ])
+          this.u[n] = gl.getUniformLocation(prog, n);
+        fini(true);
+      };
+      verifier();
+    });
     canvas.addEventListener('webglcontextlost', () => {
       this.pret = false;
       this.canvas.hidden = true;
     });
 
-    const poser = (img: TexImageSource & CanvasImageSource, largeur: number, hauteur: number) => {
-      if (!this.gl) return;
+    const poser = async (img: TexImageSource & CanvasImageSource, largeur: number, hauteur: number) => {
+      if (!(await programmePret) || !this.gl) return;
       const g = this.gl;
       this.texture = g.createTexture();
       g.bindTexture(g.TEXTURE_2D, this.texture);
@@ -371,7 +411,9 @@ export class FondEau {
       g.uniform4fv(this.u.gouttes!, v);
       // le papier vierge de l'entrée prend la couleur de la page : autour du logo, où la peinture s'efface
       // (museum.css), on voit la page ; sinon cette zone paraîtrait grise tant que la peinture n'est pas posée
-      const page = getComputedStyle(document.body).backgroundColor.match(/\d+(\.\d+)?/g)?.map(Number);
+      const page = getComputedStyle(document.body)
+        .backgroundColor.match(/\d+(\.\d+)?/g)
+        ?.map(Number);
       g.uniform3f(this.u.papier!, ...(page && page.length >= 3 ? ([page[0]! / 255, page[1]! / 255, page[2]! / 255] as const) : papier));
       this.image = { naturalWidth: largeur, naturalHeight: hauteur };
       this.resize();
@@ -386,7 +428,7 @@ export class FondEau {
     };
     const fixe = () => {
       const img = new Image();
-      img.onload = () => poser(img, img.naturalWidth, img.naturalHeight);
+      img.onload = () => void poser(img, img.naturalWidth, img.naturalHeight);
       img.src = source;
     };
     if (!sourceVideo) {
@@ -399,12 +441,16 @@ export class FondEau {
     v.playsInline = true;
     v.preload = 'auto';
     this.video = v;
-    v.addEventListener('loadeddata', () => poser(v, v.videoWidth, v.videoHeight), { once: true });
+    v.addEventListener('loadeddata', () => void poser(v, v.videoWidth, v.videoHeight), { once: true });
     // si la vidéo ne vient pas, la peinture fixe prend sa place
-    v.addEventListener('error', () => {
-      this.video = null;
-      fixe();
-    }, { once: true });
+    v.addEventListener(
+      'error',
+      () => {
+        this.video = null;
+        fixe();
+      },
+      { once: true },
+    );
     v.src = sourceVideo;
   }
 

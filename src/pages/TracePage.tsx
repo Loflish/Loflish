@@ -82,6 +82,24 @@ export function TracePage() {
   const canRepondre = editable && auteur && !scellee;
   const [edition, setEdition] = useState(false);
   const [vue, setVue] = useState<Media | null>(null);
+  // mode lecture : une colonne, les mots seuls, en plus grand (retenu sur l'appareil)
+  const [lecture, setLecture] = useState(() => {
+    try {
+      return localStorage.getItem('nmm:lecture') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const basculerLecture = () => {
+    setLecture((l) => {
+      try {
+        localStorage.setItem('nmm:lecture', l ? '0' : '1');
+      } catch {
+        /* ignore */
+      }
+      return !l;
+    });
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -95,8 +113,17 @@ export function TracePage() {
 
   if (!trace && chargement) {
     return (
-      <main className="page page-texte page-centree">
-        <p className="lead muted">Un instant, la mémoire s’ouvre…</p>
+      <main className="page page-texte page-centree" aria-busy="true">
+        <div>
+          <div className="chargement-bulle" aria-hidden="true" />
+          <p className="lead muted">Un instant, la mémoire s’ouvre…</p>
+          <div className="squelette" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
       </main>
     );
   }
@@ -119,7 +146,7 @@ export function TracePage() {
 
   return (
     <OuvrirMedia.Provider value={setVue}>
-      <main className="trace" style={{ ['--bulle' as string]: color.hex }}>
+      <main className={`trace${lecture ? ' lecture' : ''}`} style={{ ['--bulle' as string]: color.hex }}>
         <nav className="trace-nav" aria-label="Navigation du profil">
           <Link to="/" className="lien-discret">
             <Icon name="retour" size={16} /> Retour au musée
@@ -139,6 +166,9 @@ export function TracePage() {
             <button className="lien-discret" onClick={() => navigate('/', { state: { focus: trace.id } })} title="Retrouver cette bulle dans la constellation">
               <Icon name="lieu" size={16} /> Sa bulle
             </button>
+            <button className="lien-discret" onClick={basculerLecture} aria-pressed={lecture} title="Les mots seuls, en une colonne">
+              <Icon name="livre" size={16} /> {lecture ? 'Tout voir' : 'Lecture'}
+            </button>
             <button className="lien-discret" onClick={() => window.print()} title="Imprimer la trace, ou l’enregistrer en PDF">
               <Icon name="document" size={16} /> Imprimer
             </button>
@@ -153,8 +183,7 @@ export function TracePage() {
         {editable && trace.statut === 'retiree' && (
           <p className="trace-bandeau trace-bandeau-retiree" role="status">
             {memoire ? 'Cette mémoire a été retirée du musée' : 'Ta bulle a été retirée du musée'}
-            {trace.retireeRaison ? ` : ${trace.retireeRaison}` : '.'} Tu peux m’écrire pour en parler :{' '}
-            <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.
+            {trace.retireeRaison ? ` : ${trace.retireeRaison}` : '.'} Tu peux m’écrire pour en parler : <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.
           </p>
         )}
         {editable && auteur && trace.statut !== 'retiree' && <Bandeau trace={trace} />}
@@ -331,6 +360,13 @@ export function TracePage() {
           )}
         </div>
 
+        {lecture && (
+          <p className="lecture-fin">
+            <button className="lien-entrer" onClick={basculerLecture}>
+              Voir toute la trace <Icon name="fleche" size={16} />
+            </button>
+          </p>
+        )}
         <Impression trace={trace} />
         <Footer />
 
@@ -409,8 +445,8 @@ function Bandeau({ trace }: { trace: Trace }) {
   if (!estScellee(trace)) {
     return (
       <p className="trace-bandeau">
-        Cinq ans ont passé depuis la publication : un clic sur {memoire ? 'ce que tu as écrit' : 'une réponse'} ou sur un fragment te permet de le
-        modifier.{droits}
+        Cinq ans ont passé depuis la publication : un clic sur {memoire ? 'ce que tu as écrit' : 'une réponse'} ou sur un fragment te permet de le modifier.
+        {droits}
       </p>
     );
   }
@@ -419,8 +455,8 @@ function Bandeau({ trace }: { trace: Trace }) {
       <Icon name="cadenas" size={18} />
       <span>
         {memoire ? 'Cette mémoire est publique. Ce que tu as écrit sur cette personne est scellé' : 'Ta trace est publique. Tes quatre réponses sont scellées'}{' '}
-        jusqu’au {dateLongue(reouverture(trace)!)}. Chaque fragment et chaque fichier que tu déposes est scellé à son tour : une fois déposé, il
-        ne peut plus être modifié ni retiré pendant cinq ans.{droits}
+        jusqu’au {dateLongue(reouverture(trace)!)}. Chaque fragment et chaque fichier que tu déposes est scellé à son tour : une fois déposé, il ne peut plus
+        être modifié ni retiré pendant cinq ans.{droits}
       </span>
     </p>
   );
@@ -626,9 +662,7 @@ function RubriqueDetail({ r, trace, canEdit }: { r: Rubrique; trace: Trace; canE
   return (
     <div className="rubrique-detail">
       {question && <p className="salle-q">{question}</p>}
-      {canEdit && items.length > 1 && (
-        <p className="bloc-note bloc-note-auteur">Les trois premiers se montrent sur ton profil. Range-les avec les flèches.</p>
-      )}
+      {canEdit && items.length > 1 && <p className="bloc-note bloc-note-auteur">Les trois premiers se montrent sur ton profil. Range-les avec les flèches.</p>}
       {items.map((e, i) => (
         <ElementView key={e.id} e={e} trace={trace} rubrique={r.id} auteur={canEdit} rang={i} total={items.length} />
       ))}

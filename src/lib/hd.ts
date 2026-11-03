@@ -97,14 +97,11 @@ export const FONDS: Record<Fond, { large: string; haut: string }> = {
 /** Téléphone ou connexion économe : on garde les images fixes, plus légères. */
 export const LEGER =
   typeof window !== 'undefined' &&
-  (window.matchMedia('(max-width: 700px)').matches ||
-    (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true);
+  (window.matchMedia('(max-width: 700px)').matches || (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true);
 
 // Sur téléphone, 30 taches réparties entre toutes les techniques suffisent (site plus léger).
 const petitEcran = typeof window !== 'undefined' && window.matchMedia('(max-width: 700px)').matches;
-const indices = petitEcran
-  ? Array.from({ length: 30 }, (_, i) => Math.floor((i * NB_TACHES) / 30) + 1)
-  : Array.from({ length: NB_TACHES }, (_, i) => i + 1);
+const indices = petitEcran ? Array.from({ length: 30 }, (_, i) => Math.floor((i * NB_TACHES) / 30) + 1) : Array.from({ length: NB_TACHES }, (_, i) => i + 1);
 
 function fondVideo(): { src: string; type: string }[] {
   const grand = typeof window !== 'undefined' && window.screen.width * window.devicePixelRatio > 2200;
@@ -151,8 +148,10 @@ export function numeroDansPalette(n: number): { palette: 'A' | 'B' | 'C'; numero
 const tacheUrl = (n: number) => {
   const { palette, numero } = numeroDansPalette(n);
   const p = PALETTES[palette];
-  const ext = palette === 'A' && matieresSansPerte.has(n) ? 'png' : 'webp';
-  return `${base}${p.dossier}/${p.prefixe}-${String(numero).padStart(2, '0')}.${ext}`;
+  // les six matières sans perte sont servies en WebP sans perte (pixels identiques au PNG approuvé, deux fois plus léger :
+  // 1,8 Mo de moins au premier chargement) ; les PNG restent dans public/hd/taches pour l'atelier
+  const suffixe = palette === 'A' && matieresSansPerte.has(n) ? '-sans-perte.webp' : '.webp';
+  return `${base}${p.dossier}/${p.prefixe}-${String(numero).padStart(2, '0')}${suffixe}`;
 };
 /** une matière des palettes B et C n'existe que si son image est déjà faite */
 export function matiereDisponible(n: number): boolean {
@@ -206,6 +205,8 @@ function charger(n: number): Promise<void> {
         res();
       };
       img.onerror = () => res();
+      // derrière la peinture du fond et les polices : les bulles provisoires font patienter
+      img.fetchPriority = 'low';
       img.src = tacheUrl(n);
     });
     enCours.set(n, p);
@@ -216,15 +217,19 @@ function charger(n: number): Promise<void> {
 /** Charge une seule fois les taches d'aquarelle de base (toutes sur ordinateur, 30 sur téléphone). */
 export function loadTaches(): Promise<void> {
   if (!HD) return Promise.resolve();
-  loading ??= Promise.all([...indices.map(charger), ...(GOTHIQUE ? planche4 : []).map((n) => chargerMatiere(MATIERE_ENCRE + n, `${base}taches-gothique/gothique-${String(n).padStart(3, '0')}.webp`))]).then(
-    () => undefined,
-  );
+  loading ??= Promise.all([
+    ...indices.map(charger),
+    ...(GOTHIQUE ? planche4 : []).map((n) => chargerMatiere(MATIERE_ENCRE + n, `${base}taches-gothique/gothique-${String(n).padStart(3, '0')}.webp`)),
+  ]).then(() => undefined);
   return loading;
 }
 
-/** Charge des matières précises (celles que des personnes ont choisies). */
+/**
+ * Charge des matières précises (celles que des personnes ont choisies), et seulement elles : la grande bulle d'une trace
+ * n'attend plus les 30 ou 100 taches de la constellation (mesuré le 3 novembre : 14 s de retard sur téléphone).
+ */
 export function loadMatieres(list: (number | undefined)[]): Promise<void> {
-  return Promise.all([loadTaches(), ...list.filter((n): n is number => !!n && n > 0).map(charger)]).then(() => undefined);
+  return Promise.all(list.filter((n): n is number => !!n && n > 0).map(charger)).then(() => undefined);
 }
 
 /** Le catalogue complet, pour choisir sa matière. */

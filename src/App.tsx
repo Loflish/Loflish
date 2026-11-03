@@ -32,7 +32,10 @@ const AtelierTri = import.meta.env.DEV ? lazy(() => import('./pages/AtelierTri')
 function Attente() {
   return (
     <main className="page page-texte chargement" aria-busy="true">
-      <p>Un instant…</p>
+      <div>
+        <div className="chargement-bulle" aria-hidden="true" />
+        <p>Un instant…</p>
+      </div>
     </main>
   );
 }

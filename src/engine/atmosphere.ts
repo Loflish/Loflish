@@ -99,26 +99,43 @@ export class Atmosphere {
     this.gl = canvas.getContext('webgl', { antialias: false, premultipliedAlpha: false, preserveDrawingBuffer: true });
     if (!this.gl) return;
     const gl = this.gl;
-    const sh = (type: number, src: string) => {
-      const s = gl.createShader(type)!;
-      gl.shaderSource(s, src);
+    const shaders = [
+      [gl.VERTEX_SHADER, VERT],
+      [gl.FRAGMENT_SHADER, FRAG],
+    ].map(([type, src]) => {
+      const s = gl.createShader(type as number)!;
+      gl.shaderSource(s, src as string);
       gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s));
       return s;
-    };
+    });
     const prog = gl.createProgram()!;
-    gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
-    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
+    for (const s of shaders) gl.attachShader(prog, s);
     gl.linkProgram(prog);
-    gl.useProgram(prog);
-    this.prog = prog;
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    const loc = gl.getAttribLocation(prog, 'p');
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    for (const n of ['uRes', 'uTime', 'uIntensity', 'uCalm', 'uScale']) this.u[n] = gl.getUniformLocation(prog, n);
+    /**
+     * Mesuré le 3 novembre sur une carte AMD : 2,5 s de compilation au tout premier lancement, qui bloquaient la page.
+     * Avec KHR_parallel_shader_compile, le pilote compile à côté ; la peinture fixe est visible pendant ce temps, et
+     * les nappes arrivent dès que le programme est prêt (le canvas reste couleur de lin d'ici là).
+     */
+    const parallele = gl.getExtension('KHR_parallel_shader_compile') as { COMPLETION_STATUS_KHR: number } | null;
+    const verifier = () => {
+      if (this.arretee || !this.gl) return;
+      if (parallele && !gl.getProgramParameter(prog, parallele.COMPLETION_STATUS_KHR)) return void requestAnimationFrame(verifier);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        for (const s of shaders) if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s));
+        return;
+      }
+      gl.useProgram(prog);
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(prog, 'p');
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      for (const n of ['uRes', 'uTime', 'uIntensity', 'uCalm', 'uScale']) this.u[n] = gl.getUniformLocation(prog, n);
+      this.prog = prog;
+      this.draw(performance.now());
+    };
+    verifier();
     // démarre à un instant différent à chaque visite : le tableau n'est jamais deux fois le même
     this.start -= Math.random() * 600000;
   }
@@ -159,7 +176,7 @@ export class Atmosphere {
 
   private draw(now: number): void {
     const gl = this.gl;
-    if (!gl || !this.prog) return;
+    if (!gl || !this.prog || this.arretee) return;
     gl.uniform2f(this.u.uRes, this.canvas.width, this.canvas.height);
     gl.uniform1f(this.u.uTime, (now - this.start) / 1000);
     gl.uniform1f(this.u.uIntensity, this.intensity);
@@ -183,8 +200,11 @@ export class Atmosphere {
     this.raf = requestAnimationFrame(loop);
   }
 
+  /** Arrêtée pour de bon : plus aucun dessin, même par un minuteur en retard (le canvas peut déjà servir à une autre instance). */
+  private arretee = false;
   stop(): void {
     cancelAnimationFrame(this.raf);
+    this.arretee = true;
   }
 }
 

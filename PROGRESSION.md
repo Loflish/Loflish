@@ -9,6 +9,14 @@ artistique ni à l'atelier des bulles. Liste point par point et façon de vérif
 32 tests du serveur). Rien n'est poussé sur GitHub : Tom relit d'abord, corrige s'il veut, puis décide.
 Prochaine étape : reprendre le chantier des bulles (planche 4, tri dans `/#/atelier/tri`, catalogue de Créer).
 
+Même jour, second commit « Design Fable » : mesures d'abord (Lighthouse, axe-core, images par seconde, traces), cahier des
+charges v1.1 confronté au site, puis retouches : spécification de mouvement (120 / 420 ms), quatre réponses en deux colonnes
+de lecture avec l'essentiel en épigraphe, fil cousu au survol et sous les titres de salle, boutons de papier, mode Lecture,
+loader-bulle, filtre par année, shaders compilés en parallèle (2,5 s de blocage en moins), taches chargées seulement dans la
+constellation, six matières en WebP sans perte. Rapport et planches avant/après :
+`Desktop/Claude Code/reports/Design Fable 2026-11-03.md`. `?fable=0` rend le site d'avant ; `?toucher=1` essaie les
+collisions et le curseur (cahier §54).
+
 ## Point de reprise — 30 octobre 2026
 
 La version préférée de Tom (fond feutre, eau, entrée) est devenue la version par défaut du site.
