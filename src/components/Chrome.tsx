@@ -67,7 +67,11 @@ export function BubbleImage({
   useEffect(() => {
     let alive = true;
     // attend sa tache HD (si elle existe) pour être identique à la constellation
-    loadMatieres([m]).then(() => peindre(() => alive && setSrc(bubbleDataUrl(id, colorById(couleur).hex, Math.round(size * 2.2), m)), size >= 120));
+    // au-delà de 120 px, la matière en 1 024 px (chantier 2) : le grain tient sur la page d'une trace et au zoom
+    const grande = size >= 120;
+    loadMatieres([m], grande).then(() =>
+      peindre(() => alive && setSrc(bubbleDataUrl(id, colorById(couleur).hex, Math.round(size * 2.2), m, grande)), size >= 120),
+    );
     return () => {
       alive = false;
     };

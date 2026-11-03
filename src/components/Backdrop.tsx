@@ -71,6 +71,7 @@ function FondsPeints({ actif }: { actif: Fond }) {
           () => setEauPrete(true),
           () => engine.current?.cam,
           FOND_VIDEO ?? undefined,
+          FONDS.explorer.largeHD,
         );
         performance.measure('nmm:eau', 'nmm:eau:debut');
         eau.current = e;
@@ -162,6 +163,13 @@ function FondsPeints({ actif }: { actif: Fond }) {
 const VARIANTE_ORNEMENTS = varianteOrnements();
 
 const ATMOSPHERE_BY_MODE = { explore: 1, perdre: 0.9, trace: 0.7, creer: 0.55, texte: 0.85, minimal: 0.3 } as const;
+/**
+ * Chantier 5 (cahier §53.6, trois intensités) : derrière les pages éditoriales (B, accompagnement) et les profils, les nappes
+ * continuent de respirer, aux aplats des Nabis ; formulaires et juridique (C, retrait) restent sur le papier seul.
+ * `?nappes=0` rend les pages d'avant.
+ */
+const NAPPES = !(typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('nappes') === '0');
+const AVEC_NAPPES = new Set<keyof typeof MODES>(NAPPES ? ['explore', 'texte', 'trace'] : ['explore']);
 
 export function Backdrop() {
   const { engine, mode, reducedMotion, enPause } = useMuseum();
@@ -233,8 +241,11 @@ export function Backdrop() {
       tachesDemandees.current = false;
       const go = () => {
         clearSpriteCache();
-        c.resetSprites();
-        c.spritesAllowed = true;
+        // les matières partent vers le travailleur (s'il y en a un), puis les bulles se repeignent, les visibles d'abord
+        void c.peintre.envoyerMatieres().then(() => {
+          c.resetSprites();
+          c.spritesAllowed = true;
+        });
       };
       chargerTaches.current = () => {
         if (tachesDemandees.current) return;
@@ -341,9 +352,10 @@ export function Backdrop() {
       setEntering(false);
     }
     atmo.current?.setIntensity(ATMOSPHERE_BY_MODE[mode]);
+    atmo.current?.setPage(mode === 'explore' ? 0 : 1);
     orn.current?.setActif(mode === 'explore');
     // le shader s'efface avec la constellation (fondu CSS), puis s'arrête
-    const t = window.setTimeout(() => atmo.current?.pause(mode !== 'explore'), mode === 'explore' ? 0 : 1900);
+    const t = window.setTimeout(() => atmo.current?.pause(!AVEC_NAPPES.has(mode)), AVEC_NAPPES.has(mode) ? 0 : 1900);
     return () => window.clearTimeout(t);
   }, [mode, engine, enConstellation]);
 

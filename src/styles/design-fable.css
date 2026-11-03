@@ -343,3 +343,11 @@ html:not(.sans-fable) .trace-nav-right .lien-discret {
     column-gap: 0.8rem;
   }
 }
+
+/* ——— chantier 5 : les nappes des Nabis respirent derrière les pages éditoriales et les profils (cahier §53.6) */
+html:not(.sans-fable) .backdrop.mode-texte .backdrop-atmosphere.sur-fond-peint {
+  opacity: 0.42;
+}
+html:not(.sans-fable) .backdrop.mode-trace .backdrop-atmosphere.sur-fond-peint {
+  opacity: 0.26;
+}

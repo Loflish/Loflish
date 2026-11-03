@@ -84,9 +84,14 @@ export const ENTREE: 'normale' | 'hook' | 'gouttes' | null =
 
 /** Les fonds, en format ordinateur (large) et téléphone (haut). */
 export type Fond = 'explorer' | 'tissu';
-export const FONDS: Record<Fond, { large: string; haut: string }> = {
+export const FONDS: Record<Fond, { large: string; haut: string; largeHD?: string }> = {
   explorer: FOND_ESSAI
-    ? { large: `${base}${FOND_ESSAI}-16x9.webp`, haut: `${base}${FOND_ESSAI}-9x16.webp` }
+    ? {
+        large: `${base}${FOND_ESSAI}-16x9.webp`,
+        haut: `${base}${FOND_ESSAI}-9x16.webp`,
+        // le fond feutré existe aussi en 5 120 px (chantier 1) : chargé après coup sur grand écran, par l'eau
+        largeHD: FOND_FEUTRE ? `${base}${FOND_ESSAI}-16x9-5120.webp` : undefined,
+      }
     : { large: `${base}fond-16x9.webp`, haut: `${base}fond-9x16.webp` },
   /** Toutes les pages sauf la constellation : un tissu de coton ivoire, plis doux, fibres visibles. */
   tissu: PAGES_MARBRE
@@ -176,7 +181,32 @@ export function installSurfaces(): void {
 const GOTHIQUE = import.meta.env.DEV && parametres?.get('gothique') === '1';
 const planche4 = Array.from({ length: 100 }, (_, i) => i + 1);
 
-const taches = new Map<number, HTMLImageElement | HTMLCanvasElement>();
+const taches = new Map<number, HTMLImageElement | HTMLCanvasElement | ImageBitmap>();
+/** chantier 2 : les mêmes taches en 1 024 px (public/hd/taches/1024), pour les grandes bulles (trace, Créer) seulement */
+const tachesGrandes = new Map<number, HTMLImageElement>();
+const grandesEnCours = new Map<number, Promise<void>>();
+function tacheGrandeUrl(n: number): string | null {
+  if (n < 1 || n > NB_TACHES || matieresSansPerte.has(n)) return null;
+  return `${base}taches/1024/tache-${String(n).padStart(2, '0')}.webp`;
+}
+function chargerGrande(n: number): Promise<void> {
+  const url = tacheGrandeUrl(n);
+  if (!HD || !url) return Promise.resolve();
+  let p = grandesEnCours.get(n);
+  if (!p) {
+    p = new Promise<void>((res) => {
+      const img = new Image();
+      img.onload = () => {
+        tachesGrandes.set(n, img);
+        res();
+      };
+      img.onerror = () => res();
+      img.src = url;
+    });
+    grandesEnCours.set(n, p);
+  }
+  return p;
+}
 const enCours = new Map<number, Promise<void>>();
 let loading: Promise<void> | null = null;
 
@@ -228,8 +258,9 @@ export function loadTaches(): Promise<void> {
  * Charge des matières précises (celles que des personnes ont choisies), et seulement elles : la grande bulle d'une trace
  * n'attend plus les 30 ou 100 taches de la constellation (mesuré le 3 novembre : 14 s de retard sur téléphone).
  */
-export function loadMatieres(list: (number | undefined)[]): Promise<void> {
-  return Promise.all(list.filter((n): n is number => !!n && n > 0).map(charger)).then(() => undefined);
+export function loadMatieres(list: (number | undefined)[], grande = false): Promise<void> {
+  const nums = list.filter((n): n is number => !!n && n > 0);
+  return Promise.all([...nums.map(charger), ...(grande ? nums.map(chargerGrande) : [])]).then(() => undefined);
 }
 
 /** Le catalogue complet, pour choisir sa matière. */
@@ -251,7 +282,7 @@ export function loadPalettes(): Promise<void> {
 }
 
 /** Une matière fabriquée à la volée (l'atelier du mélange), au numéro choisi. */
-export function poserMatiere(n: number, image: HTMLImageElement | HTMLCanvasElement): void {
+export function poserMatiere(n: number, image: HTMLImageElement | HTMLCanvasElement | ImageBitmap): void {
   taches.set(n, image);
 }
 
@@ -279,7 +310,11 @@ export function matiereFor(seed: number): number {
  * La tache d'aquarelle d'une matière. Si elle n'est pas (encore) chargée —
  * téléphone, connexion lente —, la plus proche dans le catalogue la remplace.
  */
-export function tacheFor(n: number): HTMLImageElement | HTMLCanvasElement | null {
+export function tacheFor(n: number, grande = false): HTMLImageElement | HTMLCanvasElement | ImageBitmap | null {
+  if (grande) {
+    const g = tachesGrandes.get(n);
+    if (g) return g;
+  }
   if (!taches.size) return null;
   const hit = taches.get(n);
   if (hit) return hit;
@@ -290,4 +325,19 @@ export function tacheFor(n: number): HTMLImageElement | HTMLCanvasElement | null
     if (a) return a;
   }
   return null;
+}
+
+/** Les matières déjà chargées, en images transférables à un travailleur (chantier 6 : les bulles peintes à côté). */
+export async function matieresTransferables(): Promise<{ n: number; image: ImageBitmap }[]> {
+  if (typeof createImageBitmap === 'undefined') return [];
+  const out: { n: number; image: ImageBitmap }[] = [];
+  for (const [n, image] of taches) {
+    if (image instanceof ImageBitmap) continue;
+    try {
+      out.push({ n, image: await createImageBitmap(image) });
+    } catch {
+      /* une image indisponible : la bulle gardera son rendu procédural dans le travailleur */
+    }
+  }
+  return out;
 }

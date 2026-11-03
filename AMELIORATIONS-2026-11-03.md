@@ -206,3 +206,15 @@ Mesures d'abord, retouches ensuite, remesures : tout est dans `Desktop/Claude Co
 | 120 | Trois juges rejouables : `scripts/lighthouse.mjs` (`HEADLESS=0` avec la carte graphique), `scripts/mesures.mjs` (images par seconde, latence, axe), `scripts/planches.py` | `scripts/` | les lancer |
 
 `?fable=0` rend le site d'avant ces retouches, pour comparer.
+
+## Lot « Atelier 8K » (3 novembre, soir) — chantiers 1, 2, 5, 6 validés par Tom
+
+| N° | Amélioration | Fichiers | Vérifier |
+| --- | --- | --- | --- |
+| 121 | La peinture de l'eau passe en 5 120 × 2 880 px quand le navigateur est libre (écran ≥ 1 400 px, texture ≥ 5 120, pas d'économie de données) ; même mélange que le fond servi (écart moyen 3,4 / 255), 1,3 Mo | `src/engine/eau.ts` (`chargerHD`), `src/lib/hd.ts` (`FONDS.largeHD`), `public/hd/essais/fond-feutre-16x9-5120.webp` | `__nmmDebug.eau.image` après quelques secondes |
+| 122 | Résolution adaptative de l'eau : sous 45 images/s deux fois de suite, l'échelle tombe à 0,7 | `src/engine/eau.ts` (`surveiller`, `qualite`) | `__nmmDebug.eau.qualite` sur une machine lente |
+| 123 | Les bulles sont peintes hors du fil principal (OffscreenCanvas dans un travailleur, sprites en ImageBitmap transférés) ; l'ancien chemin reste si le navigateur ne peut pas ou avec `?travailleur=0` | `src/engine/bulles.worker.ts`, `src/engine/peintre.ts`, `constellation.ts`, `bubbleSprite.ts`, `hd.ts` (`matieresTransferables`) | `__nmmDebug.engine.peintre.actif` |
+| 124 | 94 matières recoupées en 1 024 px depuis les planches 4K d'origine (`design/hd/matieres_1024.py`), servies aux bulles ≥ 120 px (page d'une trace, Créer) ; la constellation garde 512 ; repli automatique sur la petite | `public/hd/taches/1024/` (30 Mo), `hd.ts` (`tacheFor(n, grande)`), `bubbleSprite.ts`, `Chrome.tsx` | onglet Réseau sur une trace : `taches/1024/tache-NN.webp` |
+| 125 | Derrière les pages éditoriales et les profils, les nappes continuent de respirer aux aplats des Nabis (sauge, rose ancien, miel, lilas, tilleul) au lieu de s'arrêter ; formulaires et juridique restent sur le papier seul ; `?nappes=0` rend les pages d'avant | `src/engine/atmosphere.ts` (`uPage`, `setPage`), `Backdrop.tsx` (`AVEC_NAPPES`), `design-fable.css` | ouvrir une trace, regarder le fond bouger |
+
+Non faits (choix de Tom) : 3 (fil de Ruth Rae) et 4 (tapis tufté). En attente : l'adresse de son tableau Pinterest pour accorder les cinq couleurs du 125.

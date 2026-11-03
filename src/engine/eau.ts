@@ -215,6 +215,8 @@ const ECLOSION = 3200;
 const NB_GOUTTES = 20;
 /** sous ce rythme (images par seconde), deux mesures de suite, l'eau s'arrête : mieux vaut la peinture fixe qu'un musée qui rame */
 const RYTHME_MIN = 20;
+/** sous ce rythme, deux mesures de suite, l'eau baisse d'abord sa résolution d'un cran (1,0 au lieu de 1,5 px par point) */
+const RYTHME_BAS = 45;
 /** durée d'une mesure du rythme, en millisecondes */
 const MESURE = 3000;
 
@@ -300,7 +302,10 @@ export class FondEau {
   /** l'entrée : son temps écoulé (s), sa durée, sa vitesse (accélérée si on la passe), et ce qu'on fait à la fin */
   private apparition: { t: number; duree: number; vitesse: number; fin?: () => void } | null = null;
   /** la mesure du rythme : son début, ses images, et combien de mesures de suite ont été trop lentes */
-  private rythme = { debut: 0, images: 0, lentes: 0 };
+  private rythme = { debut: 0, images: 0, lentes: 0, basses: 0 };
+  /** 1 = pleine résolution ; 0,7 quand l'appareil peine (surveiller) */
+  private qualite = 1;
+  private hdDemandee = false;
   /** prête quand l'image est posée : la peinture fixe reste visible dessous jusque-là */
   pret = false;
 
@@ -312,6 +317,8 @@ export class FondEau {
     private camera?: () => Camera | undefined,
     /** une vidéo (Seedance) qui devient la peinture vivante ; l'image fixe reste le secours */
     sourceVideo?: string,
+    /** chantier 1 : la même peinture en 5 120 px, chargée après coup sur grand écran pour un zoom sans flou */
+    private sourceHD?: string,
   ) {
     this.gl = canvas.getContext('webgl', { alpha: false, antialias: false, premultipliedAlpha: false });
     if (!this.gl) return;
@@ -420,6 +427,7 @@ export class FondEau {
       this.dessiner();
       this.pret = true;
       this.surPret?.();
+      this.chargerHD();
       // l'entrée a pu être demandée avant que l'image soit là : elle remplace alors l'éclosion
       if (!this.apparition) {
         this.eclore();
@@ -463,11 +471,42 @@ export class FondEau {
     else void v.play().catch(() => undefined);
   }
 
+  /**
+   * Chantier 1 : sur un grand écran (ordinateur, pas d'économie de données), la peinture en 5 120 px remplace la 2 560 une
+   * fois la page posée : au zoom, plus de flou. Même mélange que la version servie (design/hd/essais/melanger.cjs),
+   * refait à pleine taille depuis l'original 5 504 px. La carte graphique doit accepter une texture de cette taille.
+   */
+  private chargerHD(): void {
+    const gl = this.gl;
+    if (!gl || !this.sourceHD || this.hdDemandee || this.video) return;
+    if (window.innerWidth < 1400 || (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+    if ((gl.getParameter(gl.MAX_TEXTURE_SIZE) as number) < 5120) return;
+    this.hdDemandee = true;
+    const src = this.sourceHD;
+    const lancer = () => {
+      const img = new Image();
+      img.decoding = 'async';
+      img.onload = () => {
+        const g = this.gl;
+        if (!g || !this.texture) return;
+        g.bindTexture(g.TEXTURE_2D, this.texture);
+        g.texImage2D(g.TEXTURE_2D, 0, g.RGB, g.RGB, g.UNSIGNED_BYTE, img);
+        g.uniform2f(this.u.texel!, 1 / img.naturalWidth, 1 / img.naturalHeight);
+        this.image = { naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight };
+        this.resize();
+      };
+      img.src = src;
+    };
+    const ric = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    if (ric) ric(lancer, { timeout: 8000 });
+    else window.setTimeout(lancer, 4000);
+  }
+
   /** La toile prend la taille de son cadre, sur 1,5 pixel par point au plus ; l'image la couvre. */
   resize(): void {
     const gl = this.gl;
     if (!gl || !this.image) return;
-    const echelle = Math.min(window.devicePixelRatio || 1, 1.5);
+    const echelle = Math.min(window.devicePixelRatio || 1, 1.5) * this.qualite;
     const w = Math.max(1, Math.round(this.canvas.clientWidth * echelle));
     const h = Math.max(1, Math.round(this.canvas.clientHeight * echelle));
     this.canvas.width = w;
@@ -585,7 +624,17 @@ export class FondEau {
     }
     r.images++;
     if (now - r.debut < MESURE) return;
-    r.lentes = (r.images * 1000) / (now - r.debut) < RYTHME_MIN ? r.lentes + 1 : 0;
+    const rythme = (r.images * 1000) / (now - r.debut);
+    if (rythme < RYTHME_BAS && this.qualite > 0.7) {
+      r.basses++;
+      if (r.basses >= 2) {
+        // résolution adaptative : d'abord moins de points, avant de renoncer à l'eau
+        this.qualite = 0.7;
+        r.basses = 0;
+        this.resize();
+      }
+    } else r.basses = 0;
+    r.lentes = rythme < RYTHME_MIN ? r.lentes + 1 : 0;
     r.debut = now;
     r.images = 0;
     if (r.lentes >= 2) {

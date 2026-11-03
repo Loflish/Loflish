@@ -23,6 +23,8 @@ uniform float uTime;
 uniform float uIntensity;
 uniform vec3 uCalm; // zone calme autour du logo : x, y, rayon (px)
 uniform float uScale;
+// chantier 5 : sur les pages, les nappes prennent les aplats des Nabis (sauge, rose ancien, miel, lilas, tilleul)
+uniform float uPage;
 
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float noise(vec2 p){
@@ -65,11 +67,11 @@ void main(){
   float k = uIntensity * mix(0.25, 1.0, calm);
 
   // atmosphère : lavande, eau, pêche, rose, lumière jaune
-  col = wash(col, uv, vec2(0.0, 0.0), 0.9, t * 0.011, vec3(0.84, 0.86, 0.96), 0.48 * k, 0.53);
-  col = wash(col, uv, vec2(7.3, 2.1), 0.75, t * 0.009, vec3(0.84, 0.93, 0.88), 0.42 * k, 0.55);
-  col = wash(col, uv, vec2(3.1, 9.4), 1.1, t * 0.013, vec3(0.99, 0.88, 0.82), 0.42 * k, 0.56);
-  col = wash(col, uv, vec2(11.7, 5.5), 0.85, t * 0.010, vec3(0.97, 0.86, 0.90), 0.38 * k, 0.57);
-  col = wash(col, uv, vec2(2.4, 13.3), 1.3, t * 0.012, vec3(0.99, 0.95, 0.80), 0.40 * k, 0.55);
+  col = wash(col, uv, vec2(0.0, 0.0), 0.9, t * 0.011, mix(vec3(0.84, 0.86, 0.96), vec3(0.80, 0.78, 0.89), uPage), 0.48 * k, 0.53);
+  col = wash(col, uv, vec2(7.3, 2.1), 0.75, t * 0.009, mix(vec3(0.84, 0.93, 0.88), vec3(0.74, 0.82, 0.81), uPage), 0.42 * k, 0.55);
+  col = wash(col, uv, vec2(3.1, 9.4), 1.1, t * 0.013, mix(vec3(0.99, 0.88, 0.82), vec3(0.93, 0.80, 0.76), uPage), 0.42 * k, 0.56);
+  col = wash(col, uv, vec2(11.7, 5.5), 0.85, t * 0.010, mix(vec3(0.97, 0.86, 0.90), vec3(0.92, 0.82, 0.70), uPage), 0.38 * k, 0.57);
+  col = wash(col, uv, vec2(2.4, 13.3), 1.3, t * 0.012, mix(vec3(0.99, 0.95, 0.80), vec3(0.90, 0.90, 0.72), uPage), 0.40 * k, 0.55);
 
   // lumière de Monet : une clarté chaude qui se déplace lentement
   vec2 lp = vec2(0.5 + 0.35 * sin(t * 0.004), 0.55 + 0.25 * cos(t * 0.0031)) * vec2(uRes.x / uRes.y, 1.0);
@@ -131,7 +133,7 @@ export class Atmosphere {
       const loc = gl.getAttribLocation(prog, 'p');
       gl.enableVertexAttribArray(loc);
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-      for (const n of ['uRes', 'uTime', 'uIntensity', 'uCalm', 'uScale']) this.u[n] = gl.getUniformLocation(prog, n);
+      for (const n of ['uRes', 'uTime', 'uIntensity', 'uCalm', 'uScale', 'uPage']) this.u[n] = gl.getUniformLocation(prog, n);
       this.prog = prog;
       this.draw(performance.now());
     };
@@ -151,6 +153,12 @@ export class Atmosphere {
     this.canvas.height = h;
     this.gl?.viewport(0, 0, w, h);
     this.draw(performance.now());
+  }
+
+  /** 1 sur une page (nappes des Nabis), 0 dans la constellation (la peinture vivante). */
+  private page = 0;
+  setPage(v: number): void {
+    this.page = v;
   }
 
   setIntensity(v: number): void {
@@ -182,6 +190,7 @@ export class Atmosphere {
     gl.uniform1f(this.u.uIntensity, this.intensity);
     gl.uniform3f(this.u.uCalm, this.calm[0], this.calm[1], this.calm[2]);
     gl.uniform1f(this.u.uScale, this.scale);
+    gl.uniform1f(this.u.uPage, this.page);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 

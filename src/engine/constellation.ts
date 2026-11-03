@@ -1,5 +1,6 @@
 import { drift, gaussian, hashString, rng } from '../lib/random';
-import { bubbleSprite, provisionalSprite, SPRITE_DIAMETER } from './bubbleSprite';
+import { bubbleSprite, provisionalSprite, SPRITE_DIAMETER, type Toile } from './bubbleSprite';
+import { Peintre } from './peintre';
 
 /**
  * Constellation de présences.
@@ -58,7 +59,7 @@ interface Bubble {
   breath: number;
   breathSpeed: number;
   alpha: number;
-  sprite: HTMLCanvasElement | null;
+  sprite: Toile | ImageBitmap | null;
   /** le banc de la bulle (essai `?bancs=1`) */
   foyer?: number;
   /** la compression au contact (essai `?toucher=1`) : force 0 à 1, et l'angle de la rencontre */
@@ -103,7 +104,7 @@ const BANCS = typeof window !== 'undefined' && new URLSearchParams(window.locati
  * de la rencontre puis reprend sa forme ; et les bulles proches du curseur s'écartent d'un rien, « presque douteux ».
  */
 const TOUCHER = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('toucher') === '1';
-function embellir(sprite: HTMLCanvasElement): HTMLCanvasElement {
+function embellir(sprite: Toile): Toile {
   if (!ECLAT) return sprite;
   const c = document.createElement('canvas');
   c.width = sprite.width;
@@ -165,6 +166,13 @@ export class Constellation {
   private cols = 1;
   private rows = 1;
   private spriteQueue: Bubble[] = [];
+  /** chantier 6 : les sprites se peignent dans un travailleur quand c'est possible ; la constellation les reçoit prêts */
+  readonly peintre = new Peintre((s) => {
+    const b = this.byId.get(s.id);
+    // une réponse d'avant un changement de taille ou de matière ne compte plus
+    if (!b || s.size !== this.spriteSize || s.matiere !== b.p.matiere) return void s.image.close();
+    b.sprite = s.image;
+  });
   events: EngineEvents = {};
   /** Attend les matières HD avant de peindre les bulles (repli procédural sinon). */
   spritesAllowed = true;
@@ -872,9 +880,17 @@ export class Constellation {
 
     // génération progressive des sprites : budget de temps par image, jamais de saccade
     const t0 = performance.now();
-    while (this.spritesAllowed && this.spriteQueue.length && performance.now() - t0 < 7) {
-      const b = this.spriteQueue.shift()!;
-      b.sprite = embellir(bubbleSprite(b.p.id, b.p.hex, { matiere: b.p.matiere, size: this.spriteSize }));
+    if (this.peintre.actif && this.peintre.pret) {
+      // à côté : une vingtaine de bulles en route à la fois, les plus proches d'abord ; la page ne s'arrête jamais
+      while (this.spritesAllowed && this.spriteQueue.length && this.peintre.enAttente < 24) {
+        const b = this.spriteQueue.shift()!;
+        this.peintre.peindre(b.p.id, b.p.hex, this.spriteSize, b.p.matiere, ECLAT);
+      }
+    } else if (!this.peintre.actif) {
+      while (this.spritesAllowed && this.spriteQueue.length && performance.now() - t0 < 7) {
+        const b = this.spriteQueue.shift()!;
+        b.sprite = embellir(bubbleSprite(b.p.id, b.p.hex, { matiere: b.p.matiere, size: this.spriteSize }));
+      }
     }
 
     let focusDraw: { x: number; y: number; r: number } | null = null;
@@ -965,6 +981,7 @@ export class Constellation {
 
   destroy(): void {
     cancelAnimationFrame(this.raf);
+    this.peintre.destroy();
     const c = this.canvas;
     c.removeEventListener('pointerdown', this.onDown);
     c.removeEventListener('pointerleave', this.onLeave);

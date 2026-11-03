@@ -56,14 +56,22 @@ function deform(r: () => number, pts: Pt[], depth: number, variance: number): Pt
   return cur;
 }
 
-function tracePath(ctx: CanvasRenderingContext2D, pts: Pt[]): void {
+type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+
+function tracePath(ctx: Ctx, pts: Pt[]): void {
   ctx.beginPath();
   ctx.moveTo(pts[0][0], pts[0][1]);
   for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
   ctx.closePath();
 }
 
-const cache = new Map<string, HTMLCanvasElement>();
+/** Une toile, dans la page (canvas) ou dans un travailleur (OffscreenCanvas, sans document). */
+export type Toile = HTMLCanvasElement | OffscreenCanvas;
+function nouvelleToile(): Toile {
+  return typeof document === 'undefined' ? new OffscreenCanvas(1, 1) : document.createElement('canvas');
+}
+
+const cache = new Map<string, Toile>();
 
 export function clearSpriteCache(): void {
   cache.clear();
@@ -73,19 +81,21 @@ export interface SpriteOptions {
   size?: number;
   /** matière choisie (0 = aquarelle cousue, 1 à NB_MATIERES = taches) ; sinon tirée au hasard, fixe, depuis la graine */
   matiere?: number;
+  /** la tache en 1 024 px si elle existe (grandes bulles : trace, Créer) */
+  grande?: boolean;
 }
 
-export function bubbleSprite(seedKey: string, hex: string, opts: SpriteOptions = {}): HTMLCanvasElement {
+export function bubbleSprite(seedKey: string, hex: string, opts: SpriteOptions = {}): Toile {
   const size = opts.size ?? SPRITE_SIZE;
   const matiere = opts.matiere ?? matiereFor(hashString(seedKey));
-  const key = `${seedKey}|${hex}|${size}|${matiere}`;
+  const key = `${seedKey}|${hex}|${size}|${matiere}|${opts.grande ? 'g' : ''}`;
   const hit = cache.get(key);
   if (hit) return hit;
 
-  const canvas = document.createElement('canvas');
+  const canvas = nouvelleToile();
   canvas.width = canvas.height = size;
   // rendu logiciel : des centaines de petites opérations sont bien plus rapides sur CPU
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const ctx = canvas.getContext('2d', { willReadFrequently: true }) as Ctx | null;
   if (!ctx) return canvas;
 
   const r = rng(hashString(seedKey));
@@ -96,13 +106,18 @@ export function bubbleSprite(seedKey: string, hex: string, opts: SpriteOptions =
 
   const base = deform(r, basePolygon(r, c, c, R, 12), 4, 0.13);
 
-  const tache = matiere === MATIERE_COUSUE ? null : tacheFor(matiere);
+  const tache = matiere === MATIERE_COUSUE ? null : tacheFor(matiere, opts.grande);
   if (tache) {
     paintTache(ctx, tache, hex, c, R, r, matiere >= MATIERE_ENCRE);
   } else {
     // 0. léger halo : le pigment qui a « bu » dans la fibre autour de la tache
     for (let i = 0; i < 6; i++) {
-      const halo = deform(r, base.map(([x, y]) => [c + (x - c) * (1.06 + i * 0.025), c + (y - c) * (1.06 + i * 0.025)] as Pt), 3, 0.18);
+      const halo = deform(
+        r,
+        base.map(([x, y]) => [c + (x - c) * (1.06 + i * 0.025), c + (y - c) * (1.06 + i * 0.025)] as Pt),
+        3,
+        0.18,
+      );
       ctx.fillStyle = hsl(h, s * 0.8, Math.min(0.9, l + 0.06), 0.03);
       tracePath(ctx, halo);
       ctx.fill();
@@ -197,7 +212,12 @@ export function bubbleSprite(seedKey: string, hex: string, opts: SpriteOptions =
   // 7. le fil : un point avant qui court sur une partie du bord
   const creamThread = r() < 0.32;
   const inset = 0.84 + r() * 0.05;
-  const loop = deform(r, base.map(([x, y]) => [c + (x - c) * inset, c + (y - c) * inset] as Pt), 1, 0.08);
+  const loop = deform(
+    r,
+    base.map(([x, y]) => [c + (x - c) * inset, c + (y - c) * inset] as Pt),
+    1,
+    0.08,
+  );
   // longueur cumulée du contour
   const segs: number[] = [0];
   for (let i = 1; i <= loop.length; i++) {
@@ -261,14 +281,14 @@ export function bubbleSprite(seedKey: string, hex: string, opts: SpriteOptions =
  * matière. Elle est teintée exactement dans la couleur GRIS de la personne ;
  * ses variations de densité, sa granulation et son bord séché sont conservés.
  */
-function paintTache(ctx: CanvasRenderingContext2D, tache: CanvasImageSource, hex: string, c: number, R: number, r: () => number, encre: boolean): void {
+function paintTache(ctx: Ctx, tache: CanvasImageSource, hex: string, c: number, R: number, r: () => number, encre: boolean): void {
   const size = ctx.canvas.width;
   const side = (2 * R) / 0.82; // la tache occupe ~82 % de sa vignette
   const angle = r() * Math.PI * 2;
   const flip = r() < 0.5 ? -1 : 1;
-  const tmp = document.createElement('canvas');
+  const tmp = nouvelleToile();
   tmp.width = tmp.height = size;
-  const t = tmp.getContext('2d', { willReadFrequently: true });
+  const t = tmp.getContext('2d', { willReadFrequently: true }) as Ctx | null;
   if (!t) return;
   // l'encre garde son sens (une voûte monte), et ses fils ne doivent pas s'émietter en réduction
   if (encre) t.imageSmoothingQuality = 'high';
@@ -294,19 +314,19 @@ function paintTache(ctx: CanvasRenderingContext2D, tache: CanvasImageSource, hex
   ctx.drawImage(tmp, 0, 0);
 }
 
-const provisoires = new Map<string, HTMLCanvasElement>();
+const provisoires = new Map<string, Toile>();
 
 /**
  * Bulle provisoire, instantanée : un simple lavis de sa couleur au bord un peu
  * plus chargé. Elle s'affiche dès la première image, le temps que la vraie
  * matière d'aquarelle arrive ; elle est ensuite remplacée sur place.
  */
-export function provisionalSprite(hex: string): HTMLCanvasElement {
+export function provisionalSprite(hex: string): Toile {
   const hit = provisoires.get(hex);
   if (hit) return hit;
-  const canvas = document.createElement('canvas');
+  const canvas = nouvelleToile();
   canvas.width = canvas.height = SPRITE_SIZE;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d') as Ctx | null;
   if (ctx) {
     const c = SPRITE_SIZE / 2;
     const R = (SPRITE_SIZE * SPRITE_DIAMETER) / 2;
@@ -326,6 +346,6 @@ export function provisionalSprite(hex: string): HTMLCanvasElement {
 }
 
 /** Image de la bulle pour le DOM (profil, Se perdre, création). */
-export function bubbleDataUrl(seedKey: string, hex: string, size = 320, matiere?: number): string {
-  return bubbleSprite(seedKey, hex, { size, matiere }).toDataURL('image/png');
+export function bubbleDataUrl(seedKey: string, hex: string, size = 320, matiere?: number, grande = false): string {
+  return (bubbleSprite(seedKey, hex, { size, matiere, grande }) as HTMLCanvasElement).toDataURL('image/png');
 }

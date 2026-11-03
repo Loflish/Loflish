@@ -17,6 +17,15 @@ constellation, six matières en WebP sans perte. Rapport et planches avant/aprè
 `Desktop/Claude Code/reports/Design Fable 2026-11-03.md`. `?fable=0` rend le site d'avant ; `?toucher=1` essaie les
 collisions et le curseur (cahier §54).
 
+## Point de reprise — 3 novembre 2026
+
+Branche `ameliorations-fable-2026-11-03` (partie de `refonte-octobre`), non poussée, à relire par Tom : trois commits,
+« 100 améliorations » (`AMELIORATIONS-2026-11-03.md`, points 1 à 100), « Design Fable » (101 à 120, mesuré : rapport
+`reports/Design Fable 2026-11-03.md` hors dépôt) et « Atelier 8K » (121 à 125 : peinture 5 120 px, bulles peintes dans un
+travailleur, matières 1 024 px pour les grandes bulles, nappes des Nabis derrière les pages). Chaque lot est retirable
+par adresse (`?fable=0`, `?travailleur=0`, `?nappes=0`). Reste ensuite : relecture de Tom, fusion dans `refonte-octobre`
+avec son accord, puis le chantier des bulles (planche 4, tri `/#/atelier/tri`, catalogue de Créer).
+
 ## Point de reprise — 30 octobre 2026
 
 La version préférée de Tom (fond feutre, eau, entrée) est devenue la version par défaut du site.
