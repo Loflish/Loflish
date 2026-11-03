@@ -3,6 +3,29 @@ import { deposerFragment, modifierFragment } from '../data/store';
 import { CATEGORIES_OEUVRES, limiteDe, placesRestantes, type Element, type RubriqueId } from '../data/types';
 import { Icon } from './Icon';
 import { ChoixMedia, type MediaChoisi } from './Media';
+import { autoGrow } from '../lib/autogrow';
+
+/**
+ * Ce qu'on est en train d'écrire dans une rubrique reste dans l'onglet (sessionStorage) : fermer la
+ * salle par mégarde, ou ouvrir une autre rubrique, ne perd plus le texte en cours.
+ */
+type Brouillon = { titre: string; texte: string; quand: string; lieu: string; lien: string; categorie: string };
+const cleBrouillon = (traceId: string, rubrique: RubriqueId) => `nmm:brouillon-fragment:${traceId}:${rubrique}`;
+function lireBrouillon(cle: string): Partial<Brouillon> | null {
+  try {
+    return JSON.parse(sessionStorage.getItem(cle) || 'null') as Partial<Brouillon> | null;
+  } catch {
+    return null;
+  }
+}
+function garderBrouillon(cle: string, f: Brouillon): void {
+  try {
+    if (f.texte || f.titre) sessionStorage.setItem(cle, JSON.stringify(f));
+    else sessionStorage.removeItem(cle);
+  } catch {
+    /* stockage indisponible : le texte vit le temps de la salle */
+  }
+}
 
 /**
  * Déposer un fragment d'existence sur sa trace, avec au plus un fichier
@@ -74,14 +97,24 @@ export function FragmentEditor({
 }) {
   const cfg = { ...CONFIG[rubrique], ...(memoire ? CONFIG_MEMOIRE[rubrique] : {}) };
   const uid = useId();
-  const [f, setF] = useState({
-    titre: modifier?.titre ?? '',
-    texte: modifier?.texte ?? '',
-    quand: modifier?.quand ?? '',
-    lieu: modifier?.lieu ?? '',
-    lien: modifier?.lien ?? '',
-    categorie: modifier?.categorie ?? (rubrique === 'oeuvres' ? 'Livre' : ''),
+  const cle = cleBrouillon(traceId, rubrique);
+  const [f, setFBrut] = useState<Brouillon>(() => {
+    const garde = modifier ? null : lireBrouillon(cle);
+    return {
+      titre: modifier?.titre ?? garde?.titre ?? '',
+      texte: modifier?.texte ?? garde?.texte ?? '',
+      quand: modifier?.quand ?? garde?.quand ?? '',
+      lieu: modifier?.lieu ?? garde?.lieu ?? '',
+      lien: modifier?.lien ?? garde?.lien ?? '',
+      categorie: modifier?.categorie ?? garde?.categorie ?? (rubrique === 'oeuvres' ? 'Livre' : ''),
+    };
   });
+  const setF = (v: Brouillon | ((x: Brouillon) => Brouillon)) =>
+    setFBrut((x) => {
+      const n = typeof v === 'function' ? v(x) : v;
+      if (!modifier) garderBrouillon(cle, n);
+      return n;
+    });
   const [media, setMedia] = useState<MediaChoisi>(null);
   const [confirmer, setConfirmer] = useState(false);
   const [envoi, setEnvoi] = useState(false);
@@ -184,8 +217,18 @@ export function FragmentEditor({
       )}
       <label className="field">
         <span className="field-label">{cfg.texte}</span>
-        <textarea id={`${uid}-texte`} rows={5} maxLength={cfg.max} value={f.texte} onChange={(e) => setF({ ...f, texte: e.target.value })} />
-        <span className="compteur">
+        <textarea
+          id={`${uid}-texte`}
+          rows={5}
+          maxLength={cfg.max}
+          value={f.texte}
+          ref={autoGrow}
+          onChange={(e) => {
+            autoGrow(e.target);
+            setF({ ...f, texte: e.target.value });
+          }}
+        />
+        <span className={`compteur${f.texte.length >= cfg.max * 0.9 ? ' est-proche' : ''}`}>
           {f.texte.length} / {cfg.max}
         </span>
       </label>

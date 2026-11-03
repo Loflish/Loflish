@@ -26,20 +26,38 @@ export class ErreurApi extends Error {
   }
 }
 
-/** Un appel au serveur. Les erreurs arrivent avec un message clair, en français. */
+/** Au-delà de ce délai (ms), un appel est abandonné ; un envoi de fichier a le temps qu'il faut. */
+const DELAI = 20_000;
+const DELAI_FICHIER = 10 * 60_000;
+
+/**
+ * Un appel au serveur. Les erreurs arrivent avec un message clair, en français.
+ * Une lecture (GET) qui échoue sur le réseau est retentée une fois, après une courte pause :
+ * un téléphone qui change d'antenne ne doit pas vider la constellation.
+ */
 export async function appel<T = unknown>(methode: string, chemin: string, corps?: unknown): Promise<T> {
   const url = `${BRUT}${chemin.replace(/^\/api/, '')}`;
   const formulaire = typeof FormData !== 'undefined' && corps instanceof FormData;
-  let r: Response;
-  try {
-    r = await fetch(url, {
+  const essai = () =>
+    fetch(url, {
       method: methode,
       credentials: 'include',
       headers: corps === undefined || formulaire ? undefined : { 'content-type': 'application/json' },
       body: corps === undefined ? undefined : formulaire ? corps : JSON.stringify(corps),
+      signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(formulaire ? DELAI_FICHIER : DELAI) : undefined,
     });
-  } catch {
-    throw new ErreurApi('Le musée ne répond pas. Vérifie ta connexion et réessaie.', 0, 'reseau');
+  let r: Response;
+  try {
+    r = await essai();
+  } catch (e) {
+    const delai = (e as { name?: string }).name === 'TimeoutError';
+    if (methode !== 'GET') throw new ErreurApi(delai ? 'Le musée met trop de temps à répondre. Réessaie dans un instant.' : 'Le musée ne répond pas. Vérifie ta connexion et réessaie.', 0, 'reseau');
+    await new Promise((fin) => setTimeout(fin, 800));
+    try {
+      r = await essai();
+    } catch {
+      throw new ErreurApi('Le musée ne répond pas. Vérifie ta connexion et réessaie.', 0, 'reseau');
+    }
   }
   const d = (await r.json().catch(() => ({}))) as { erreur?: string; code?: string } & T;
   if (!r.ok) throw new ErreurApi(d.erreur ?? 'Une erreur est survenue.', r.status, d.code ?? 'erreur');

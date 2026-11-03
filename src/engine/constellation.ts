@@ -74,6 +74,8 @@ export interface EngineEvents {
   onSelect?: (id: string | null) => void;
   onFrame?: () => void;
   onMoved?: () => void;
+  /** un second clic (ou une seconde touche) sur la bulle déjà ouverte : on entre dans sa mémoire */
+  onEnter?: (id: string) => void;
 }
 
 const TAU = Math.PI * 2;
@@ -162,6 +164,8 @@ export class Constellation {
   private calmZones: { x: number; y: number; w: number; h: number }[] = [];
   private foyers: { x: number; y: number; ph: number }[] = [];
   private rayonBanc = 0;
+  /** le dernier clic sur une bulle : deux clics rapprochés sur la même ouvrent sa mémoire */
+  private dernierClic: { id: string; t: number } | null = null;
 
   constructor(private canvas: HTMLCanvasElement, presences: Presence[]) {
     const ctx = canvas.getContext('2d');
@@ -341,8 +345,15 @@ export class Constellation {
     this.match = ids;
   }
 
+  /** Le visiteur s'est éloigné du point de départ (zoom ou promenade) : « Revenir au centre » a un sens. */
   get isMoved(): boolean {
-    return Math.abs(this.cam.zoom - this.defaultZoom) > 0.05;
+    return Math.abs(this.cam.zoom - this.defaultZoom) > 0.05 || Math.hypot(this.wrapD(this.cam.x, this.worldW), this.wrapD(this.cam.y, this.worldH)) > 160;
+  }
+
+  /** Une présence au hasard parmi celles qui sont dans la constellation (pour « Une bulle au hasard »). */
+  auHasard(sauf: string | null = null): string | null {
+    const choix = this.bubbles.filter((b) => b.p.id !== sauf);
+    return choix.length ? choix[Math.floor(Math.random() * choix.length)]!.p.id : null;
   }
 
   // ————————————————————————————————— caméra
@@ -375,8 +386,9 @@ export class Constellation {
     this.camAnim = { from, to: target, t0: performance.now(), dur, done };
   }
 
+  /** Revenir au point de départ : le centre de la constellation, au zoom d'origine. */
   resetView(): void {
-    this.animateCam({ zoom: this.defaultZoom }, 1400);
+    this.animateCam({ x: 0, y: 0, zoom: this.defaultZoom }, 1400);
   }
 
   /** Entrer dans la mémoire d'une personne : la bulle devient le point de départ de la transition. */
@@ -464,12 +476,17 @@ export class Constellation {
     return this.byId.get(id)?.p;
   }
 
+  /** La bulle sous le pointeur : on ne regarde que les cases de la grille autour de lui, pas les 380 bulles. */
   private hit(sx: number, sy: number): Bubble | null {
     let best: Bubble | null = null;
     let bestD = Infinity;
     const rad = (this.D * this.cam.zoom) / 2 + 6;
-    for (const b of this.bubbles) {
-      if (b.alpha < 0.3) continue;
+    const wx = this.cam.x + (sx - this.w / 2) / this.cam.zoom;
+    const wy = this.cam.y + (sy - this.h / 2) / this.cam.zoom;
+    const gx = Math.floor((((wx % this.worldW) + this.worldW) % this.worldW) / this.cell);
+    const gy = Math.floor((((wy % this.worldH) + this.worldH) % this.worldH) / this.cell);
+    const voir = (b: Bubble) => {
+      if (b.alpha < 0.3) return;
       const x = this.wrapD(b.x - this.cam.x, this.worldW) * this.cam.zoom + this.w / 2;
       const y = this.wrapD(b.y - this.cam.y, this.worldH) * this.cam.zoom + this.h / 2;
       const d = Math.hypot(x - sx, y - sy);
@@ -477,7 +494,13 @@ export class Constellation {
         best = b;
         bestD = d;
       }
+    };
+    if (!this.grid.size) {
+      this.bubbles.forEach(voir);
+      return best;
     }
+    for (let oy = -1; oy <= 1; oy++)
+      for (let ox = -1; ox <= 1; ox++) this.grid.get(((gy + oy + this.rows) % this.rows) * this.cols + ((gx + ox + this.cols) % this.cols))?.forEach(voir);
     return best;
   }
 
@@ -575,6 +598,14 @@ export class Constellation {
       const rect = this.canvas.getBoundingClientRect();
       const b = this.hit(e.clientX - rect.left, e.clientY - rect.top);
       this.camVel = { x: 0, y: 0 };
+      const maintenant = performance.now();
+      // deux clics rapprochés sur la bulle déjà ouverte : on entre, sans chercher le bouton de la fiche
+      if (b && this.dernierClic?.id === b.p.id && maintenant - this.dernierClic.t < 450 && this.selectedId === b.p.id) {
+        this.dernierClic = null;
+        this.events.onEnter?.(b.p.id);
+        return;
+      }
+      this.dernierClic = b ? { id: b.p.id, t: maintenant } : null;
       this.select(b ? b.p.id : null);
     }
   };
@@ -609,6 +640,9 @@ export class Constellation {
       this.zoomAt(this.w / 2, this.h / 2, this.cam.zoom * 1.15);
     } else if (k === '-') {
       this.zoomAt(this.w / 2, this.h / 2, this.cam.zoom / 1.15);
+    } else if (k === 'home' || k === '0') {
+      e.preventDefault();
+      this.resetView();
     } else if (k === 'escape') {
       this.select(null);
     }
@@ -854,6 +888,8 @@ export class Constellation {
       this.raf = requestAnimationFrame(loop);
       const dt = Math.min(0.05, (now - (this.last || now)) / 1000);
       this.last = now;
+      // onglet caché : rien à montrer, la batterie se repose (le temps de la promenade s'arrête aussi)
+      if (document.hidden) return;
       // hors de la constellation, plus rien à calculer ni à dessiner : la toile s'efface
       // par un fondu CSS (sur la carte graphique) ; les sprites continuent de se préparer,
       // pour un retour immédiat

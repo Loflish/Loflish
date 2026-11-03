@@ -86,6 +86,8 @@ export function Icon({ name, size = 22, title }: { name: string; size?: number; 
         alt={title ?? ''}
         aria-hidden={title ? undefined : true}
         draggable={false}
+        loading="lazy"
+        decoding="async"
       />
     );
   }

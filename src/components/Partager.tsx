@@ -32,7 +32,7 @@ async function copier(texte: string): Promise<boolean> {
     ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.select();
-    let ok = false;
+    let ok: boolean;
     try {
       ok = document.execCommand('copy');
     } catch {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BubbleImage, Footer } from '../components/Chrome';
 import { ChoixConfidentialite } from '../components/ChoixConfidentialite';
 import { TexteBrode } from '../components/TexteBrode';
@@ -56,8 +56,14 @@ const TITRE_MEDIAS = 'Photos, vidéos, sons & documents';
 
 type SalleState = { kind: 'rubrique'; r: Rubrique } | { kind: 'medias' } | { kind: 'ajout-media' } | { kind: 'signaler' };
 
+/** Le lien d'une salle précise d'une trace (#/trace/…?salle=souvenirs) : il s'ouvre directement dessus. */
+function lienSalle(id: string, salle: RubriqueId | 'medias'): string {
+  return `${window.location.origin}${window.location.pathname}#/trace/${encodeURIComponent(id)}?salle=${salle}`;
+}
+
 export function TracePage() {
   useMuseumMode('trace');
+  const navigate = useNavigate();
   const { id = '' } = useParams();
   useMesTraces(); // se met à jour quand on ajoute un fragment
   // aperçu autonome : tout est déjà là ; en ligne : le profil complet se charge à la demande
@@ -80,11 +86,12 @@ export function TracePage() {
   useEffect(() => {
     window.scrollTo(0, 0);
     setAuteur(mine);
-    // arrivée depuis « Mes traces » : ouvrir directement une rubrique
-    const ouvrir = (location.state as { ouvrir?: RubriqueId } | null)?.ouvrir;
-    const r = RUBRIQUES.find((x) => x.id === ouvrir);
+    // arrivée depuis « Mes traces », ou par un lien vers une salle (…?salle=souvenirs) : ouvrir directement la rubrique
+    const voulu = (location.state as { ouvrir?: RubriqueId } | null)?.ouvrir ?? new URLSearchParams(location.search).get('salle');
+    const r = RUBRIQUES.find((x) => x.id === voulu);
     if (r) setSalle({ kind: 'rubrique', r });
-  }, [id, mine, location.state]);
+    else if (voulu === 'medias') setSalle({ kind: 'medias' });
+  }, [id, mine, location.state, location.search]);
 
   if (!trace && chargement) {
     return (
@@ -129,6 +136,12 @@ export function TracePage() {
               </div>
             )}
             <BoutonPartager titre={trace.nom} url={lienTrace(trace.id)} />
+            <button className="lien-discret" onClick={() => navigate('/', { state: { focus: trace.id } })} title="Retrouver cette bulle dans la constellation">
+              <Icon name="lieu" size={16} /> Sa bulle
+            </button>
+            <button className="lien-discret" onClick={() => window.print()} title="Imprimer la trace, ou l’enregistrer en PDF">
+              <Icon name="document" size={16} /> Imprimer
+            </button>
             {!mine && (
               <button className="lien-discret" onClick={() => setSalle({ kind: 'signaler' })}>
                 <Icon name="drapeau" size={16} /> Signaler
@@ -318,6 +331,7 @@ export function TracePage() {
           )}
         </div>
 
+        <Impression trace={trace} />
         <Footer />
 
         {salle && (
@@ -331,6 +345,51 @@ export function TracePage() {
         {vue && <MediaVue m={vue} onClose={() => setVue(null)} />}
       </main>
     </OuvrirMedia.Provider>
+  );
+}
+
+/**
+ * Pour l'imprimante seulement (print.css) : toutes les rubriques et tous leurs fragments, à la suite,
+ * puis les titres des photos, sons et documents. À l'écran, cette section n'existe pas.
+ */
+function Impression({ trace }: { trace: Trace }) {
+  const remplies = RUBRIQUES.filter((r) => (trace.rubriques[r.id]?.length ?? 0) > 0);
+  const libres = mediasLibres(trace);
+  if (!remplies.length && !libres.length) return null;
+  return (
+    <section className="impression" aria-hidden="true">
+      <h2>{trace.type === 'memoire' ? 'Fragments de son existence' : 'Fragments de mon existence'}</h2>
+      {remplies.map((r) => (
+        <div key={r.id} className="impression-rubrique">
+          <h3>{titreRubrique(r, trace.type)}</h3>
+          {(trace.rubriques[r.id] ?? []).map((e) => {
+            const meta = [e.categorie, e.lien, e.quand, e.lieu].filter(Boolean).join(', ');
+            return (
+              <p key={e.id} className="impression-fragment" dir="auto">
+                {e.titre && <em>{e.titre}. </em>}
+                {e.texte}
+                {meta && <span className="impression-meta"> ({meta})</span>}
+              </p>
+            );
+          })}
+        </div>
+      ))}
+      {libres.length > 0 && (
+        <div className="impression-rubrique">
+          <h3>{TITRE_MEDIAS}</h3>
+          {libres.map((m) => (
+            <p key={m.id} className="impression-fragment">
+              {m.titre}
+              {m.legende ? ` : ${m.legende}` : ''}
+              {m.url ? <span className="impression-meta"> ({m.url})</span> : ''}
+            </p>
+          ))}
+        </div>
+      )}
+      <p className="impression-pied">
+        {trace.nom}, {TYPE_LABEL[trace.type].toLowerCase()}. Nos Mots Mémoriaux, {lienTrace(trace.id)}
+      </p>
+    </section>
   );
 }
 
@@ -574,6 +633,12 @@ function RubriqueDetail({ r, trace, canEdit }: { r: Rubrique; trace: Trace; canE
         <ElementView key={e.id} e={e} trace={trace} rubrique={r.id} auteur={canEdit} rang={i} total={items.length} />
       ))}
       {canEdit && <FragmentEditor key={items.length} traceId={trace.id} rubrique={r.id} items={items} memoire={trace.type === 'memoire'} />}
+      {items.length > 0 && (
+        <p className="voir-tout">
+          {/* le lien ouvre la trace directement sur cette salle */}
+          <BoutonPartager titre={`${trace.nom}, ${titreRubrique(r, trace.type).toLowerCase()}`} url={lienSalle(trace.id, r.id)} />
+        </p>
+      )}
     </div>
   );
 }

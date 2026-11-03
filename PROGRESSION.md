@@ -1,5 +1,14 @@
 # Nos Mots Mémoriaux : état sauvegardé
 
+## Point de reprise — 3 novembre 2026
+
+Sur la branche `ameliorations-fable-2026-11-03` (partie de `refonte-octobre`, 00ac316) : 100 améliorations
+d'outillage, de chargement, d'accessibilité, d'impression, de partage et de robustesse, sans toucher à la direction
+artistique ni à l'atelier des bulles. Liste point par point et façon de vérifier chacune :
+[AMELIORATIONS-2026-11-03.md](AMELIORATIONS-2026-11-03.md). `npm run verifier` est vert (24 tests du site,
+32 tests du serveur). Rien n'est poussé sur GitHub : Tom relit d'abord, corrige s'il veut, puis décide.
+Prochaine étape : reprendre le chantier des bulles (planche 4, tri dans `/#/atelier/tri`, catalogue de Créer).
+
 ## Point de reprise — 30 octobre 2026
 
 La version préférée de Tom (fond feutre, eau, entrée) est devenue la version par défaut du site.

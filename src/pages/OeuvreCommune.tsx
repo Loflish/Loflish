@@ -107,6 +107,9 @@ export function OeuvreCommune() {
   const vue = useRef<Vue>({ s: 1, x: 0, y: 0 });
   const survol = useRef<[number, number] | null>(null);
   const [, redessiner] = useState(0);
+  /** le cadrage d'ouverture (le cœur de l'œuvre), pour y revenir d'un clic ou de la touche Début */
+  const cadrerRef = useRef<() => void>(() => undefined);
+  const [eloigne, setEloigne] = useState(false);
 
   useEffect(() => {
     const o = ecouterOeuvre(setOeuvre);
@@ -180,8 +183,10 @@ export function OeuvreCommune() {
       // la vue s'ouvre sur le cœur de l'œuvre ; autour, la toile s'étend loin
       const s = Math.min(w / COEUR.l, (h - 40) / COEUR.h) * 0.9;
       vue.current = { s, x: (w - COEUR.l * s) / 2 - COEUR.x * s, y: (h - COEUR.h * s) / 2 + 12 - COEUR.y * s };
+      setEloigne(false);
       redessiner((n) => n + 1);
     };
+    cadrerRef.current = cadrer;
     cadrer();
     window.addEventListener('resize', cadrer);
     return () => window.removeEventListener('resize', cadrer);
@@ -222,7 +227,18 @@ export function OeuvreCommune() {
     const px = cx - r.left;
     const py = cy - r.top;
     vue.current = { s, x: px - ((px - v.x) * s) / v.s, y: py - ((py - v.y) * s) / v.s };
+    setEloigne(true);
     redessiner((n) => n + 1);
+  };
+  // au clavier, sur la toile : + et - pour s'approcher, Début pour revenir au cœur
+  const onKey = (e: React.KeyboardEvent) => {
+    const r = dessus.current?.getBoundingClientRect();
+    if (!r) return;
+    if (e.key === '+' || e.key === '=') zoomer(1.2, r.left + r.width / 2, r.top + r.height / 2);
+    else if (e.key === '-') zoomer(1 / 1.2, r.left + r.width / 2, r.top + r.height / 2);
+    else if (e.key === 'Home') cadrerRef.current();
+    else return;
+    e.preventDefault();
   };
   const peutPoser = !oeuvre.mien && oeuvre.peutCoudre && !arrivee && !anim;
 
@@ -252,6 +268,7 @@ export function OeuvreCommune() {
       if (g.bouge || Math.hypot(e.clientX - g.x, e.clientY - g.y) > 6) {
         g.bouge = true;
         vue.current = { ...vue.current, x: vue.current.x + dx, y: vue.current.y + dy };
+        if (!eloigne) setEloigne(true);
         redessiner((n) => n + 1);
       }
       pointeurs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -308,13 +325,20 @@ export function OeuvreCommune() {
         ref={dessus}
         className={`oeuvre-toile oeuvre-dessus${peutPoser ? ' peut-poser' : ''}`}
         role="img"
-        aria-label={`L’œuvre commune : ${n} trait${n > 1 ? 's' : ''} cousu${n > 1 ? 's' : ''}.`}
+        tabIndex={0}
+        aria-label={`L’œuvre commune : ${n} trait${n > 1 ? 's' : ''} cousu${n > 1 ? 's' : ''}. Plus et moins pour s’approcher, Début pour revenir au cœur.`}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
+        onKeyDown={onKey}
         onWheel={(e) => zoomer(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY)}
       />
+      {eloigne && (
+        <button className="lien-discret oeuvre-recentrer" onClick={() => cadrerRef.current()} aria-keyshortcuts="Home">
+          <Icon name="retour" size={16} /> Revenir au cœur
+        </button>
+      )}
       <section className="oeuvre-panneau" aria-live="polite">
         <h1 className="oeuvre-titre">L’œuvre commune</h1>
         <p className="oeuvre-texte">

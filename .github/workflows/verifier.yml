@@ -1,0 +1,40 @@
+# À chaque envoi sur GitHub : types, lint, tests et build, comme « npm run verifier » sur le PC.
+name: Vérifier
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  site:
+    name: Site (types, lint, tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm --prefix server ci
+      - run: npm run typecheck
+      - run: npm --prefix server run typecheck
+      - run: npm run lint
+      - run: npm run test:site
+      - run: npm run build
+
+  serveur:
+    name: Serveur (tests sur une vraie base)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm --prefix server ci
+      # ubuntu-latest embarque PostgreSQL 16 ; test/base.ts le démarre sur un port à part
+      - run: npm run serveur:test
+        env:
+          PG_BIN: /usr/lib/postgresql/16/bin

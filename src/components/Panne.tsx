@@ -13,9 +13,15 @@ export class Panne extends Component<{ children: ReactNode }, { panne: boolean }
     return (
       <main className="page-panne">
         <h1 className="page-titre">Cette page n’a pas pu s’ouvrir.</h1>
-        <button type="button" className="bouton" onClick={() => location.reload()}>
-          Recharger la page
-        </button>
+        <p className="muted">Rien de ce que tu as déposé n’est perdu : le musée garde tout de son côté.</p>
+        <div className="liens-colonne">
+          <button type="button" className="bouton" onClick={() => location.reload()}>
+            Recharger la page
+          </button>
+          <a className="lien-entrer" href="#/" onClick={() => window.setTimeout(() => location.reload(), 50)}>
+            Retour au musée
+          </a>
+        </div>
       </main>
     );
   }

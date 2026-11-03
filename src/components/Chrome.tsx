@@ -17,7 +17,8 @@ const logoUrl = `${import.meta.env.BASE_URL}brand/logo-ligne-petit.webp`;
 export function Logo({ size = 'normal' }: { size?: 'normal' | 'petit' }) {
   return (
     <Link to="/" className={`logo logo-${size}`} aria-label="Nos Mots Mémoriaux, retour à la constellation">
-      <img src={logoUrl} alt="Nos Mots Mémoriaux, brodé à la main en fil bordeaux" width={900} height={88} />
+      {/* le logo est la première chose que l'on voit : il passe devant les autres images (attribut en minuscules : React 18 ne le connaît pas encore) */}
+      <img src={logoUrl} alt="Nos Mots Mémoriaux, brodé à la main en fil bordeaux" width={900} height={88} decoding="async" {...{ fetchpriority: 'high' }} />
     </Link>
   );
 }
@@ -73,7 +74,7 @@ export function BubbleImage({
   }, [id, couleur, size, m]);
   return (
     <span className={`bubble-image ${className}`} style={{ width: size, height: size }} aria-hidden="true">
-      {src && <img src={src} alt="" />}
+      {src && <img src={src} alt="" decoding="async" />}
     </span>
   );
 }
@@ -129,7 +130,7 @@ export function Dock() {
             <ul className="menu-list">
               {MENU.map((m) => (
                 <li key={m.to}>
-                  <Link to={m.to} className="menu-link">
+                  <Link to={m.to} className="menu-link" aria-current={location.pathname === m.to ? 'page' : undefined}>
                     <Icon name={m.icon} size={20} />
                     <span>{m.label}</span>
                   </Link>

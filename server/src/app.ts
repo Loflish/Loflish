@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
 import cookie from '@fastify/cookie';
@@ -19,6 +20,9 @@ import { routesPubliques } from './routes/public';
 /** Seuls les scripts du site s'exécutent ; les médias peuvent venir du stockage S3 (https), les vidéos liées de YouTube et Vimeo (lecteurIntegre). */
 const POLITIQUE =
   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; font-src 'self' data:; connect-src 'self'; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
+
+/** La version du serveur (server/package.json ; dans l'image Docker, /app/package.json), montrée par /api/sante. */
+const VERSION: string = (createRequire(import.meta.url)('../package.json') as { version: string }).version;
 
 /** Le serveur du musée, assemblé (utilisé par index.ts, et par les tests). */
 export async function creerApp(): Promise<FastifyInstance> {
@@ -63,9 +67,11 @@ export async function creerApp(): Promise<FastifyInstance> {
     return rep.status(500).send({ erreur: 'Une erreur est survenue de notre côté. Réessaie un peu plus tard.', code: 'serveur' });
   });
 
-  app.get('/api/sante', async () => {
+  // la santé du musée : la base répond, et depuis combien de temps le serveur tourne (lu par Docker et par la supervision)
+  app.get('/api/sante', async (req, rep) => {
+    rep.header('cache-control', 'no-store');
     await requete('select 1');
-    return { ok: true };
+    return { ok: true, version: VERSION, depuis: Math.round(process.uptime()) };
   });
 
   app.decorateRequest('compte', null);

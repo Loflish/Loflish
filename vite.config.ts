@@ -67,6 +67,15 @@ function sansEssais(): Plugin {
 export default defineConfig({
   base: './',
   plugins: [react(), atelierBulles(), sansEssais()],
+  build: {
+    rollupOptions: {
+      output: {
+        // React et le routeur dans leur propre fichier : il ne change pas d'une version du site à l'autre,
+        // le navigateur le garde, et seul le code du musée est retéléchargé
+        manualChunks: { react: ['react', 'react-dom', 'react-router-dom'] },
+      },
+    },
+  },
   server: {
     proxy: { '/api': { target: 'http://localhost:8787', changeOrigin: false } },
   },

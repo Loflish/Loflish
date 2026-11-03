@@ -7,20 +7,61 @@ import { Icon } from '../components/Icon';
 import { Panneau } from '../components/Panneau';
 import { Signaler } from '../components/Signaler';
 import { allTraces, apercu, TYPE_LABEL } from '../data/store';
-import { shuffle } from '../lib/random';
+import { rng, shuffle } from '../lib/random';
 import { useMuseumMode } from '../lib/museum';
 import { useTitre } from '../lib/titre';
+
+const CLE = 'nmm:se-perdre';
+const CLE_VU = 'nmm:se-perdre-vu';
+const lire = (k: string) => {
+  try {
+    return sessionStorage.getItem(k);
+  } catch {
+    return null;
+  }
+};
+const ecrire = (k: string, v: string) => {
+  try {
+    sessionStorage.setItem(k, v);
+  } catch {
+    /* ignore */
+  }
+};
 
 /**
  * Se perdre : accepter de ne pas savoir qui l'on va rencontrer.
  * Hasard équitable : ordre mélangé sans répétition dans la session, aucune
  * personnalisation, aucun signal de popularité, aucun autoplay.
+ * Le fil de la promenade tient le temps de l'onglet : ouvrir une trace puis revenir reprend à la même carte.
  */
 export function SePerdre() {
   useMuseumMode('perdre');
   useTitre('Se perdre');
-  const order = useMemo(() => shuffle(Math.random, allTraces()), []);
-  const [i, setI] = useState(0);
+  const [graine] = useState(() => Number(lire(`${CLE}:graine`)) || Math.floor(Math.random() * 2 ** 31));
+  const order = useMemo(() => shuffle(rng(graine), allTraces()), [graine]);
+  const [i, setI] = useState(() => Math.min(Number(lire(`${CLE}:i`)) || 0, Math.max(0, order.length - 1)));
+  useEffect(() => {
+    ecrire(`${CLE}:graine`, String(graine));
+    ecrire(`${CLE}:i`, String(i));
+  }, [graine, i]);
+  // la première fois : un mot sur les gestes, qui s'efface
+  const [aide, setAide] = useState(() => {
+    try {
+      return !localStorage.getItem(CLE_VU);
+    } catch {
+      return true;
+    }
+  });
+  useEffect(() => {
+    if (!aide) return;
+    try {
+      localStorage.setItem(CLE_VU, '1');
+    } catch {
+      /* ignore */
+    }
+    const t = window.setTimeout(() => setAide(false), 7000);
+    return () => window.clearTimeout(t);
+  }, [aide]);
   const [dir, setDir] = useState<1 | -1>(1);
   const [drag, setDrag] = useState(0);
   const start = useRef<number | null>(null);
@@ -93,6 +134,10 @@ export function SePerdre() {
         </article>
       </div>
 
+      <p className={`perdre-aide${aide ? '' : ' is-hidden'}`} aria-hidden={!aide}>
+        <span className="hint-large">Les flèches du clavier, ou glisse la carte : à droite pour la suivante, à gauche pour revenir.</span>
+        <span className="hint-small">Glisse la carte vers la gauche pour rencontrer la suivante.</span>
+      </p>
       <div className="perdre-actions">
         <button className="lien-discret" onClick={() => go(-1)} disabled={i === 0}>
           <Icon name="retour" size={16} /> Précédent

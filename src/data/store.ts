@@ -178,8 +178,10 @@ function save(): void {
   if (!EN_LIGNE)
     try {
       localStorage.setItem(LOCAL_KEY, JSON.stringify(local));
+      derniereErreur = '';
     } catch {
-      /* stockage plein ou indisponible : la trace reste en mémoire pour la session */
+      // stockage plein ou indisponible : la trace reste en mémoire pour la session, et l'auteur le sait
+      derniereErreur = 'Le navigateur n’a plus de place pour garder ce dépôt : il disparaîtra en fermant la page. Emporte tes traces dans un fichier (page Compte).';
     }
   notifier();
 }
@@ -206,6 +208,31 @@ export function publishLocal(t: Trace): void {
 /** Mes traces (visibles comme « miennes » uniquement sur cet appareil). */
 export function useMesTraces(): Trace[] {
   return useSyncExternalStore(abonner, () => snapshot);
+}
+
+// ——— aperçu autonome : emporter ses traces dans un fichier, et les reprendre sur un autre appareil
+// (le 26 octobre, un navigateur qui a perdu sa mémoire a effacé des essais : un fichier, lui, reste)
+
+/** Le fichier à télécharger : les traces de cet appareil, telles quelles (les fichiers déposés ne sont pas dedans). */
+export function exporterLocal(): string {
+  return JSON.stringify({ musee: 'Nos Mots Mémoriaux', exporteLe: new Date().toISOString(), email: emailDuCompte() || undefined, traces: local }, null, 2);
+}
+
+/** Reprendre un fichier exporté : chaque trace valide remplace celle de même identifiant, ou s'ajoute. Rend combien ont été reprises. */
+export function importerLocal(texte: string): number {
+  const d = JSON.parse(texte) as { traces?: unknown };
+  const liste = Array.isArray(d.traces) ? d.traces : [];
+  const valides = liste.filter(
+    (t): t is Trace => !!t && typeof t === 'object' && typeof (t as Trace).id === 'string' && typeof (t as Trace).nom === 'string' && ['personnelle', 'memoire'].includes((t as Trace).type) && typeof (t as Trace).couleur === 'string',
+  );
+  if (!valides.length) throw new Error('Ce fichier ne contient aucune trace de Nos Mots Mémoriaux.');
+  const propres = valides.map((t) => migrer({ ...t, rubriques: t.rubriques ?? {}, medias: (t.medias ?? []).filter((m) => !m.fichier || m.src) }));
+  const ids = new Set(propres.map((t) => t.id));
+  local = [...propres, ...local.filter((t) => !ids.has(t.id))];
+  // deux bulles au plus, différentes : la plus récente de chaque sorte
+  local = local.filter((t, i) => local.findIndex((x) => x.type === t.type) === i);
+  save();
+  return propres.filter((t) => local.includes(t)).length;
 }
 
 export function isMine(id: string): boolean {

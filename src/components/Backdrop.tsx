@@ -58,7 +58,7 @@ function FondsPeints({ actif }: { actif: Fond }) {
       e.stop();
       eau.current = null;
     };
-  }, [actif]);
+  }, [actif, engine]);
   useEffect(() => {
     eau.current?.setPause(enPause);
     eau.current?.setReduit(reducedMotion);
@@ -161,7 +161,6 @@ export function Backdrop() {
     const presences = traces.map((t) => ({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex, matiere: t.matiere }));
     const c = new Constellation(cvsRef.current!, presences);
     engine.current = c;
-    if (HD && encreRef.current) encre.current = new Encre(encreRef.current, HD_FILES.encre);
     if (HD) {
       // les bulles s'affichent tout de suite en lavis provisoire, puis prennent leur vraie
       // matière d'aquarelle dès que les taches HD sont là (8 s au plus, sinon rendu procédural)
@@ -204,12 +203,30 @@ export function Backdrop() {
     };
   }, [engine]);
 
+  /**
+   * La vidéo d'encre (170 Ko) ne se charge qu'au premier geste vers une bulle (survol ou touche), jamais avec la
+   * page ; et pas du tout si la personne a demandé d'économiser les données. D'ici le clic sur « Entrer », elle est prête.
+   */
+  const preparerEncre = () => {
+    if (encre.current || !HD || !encreRef.current) return;
+    if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+    encre.current = new Encre(encreRef.current, HD_FILES.encre);
+  };
+
   // ——— événements du moteur → interface (sans re-rendu à chaque image)
   useEffect(() => {
     const c = engine.current;
     if (!c) return;
-    c.events.onHover = (id) => setHovered(id);
-    c.events.onSelect = (id) => setSelected(id);
+    c.events.onHover = (id) => {
+      if (id) preparerEncre();
+      setHovered(id);
+    };
+    c.events.onSelect = (id) => {
+      if (id) preparerEncre();
+      setSelected(id);
+    };
+    // un second clic sur la bulle ouverte vaut « Entrer dans sa mémoire »
+    c.events.onEnter = () => enterBtn.current?.click();
     c.events.onFrame = () => {
       const hl = hoverLabel.current;
       const show = c.hoverId && c.hoverId !== c.selectedId ? c.hoverId : null;

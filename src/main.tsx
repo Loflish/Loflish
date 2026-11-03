@@ -19,6 +19,8 @@ import './styles/base.css';
 import './styles/museum.css';
 import './styles/trace.css';
 import './styles/pages.css';
+import './styles/finitions.css';
+import './styles/print.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

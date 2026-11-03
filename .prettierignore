@@ -1,0 +1,8 @@
+dist
+node_modules
+server/dist
+server/node_modules
+design
+public
+*.md
+package-lock.json

@@ -179,7 +179,11 @@ export async function routesAuth(app: FastifyInstance) {
     return { ok: true };
   });
 
-  app.get('/api/moi', async (req) => ({ compte: req.compte ? publicCompte(req.compte) : null }));
+  app.get('/api/moi', async (req, rep) => {
+    // qui je suis ne doit jamais être gardé par un cache (navigateur ou relais) : après une déconnexion, la réponse change
+    rep.header('cache-control', 'private, no-store');
+    return { compte: req.compte ? publicCompte(req.compte) : null };
+  });
 
   // changer d'adresse e-mail : un code part vers la nouvelle adresse ; rien ne change avant qu'il soit donné
   app.post('/api/moi/email', { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } }, async (req) => {

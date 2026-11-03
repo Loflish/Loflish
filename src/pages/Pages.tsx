@@ -3,7 +3,21 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Footer, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
 import { EDITIONS, tracesDeLEdition } from '../data/archives';
-import { allTraces, changerEmail, confirmerEmail, demanderCode, effacerMonCompte, emailDuCompte, entrerAvecCode, seDeconnecter, useCompte, useMesTraces, type CompteSession } from '../data/store';
+import {
+  allTraces,
+  changerEmail,
+  confirmerEmail,
+  demanderCode,
+  effacerMonCompte,
+  emailDuCompte,
+  entrerAvecCode,
+  exporterLocal,
+  importerLocal,
+  seDeconnecter,
+  useCompte,
+  useMesTraces,
+  type CompteSession,
+} from '../data/store';
 import { ChoixConfidentialite } from '../components/ChoixConfidentialite';
 import { MesTraces } from './MesTraces';
 import { CONTACT } from '../lib/contact';
@@ -598,6 +612,8 @@ function CompteReglages() {
         </section>
       )}
 
+      {!EN_LIGNE && <SauvegardeLocale nombre={traces.length} />}
+
       <section className="compte-bloc" aria-labelledby="h-donnees">
         <h2 id="h-donnees" className="intertitre">
           Protection de mes données
@@ -612,6 +628,67 @@ function CompteReglages() {
         </p>
       </section>
     </div>
+  );
+}
+
+/**
+ * Aperçu autonome : les traces vivent dans ce navigateur. Un fichier permet de les garder ailleurs,
+ * et de les reprendre sur un autre appareil (ou après un navigateur qui a perdu sa mémoire).
+ */
+function SauvegardeLocale({ nombre }: { nombre: number }) {
+  const [message, setMessage] = useState('');
+  const [erreur, setErreur] = useState('');
+  const exporter = () => {
+    const blob = new Blob([exporterLocal()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mes-traces-nos-mots-memoriaux-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+    setMessage('Le fichier est téléchargé.');
+    setErreur('');
+  };
+  const reprendre = async (f: File | undefined) => {
+    if (!f) return;
+    try {
+      const n = importerLocal(await f.text());
+      setMessage(`${n} trace${n > 1 ? 's' : ''} reprise${n > 1 ? 's' : ''} sur cet appareil.`);
+      setErreur('');
+    } catch (e) {
+      setErreur(e instanceof Error ? e.message : 'Ce fichier n’a pas pu être lu.');
+      setMessage('');
+    }
+  };
+  return (
+    <section className="compte-bloc" aria-labelledby="h-sauvegarde">
+      <h2 id="h-sauvegarde" className="intertitre">
+        Garder mes traces ailleurs
+      </h2>
+      <p className="muted petit">
+        Dans cet aperçu, tes traces vivent dans ce navigateur. Un fichier te permet de les garder, et de les reprendre sur un autre appareil. Les
+        photos, vidéos et sons déposés ne sont pas dans le fichier.
+      </p>
+      <div className="compte-sauvegarde">
+        <button className="bouton bouton-discret" onClick={exporter} disabled={nombre === 0}>
+          Emporter mes traces (fichier)
+        </button>
+        <label className="lien-discret editeur-fichier" htmlFor="reprise-fichier">
+          <Icon name="archive" size={16} /> Reprendre un fichier
+        </label>
+        <input id="reprise-fichier" type="file" accept="application/json,.json" className="sr-only" onChange={(e) => void reprendre(e.target.files?.[0])} />
+      </div>
+      {message && (
+        <p className="compte-ok" role="status">
+          {message}
+        </p>
+      )}
+      {erreur && (
+        <p className="editeur-erreur" role="alert">
+          {erreur}
+        </p>
+      )}
+    </section>
   );
 }
 

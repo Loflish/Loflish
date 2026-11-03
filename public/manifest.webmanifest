@@ -1,0 +1,17 @@
+{
+  "name": "Nos Mots Mémoriaux",
+  "short_name": "Nos Mots",
+  "description": "Un musée vivant où chacun peut laisser sa trace, ses derniers mots et ses souvenirs.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ECE9E2",
+  "theme_color": "#ECE9E2",
+  "icons": [
+    { "src": "icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

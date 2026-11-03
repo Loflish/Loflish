@@ -13,6 +13,7 @@ import { GRIS_PALETTE, colorById } from '../lib/palette';
 import { listePays, PAYS_AUTRE } from '../lib/pays';
 import { useMuseum, useMuseumMode } from '../lib/museum';
 import { useTitre } from '../lib/titre';
+import { autoGrow } from '../lib/autogrow';
 
 /**
  * Créer ma trace : un parcours court pour publier, profond ensuite.
@@ -42,6 +43,8 @@ interface Draft {
   souvenir: string;
   opts: { archives: boolean; musee: boolean; broderie: boolean; reseaux: boolean };
   droits: boolean;
+  /** l'étape où l'on en était : on la retrouve en revenant, même après avoir fermé l'onglet */
+  etape?: number;
 }
 
 const EMPTY: Draft = {
@@ -86,21 +89,44 @@ export function Creer() {
       return { ...EMPTY, matiere: matiereAuHasard() };
     }
   });
-  const [step, setStep] = useState(0);
+  // un brouillon commencé reprend à son étape ; la personne peut aussi repartir de zéro
+  const [repris, setRepris] = useState(() => !!d.kind && (d.etape ?? 0) > 0);
+  const [step, setStep] = useState(() => (d.kind ? Math.min(d.etape ?? 0, d.kind === 'memoire' ? 5 : 6) : 0));
   const [publishing, setPublishing] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     const t = window.setTimeout(() => {
       try {
-        localStorage.setItem(KEY, JSON.stringify(d));
+        localStorage.setItem(KEY, JSON.stringify({ ...d, etape: step }));
         setSaved(true);
       } catch {
         /* ignore */
       }
     }, 500);
     return () => window.clearTimeout(t);
-  }, [d]);
+  }, [d, step]);
+
+  // fermer l'onglet pendant que le brouillon s'enregistre : le navigateur demande confirmation
+  useEffect(() => {
+    if (saved || !d.kind) return;
+    const garde = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', garde);
+    return () => window.removeEventListener('beforeunload', garde);
+  }, [saved, d.kind]);
+
+  const repartirDeZero = () => {
+    try {
+      localStorage.removeItem(KEY);
+    } catch {
+      /* ignore */
+    }
+    setD({ ...EMPTY, matiere: matiereAuHasard() });
+    setStep(0);
+    setRepris(false);
+  };
 
   const colonne = useRef<HTMLDivElement>(null);
   const firstStep = useRef(true);
@@ -247,11 +273,32 @@ export function Creer() {
   return (
     <main className="page creer">
       <PageTop />
-      <div className="creer-colonne" ref={colonne}>
+      {/* Ctrl+Entrée (ou Cmd+Entrée) : continuer sans lâcher le clavier */}
+      <div
+        className="creer-colonne"
+        ref={colonne}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && canNext && step < last) {
+            e.preventDefault();
+            setStep((s) => s + 1);
+          }
+        }}
+      >
         <p className="etape-compteur" tabIndex={-1}>
           Étape {step + 1} sur {steps.length}
           <span className={`brouillon${saved ? ' is-saved' : ''}`}>{saved ? 'Brouillon privé enregistré' : 'Enregistrement…'}</span>
         </p>
+        {repris && (
+          <div className="brouillon-reprise" role="status">
+            <p>Ton brouillon a été retrouvé : tu reprends là où tu t’étais arrêté.</p>
+            <button className="lien-discret petit" onClick={() => setRepris(false)}>
+              Continuer
+            </button>
+            <button className="lien-discret petit" onClick={repartirDeZero}>
+              Repartir de zéro
+            </button>
+          </div>
+        )}
 
         {step === 0 && (
           <section className="etape">
@@ -368,7 +415,7 @@ export function Creer() {
             )}
             <label className="field">
               <span className="field-label">Pays associé à {d.kind === 'memoire' ? 'cette mémoire' : 'ma trace'} (facultatif)</span>
-              <select value={d.pays} onChange={(e) => up({ pays: e.target.value })}>
+              <select value={d.pays} autoComplete="country-name" onChange={(e) => up({ pays: e.target.value })}>
                 <option value="">Aucun</option>
                 {listePays().map((p) => (
                   <option key={p}>{p}</option>
@@ -392,13 +439,15 @@ export function Creer() {
                     rows={i === 3 ? 3 : 6}
                     maxLength={max}
                     value={d.q[i]}
+                    ref={autoGrow}
                     onChange={(e) => {
+                      autoGrow(e.target);
                       const q2 = [...d.q] as Draft['q'];
                       q2[i] = e.target.value;
                       up({ q: q2 });
                     }}
                   />
-                  <span className="compteur" aria-live="off">
+                  <span className={`compteur${d.q[i].length >= max * 0.9 ? ' est-proche' : ''}`} aria-live="off">
                     {d.q[i].length} / {max}
                   </span>
                   {i === 1 && (
@@ -422,8 +471,17 @@ export function Creer() {
             </p>
             <label className="field">
               <span className="sr-only">{QUESTION_MEMOIRE}</span>
-              <textarea rows={7} maxLength={LIMITES.memoire} value={d.souvenir} onChange={(e) => up({ souvenir: e.target.value })} />
-              <span className="compteur">
+              <textarea
+                rows={7}
+                maxLength={LIMITES.memoire}
+                value={d.souvenir}
+                ref={autoGrow}
+                onChange={(e) => {
+                  autoGrow(e.target);
+                  up({ souvenir: e.target.value });
+                }}
+              />
+              <span className={`compteur${d.souvenir.length >= LIMITES.memoire * 0.9 ? ' est-proche' : ''}`}>
                 {d.souvenir.length} / {LIMITES.memoire}
               </span>
             </label>

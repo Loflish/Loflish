@@ -1,0 +1,239 @@
+/*
+ * Finitions transversales (3 novembre 2026) : typographie moderne, mouvement réduit, lien d'évitement,
+ * petites tailles relevées. Une seule feuille, chargée en dernier : retirer son import dans main.tsx
+ * rend exactement le site d'avant.
+ */
+
+/* Newsreader est une police variable à axe optique : le navigateur choisit lui-même le dessin selon la taille */
+body {
+  font-optical-sizing: auto;
+  /* sur téléphone, tirer la page vers le bas ne doit jamais la recharger en pleine promenade dans la constellation */
+  overscroll-behavior-y: none;
+}
+
+/* les titres se coupent en lignes équilibrées, les paragraphes évitent le mot orphelin de fin de ligne */
+h1,
+h2,
+h3,
+.page-titre,
+.etape-titre,
+.trace-nom,
+.intertitre,
+.perdre-nom,
+.apercu-nom,
+.question-libelle,
+.oeuvre-titre {
+  text-wrap: balance;
+}
+p,
+li,
+blockquote,
+.lead,
+.apercu-texte,
+.perdre-texte {
+  text-wrap: pretty;
+}
+/* les longs textes se coupent au trait d'union sur les écrans étroits (lang="fr" sur la page) */
+.texte-courant p,
+.projet-paragraphe,
+.question-reponse p,
+.element-texte,
+.citation,
+.juridique-liste p,
+.etape-texte {
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+
+/* plus de rectangle bleu au toucher, sur téléphone */
+a,
+button,
+[role='button'],
+.couleur,
+.chip {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* les plus petits textes relevés au-dessus de 11 px */
+.media-duree {
+  font-size: 0.72rem;
+}
+.media-ajout {
+  font-size: 0.68rem;
+}
+.param-val {
+  font-size: 0.72rem;
+}
+
+/* le compteur de caractères s'affirme quand il ne reste presque plus de place */
+.compteur.est-proche {
+  color: var(--encre);
+  font-weight: 600;
+}
+
+/* lien d'évitement : invisible, sauf au clavier */
+.aller-au-contenu {
+  position: fixed;
+  left: 1rem;
+  top: -4rem;
+  z-index: 200;
+  padding: 0.6em 1em;
+  font-size: var(--t-s);
+  background: var(--encre);
+  color: var(--lin-clair);
+  border-radius: var(--rayon);
+  text-decoration: none;
+  transition: top 200ms var(--doux);
+}
+.aller-au-contenu:focus-visible {
+  top: 1rem;
+  outline-color: var(--lin-clair);
+  outline-offset: -4px;
+}
+
+/* une page qui se charge (les pages intérieures arrivent à la demande) */
+.chargement {
+  min-height: 60dvh;
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--encre-2);
+}
+
+/* « Revenir au centre » dans la constellation, « Revenir au cœur » dans l'œuvre : discrets, à droite */
+.explorer-actions .lien-discret,
+.oeuvre-recentrer {
+  pointer-events: auto;
+}
+.oeuvre-recentrer {
+  position: absolute;
+  right: clamp(1rem, 2.6vw, 2.2rem);
+  top: 6.4rem;
+  z-index: 3;
+}
+@media (max-width: 760px) {
+  .oeuvre-recentrer {
+    top: 4.6rem;
+  }
+}
+
+/* le premier passage dans « Se perdre » : un mot sur les gestes, qui s'efface */
+.perdre-aide {
+  position: fixed;
+  left: 50%;
+  bottom: 8.2rem;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: var(--t-xs);
+  color: var(--encre-3);
+  text-align: center;
+  max-width: calc(100vw - 2rem);
+  pointer-events: none !important;
+  transition: opacity 1200ms var(--doux);
+}
+.perdre-aide.is-hidden {
+  opacity: 0;
+}
+
+/* la recherche : un extrait du passage trouvé, sous le nom */
+.result {
+  flex-wrap: wrap;
+}
+.result-extrait {
+  flex-basis: 100%;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: var(--t-xs);
+  color: var(--encre-2);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.result-extrait mark {
+  background: rgba(132, 186, 227, 0.3);
+  color: inherit;
+}
+.search-vider {
+  margin-top: 0.4rem;
+}
+.search-total {
+  font-size: var(--t-xs);
+  color: var(--encre-3);
+  margin-top: 0.3rem;
+}
+
+/* reprendre un brouillon, ou repartir de zéro */
+.brouillon-reprise {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1.4rem;
+  margin: 0 0 1.8rem;
+  padding: 0.8rem 1rem;
+  border-left: 2px solid var(--encre-2);
+  background: rgba(243, 241, 236, 0.7);
+  font-size: var(--t-s);
+}
+.brouillon-reprise p {
+  flex: 1 1 18rem;
+  margin: 0;
+}
+
+/* exporter et reprendre ses traces (aperçu autonome) */
+.compte-sauvegarde {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.6rem;
+  align-items: center;
+  margin-top: 0.8rem;
+}
+
+/* le message d'une page en panne : un lien vers le musée en plus du rechargement */
+.page-panne .liens-colonne {
+  justify-items: center;
+}
+
+/*
+ * Mouvement réduit (réglage du système) : plus de respiration des bulles ni des fonds, les panneaux se
+ * posent sans glisser, et la constellation reste au ralenti (museum.tsx).
+ */
+@media (prefers-reduced-motion: reduce) {
+  .breathing img,
+  .rejoint img,
+  .fond-peint img,
+  .fond-peint video,
+  .fond-peint canvas.fond-eau,
+  .backdrop-ornements.colle-au-fond,
+  .intro-phrase,
+  .bulle-change img {
+    animation: none !important;
+  }
+  .emerge,
+  .apercu,
+  .menu-panel,
+  .menu-scrim,
+  .search-panel,
+  .salle,
+  .salle-scrim,
+  .entre-droite,
+  .entre-gauche,
+  .partager-manuel,
+  .media-vue-scrim,
+  .publication-texte {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+  }
+  .lien-entrer:hover .icon {
+    transform: none;
+  }
+  .rejoint img {
+    opacity: 1;
+  }
+}
+
+/* le défilement vers un élément mis au point (lien d'évitement, « Aller aux fragments ») est doux, sauf si le système refuse le mouvement */
+@media (prefers-reduced-motion: no-preference) {
+  html:focus-within {
+    scroll-behavior: smooth;
+  }
+}

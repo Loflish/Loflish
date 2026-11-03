@@ -18,6 +18,31 @@ function searchable(t: Trace): string {
   return ' ' + norm(parts.join(' ')).replace(/[^a-z0-9]+/g, ' ');
 }
 
+/** Chaque caractère ramené à sa base (sans accent, en minuscule), un pour un : les positions restent celles du texte d'origine. */
+const base = (chars: string[]) => chars.map((ch) => ch.normalize('NFD')[0]!.toLowerCase()).join('');
+
+/** Le passage où le mot cherché apparaît (le nom mis à part) : quelques mots avant, le mot, quelques mots après. */
+function extrait(t: Trace, mot: string): { avant: string; mot: string; apres: string } | null {
+  if (!mot) return null;
+  const textes = [...(t.questions ?? []), t.memoire?.aperçu ?? '', t.pays ?? ''];
+  for (const list of Object.values(t.rubriques)) for (const e of list ?? []) textes.push(e.titre ?? '', e.texte, e.lieu ?? '');
+  const cible = base([...mot]);
+  for (const texte of textes) {
+    if (!texte) continue;
+    const chars = [...texte];
+    const i = base(chars).indexOf(cible);
+    if (i < 0) continue;
+    const debut = Math.max(0, i - 36);
+    const fin = Math.min(chars.length, i + cible.length + 60);
+    return {
+      avant: (debut > 0 ? '…' : '') + chars.slice(debut, i).join(''),
+      mot: chars.slice(i, i + cible.length).join(''),
+      apres: chars.slice(i + cible.length, fin).join('') + (fin < chars.length ? '…' : ''),
+    };
+  }
+  return null;
+}
+
 export function Explorer() {
   useMuseumMode('explore');
   const { engine, enPause, setEnPause } = useMuseum();
@@ -36,6 +61,8 @@ export function Explorer() {
   const maTrace = useMesTraces().find((t) => traces.includes(t));
   const [hint, setHint] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
+  // le visiteur s'est promené ou approché : « Revenir au centre » apparaît
+  const [deplace, setDeplace] = useState(() => !!engine.current?.isMoved);
   // une seule phrase, à la toute première visite, puis elle s'efface
   const [intro, setIntro] = useState(() => {
     try {
@@ -58,9 +85,10 @@ export function Explorer() {
   // le fond autour du logo brodé reste calme et clair
   const logoRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    const c = engine.current;
     const place = () => {
       const r = logoRef.current?.getBoundingClientRect();
-      if (r) engine.current?.setCalmZones([{ x: r.left - 10, y: r.top - 10, w: r.width + 20, h: r.height + 20 }]);
+      if (r) c?.setCalmZones([{ x: r.left - 10, y: r.top - 10, w: r.width + 20, h: r.height + 20 }]);
     };
     place();
     const t = window.setTimeout(place, 400);
@@ -68,7 +96,7 @@ export function Explorer() {
     return () => {
       window.clearTimeout(t);
       window.removeEventListener('resize', place);
-      engine.current?.setCalmZones([]);
+      c?.setCalmZones([]);
     };
   }, [engine]);
 
@@ -76,7 +104,10 @@ export function Explorer() {
     const c = engine.current;
     if (!c) return;
     const prev = c.events.onMoved;
-    c.events.onMoved = () => setHint(false);
+    c.events.onMoved = () => {
+      setHint(false);
+      setDeplace(true);
+    };
     return () => {
       c.events.onMoved = prev;
     };
@@ -114,6 +145,32 @@ export function Explorer() {
     return () => window.clearTimeout(t);
   }, []);
 
+  // au clavier : « / » ou Ctrl+K ouvrent la recherche, Échap la ferme
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const dansUnChamp = e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]');
+      if (e.key === 'Escape' && searchOpen) return setSearchOpen(false);
+      if (dansUnChamp) return;
+      if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [searchOpen]);
+
+  const auHasard = () => {
+    const c = engine.current;
+    const id = c?.auHasard(c.selectedId);
+    if (id) c!.focusOn(id);
+  };
+  const recentrer = () => {
+    engine.current?.select(null);
+    engine.current?.resetView();
+    setDeplace(false);
+  };
+
   return (
     <div className="explorer" role="main">
       <h1 className="sr-only">Nos Mots Mémoriaux, {edition ? `archives, édition ${edition.titre}` : 'la constellation des présences'}</h1>
@@ -130,15 +187,25 @@ export function Explorer() {
       </div>
 
       <div className="explorer-actions">
-        <button className="lien-discret" onClick={() => setSearchOpen(true)} aria-expanded={searchOpen}>
+        <button className="lien-discret" onClick={() => setSearchOpen(true)} aria-expanded={searchOpen} aria-keyshortcuts="/ Control+K">
           <Icon name="recherche" size={18} /> Rechercher
         </button>
         <button className="lien-discret" onClick={() => setEnPause(!enPause)}>
           <Icon name={enPause ? 'play' : 'pause'} size={18} /> {enPause ? 'Reprendre le mouvement' : 'Mettre en pause'}
         </button>
+        {traces.length > 1 && (
+          <button className="lien-discret" onClick={auHasard}>
+            <Icon name="onde" size={18} /> Une bulle au hasard
+          </button>
+        )}
         {maTrace && (
           <button className="lien-discret" onClick={() => engine.current?.focusOn(maTrace.id)}>
             <Icon name="lieu" size={18} /> Retrouver ma bulle
+          </button>
+        )}
+        {deplace && (
+          <button className="lien-discret" onClick={recentrer} aria-keyshortcuts="Home">
+            <Icon name="retour" size={18} /> Revenir au centre
           </button>
         )}
       </div>
@@ -179,6 +246,13 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
   const allPays = useMemo(() => [...new Set(traces.map((x) => x.t.pays).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b, 'fr')), [traces]);
 
   const active = q.trim() !== '' || type !== 'tous' || rubs.length > 0 || pays !== '';
+  const vider = () => {
+    setQ('');
+    setType('tous');
+    setRubs([]);
+    setPays('');
+    input.current?.focus();
+  };
 
   // En ligne, les bulles ne portent qu'un aperçu : le texte des fragments et les
   // rubriques remplies sont cherchés par le serveur.
@@ -224,7 +298,10 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
   useEffect(() => {
     engine.current?.setMatch(active ? new Set(results.map((r) => r.id)) : null);
   }, [results, active, engine]);
-  useEffect(() => () => engine.current?.setMatch(null), [engine]);
+  useEffect(() => {
+    const c = engine.current;
+    return () => c?.setMatch(null);
+  }, [engine]);
 
   // Pas de classement : les présences trouvées sont mélangées au hasard (jamais la popularité),
   // puis montrées par séries ; la liste défile dans le panneau.
@@ -239,6 +316,7 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
   const [combien, setCombien] = useState(30);
   useEffect(() => setCombien(30), [results]);
   const shown = melange.slice(0, combien);
+  const mot = q.trim();
 
   return (
     <aside className="search-panel" aria-label="Rechercher et filtrer" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
@@ -248,10 +326,21 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
           <Icon name="fermer" size={18} />
         </button>
       </div>
-      <label className="field">
-        <span className="sr-only">Un nom, un mot, un lieu</span>
-        <input ref={input} type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Un nom, un mot, un lieu…" />
-      </label>
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          // Entrée avec une seule présence trouvée : on va la voir
+          const seule = results.length === 1 ? results[0]! : null;
+          if (seule) engine.current?.has(seule.id) ? engine.current.focusOn(seule.id) : navigate(`/trace/${seule.id}`);
+        }}
+      >
+        <label className="field">
+          <span className="sr-only">Un nom, un mot, un lieu</span>
+          <input ref={input} type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Un nom, un mot, un lieu…" autoComplete="off" />
+        </label>
+        <p className="search-total">Parmi {source.length.toLocaleString('fr-FR')} présences.</p>
+      </form>
 
       <fieldset className="filter">
         <legend>Type de trace</legend>
@@ -301,18 +390,28 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
           <p className="muted">
             {results.length === 0 ? 'Aucune présence ne correspond, pour l’instant.' : `${results.length} présence${results.length > 1 ? 's' : ''} correspond${results.length > 1 ? 'ent' : ''}.`}
           </p>
+          <button className="lien-discret petit search-vider" onClick={vider}>
+            <Icon name="fermer" size={14} /> Effacer la recherche
+          </button>
           <ul>
-            {shown.map((t) => (
-              <li key={t.id}>
-                <button
-                  className="result"
-                  onClick={() => (engine.current?.has(t.id) ? engine.current.focusOn(t.id) : navigate(`/trace/${t.id}`))}
-                >
-                  <span className="result-nom">{t.nom}</span>
-                  <span className="result-meta">{t.pays ?? TYPE_LABEL[t.type]}</span>
-                </button>
-              </li>
-            ))}
+            {shown.map((t) => {
+              const ex = mot.length >= 2 ? extrait(t, mot) : null;
+              return (
+                <li key={t.id}>
+                  <button className="result" onClick={() => (engine.current?.has(t.id) ? engine.current.focusOn(t.id) : navigate(`/trace/${t.id}`))}>
+                    <span className="result-nom">{t.nom}</span>
+                    <span className="result-meta">{t.pays ?? TYPE_LABEL[t.type]}</span>
+                    {ex && (
+                      <span className="result-extrait" dir="auto">
+                        {ex.avant}
+                        <mark>{ex.mot}</mark>
+                        {ex.apres}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
           {melange.length > combien && (
             <button className="lien-discret search-plus" onClick={() => setCombien((n) => n + 30)}>

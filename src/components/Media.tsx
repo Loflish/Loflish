@@ -30,7 +30,7 @@ export function MediaThumb({ m, size = 'm' }: { m: Media; size?: 's' | 'm' | 'l'
   const vu = url && !casse ? url : null;
   const surface = (
     <div className="media-surface" style={{ ['--teinte' as string]: m.teinte ?? '#DDD8CE' }}>
-      {m.kind === 'image' && vu && <img className="media-img" src={vu} alt="" loading="lazy" onError={() => setCasse(true)} />}
+      {m.kind === 'image' && vu && <img className="media-img" src={vu} alt="" loading="lazy" decoding="async" onError={() => setCasse(true)} />}
       {m.kind === 'image' && !vu && <span className="media-placeholder">photographie</span>}
       {m.kind === 'video' && vu && (
         <video className="media-img" src={`${vu}#t=0.5`} muted playsInline preload="metadata" aria-hidden="true" onError={() => setCasse(true)} />
@@ -92,6 +92,21 @@ export function MediaVue({ m, onClose }: { m: Media; onClose: () => void }) {
     ref.current?.focus();
     // Échap ferme la visionneuse seule, pas la salle ouverte derrière elle
     const onKey = (e: KeyboardEvent) => {
+      // la tabulation reste dans la visionneuse
+      if (e.key === 'Tab' && ref.current) {
+        const focusables = [...ref.current.querySelectorAll<HTMLElement>('a[href], button, audio, video, iframe')];
+        if (!focusables.length) return;
+        const premier = focusables[0]!;
+        const dernier = focusables[focusables.length - 1]!;
+        if (e.shiftKey && (document.activeElement === premier || document.activeElement === ref.current)) {
+          e.preventDefault();
+          dernier.focus();
+        } else if (!e.shiftKey && document.activeElement === dernier) {
+          e.preventDefault();
+          premier.focus();
+        }
+        return;
+      }
       if (e.key !== 'Escape') return;
       e.stopImmediatePropagation();
       onClose();
@@ -115,7 +130,7 @@ export function MediaVue({ m, onClose }: { m: Media; onClose: () => void }) {
         </div>
         <div className="media-vue-corps">
           {demo && <p className="muted">Aucun fichier n’a été déposé ici.</p>}
-          {m.kind === 'image' && url && <img src={url} alt={m.legende || m.titre} />}
+          {m.kind === 'image' && url && <img src={url} alt={m.legende || m.titre} decoding="async" />}
           {m.kind === 'video' && url && <video src={url} controls playsInline autoPlay />}
           {m.kind === 'audio' && url && (
             <div className="media-vue-audio">
