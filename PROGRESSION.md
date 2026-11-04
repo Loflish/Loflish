@@ -1,5 +1,13 @@
 # Nos Mots Mémoriaux : état sauvegardé
 
+## Point de reprise — 4 novembre 2026
+
+Chantier des bulles : Tom a trié (290 gardées sur 300), puis voulu une nouvelle direction « filaments comme Beksiński, mais
+joyeux, vifs, constellation, GRIS ». La planche 5 « filaments de lumière » est peinte par code (`design/hd/lumiere.py`,
+Flow refusant la connexion) et, après la grande comparaison (`reports/Bulles 2026-11-04/`), Tom l'a choisie : c'est le
+catalogue du site (`CATALOGUE` dans `src/lib/hd.ts`, `?bulles=anciennes` pour l'ancien). Points 126 à 129 de
+`AMELIORATIONS-2026-11-03.md`. Reste : relecture de Tom, fusion, mise en ligne avec son accord.
+
 ## Point de reprise — 3 novembre 2026
 
 Sur la branche `ameliorations-fable-2026-11-03` (partie de `refonte-octobre`, 00ac316) : 100 améliorations

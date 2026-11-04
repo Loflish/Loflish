@@ -109,9 +109,7 @@ export const LEGER =
   typeof window !== 'undefined' &&
   (window.matchMedia('(max-width: 700px)').matches || (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true);
 
-// Sur téléphone, 30 taches réparties entre toutes les techniques suffisent (site plus léger).
 const petitEcran = typeof window !== 'undefined' && window.matchMedia('(max-width: 700px)').matches;
-const indices = petitEcran ? Array.from({ length: 30 }, (_, i) => Math.floor((i * NB_TACHES) / 30) + 1) : Array.from({ length: NB_TACHES }, (_, i) => i + 1);
 
 function fondVideo(): { src: string; type: string }[] {
   const grand = typeof window !== 'undefined' && window.screen.width * window.devicePixelRatio > 2200;
@@ -147,10 +145,22 @@ export const PALETTES = {
   A: { debut: 1, fin: NB_MATIERES, dossier: 'taches', prefixe: 'tache' },
   B: { debut: 101, fin: 200, dossier: 'taches-vie', prefixe: 'vie' },
   C: { debut: 201, fin: 252, dossier: 'taches-da', prefixe: 'da' },
+  /** L = la planche 5 « filaments de lumière » (4 novembre, design/planche-5-lumiere.md), peinte par design/hd/lumiere.py ; des encres */
+  L: { debut: MATIERE_ENCRE + 501, fin: MATIERE_ENCRE + 600, dossier: 'taches-lumiere', prefixe: 'lumiere' },
 } as const;
+/**
+ * Le catalogue du site depuis le 4 novembre 2026 : la planche 5, choisie par Tom après la grande comparaison
+ * (reports/Bulles 2026-11-04/). `?bulles=anciennes` rend les 100 taches d'aquarelle (A). Les matières déjà choisies
+ * par des personnes (numéros A) restent servies telles quelles.
+ */
+export const CATALOGUE = parametres?.get('bulles') === 'anciennes' ? PALETTES.A : PALETTES.L;
+export const CATALOGUE_LISTE = Array.from({ length: 100 }, (_, i) => CATALOGUE.debut + i);
+// Sur téléphone, 30 matières réparties dans le catalogue suffisent (site plus léger).
+const indices = petitEcran ? Array.from({ length: 30 }, (_, i) => CATALOGUE.debut + Math.floor((i * 100) / 30)) : CATALOGUE_LISTE;
 const NB_TOUTES = PALETTES.C.fin;
 /** le numéro affiché dans sa palette (B 14 pour la matière 114) */
-export function numeroDansPalette(n: number): { palette: 'A' | 'B' | 'C'; numero: number } {
+export function numeroDansPalette(n: number): { palette: 'A' | 'B' | 'C' | 'L'; numero: number } {
+  if (n >= PALETTES.L.debut && n <= PALETTES.L.fin) return { palette: 'L', numero: n - PALETTES.L.debut + 1 };
   if (n >= PALETTES.C.debut) return { palette: 'C', numero: n - PALETTES.C.debut + 1 };
   if (n >= PALETTES.B.debut) return { palette: 'B', numero: n - PALETTES.B.debut + 1 };
   return { palette: 'A', numero: n };
@@ -185,9 +195,6 @@ export function installSurfaces(): void {
 /** Essai, en développement seulement : ?gothique=1 donne à toutes les bulles une matière de la planche 4. */
 const GOTHIQUE = import.meta.env.DEV && parametres?.get('gothique') === '1';
 const planche4 = Array.from({ length: 100 }, (_, i) => i + 1);
-/** Essai, en développement seulement : ?lumiere=1 donne à toutes les bulles une matière de la planche 5 (design/hd/lumiere.py). */
-const LUMIERE = import.meta.env.DEV && parametres?.get('lumiere') === '1';
-export const PLANCHE5 = MATIERE_ENCRE + 500;
 /** Essai, en développement seulement : ?melange=1 donne aux bulles les 100 du mélange des trois planches (design/selection-bulles.json). */
 const MELANGE_SEL = import.meta.env.DEV && parametres?.get('melange') === '1';
 const DOSSIERS = {
@@ -204,7 +211,9 @@ const taches = new Map<number, HTMLImageElement | HTMLCanvasElement | ImageBitma
 const tachesGrandes = new Map<number, HTMLImageElement>();
 const grandesEnCours = new Map<number, Promise<void>>();
 function tacheGrandeUrl(n: number): string | null {
-  if (n < 1 || n > NB_TACHES || matieresSansPerte.has(n)) return null;
+  const { palette, numero } = numeroDansPalette(n);
+  if (palette === 'L') return `${base}taches-lumiere/1024/lumiere-${String(numero).padStart(2, '0')}.webp`;
+  if (palette !== 'A' || n < 1 || matieresSansPerte.has(n)) return null;
   return `${base}taches/1024/tache-${String(n).padStart(2, '0')}.webp`;
 }
 function chargerGrande(n: number): Promise<void> {
@@ -229,7 +238,7 @@ const enCours = new Map<number, Promise<void>>();
 let loading: Promise<void> | null = null;
 
 function charger(n: number): Promise<void> {
-  if (!HD || n < 1 || n > NB_TOUTES) return Promise.resolve();
+  if (!HD || n < 1 || (n > NB_TOUTES && numeroDansPalette(n).palette !== 'L')) return Promise.resolve();
   let p = enCours.get(n);
   if (!p) {
     p = new Promise<void>((res) => {
@@ -269,7 +278,6 @@ export function loadTaches(): Promise<void> {
     ...indices.map(charger),
     ...(GOTHIQUE ? planche4 : []).map((n) => chargerMatiere(MATIERE_ENCRE + n, `${base}taches-gothique/gothique-${String(n).padStart(3, '0')}.webp`)),
     ...melange.map((m) => chargerMatiere(m.n, `${base}${m.src}`)),
-    ...(LUMIERE ? planche4 : []).map((n) => chargerMatiere(PLANCHE5 + n, `${base}taches-lumiere/lumiere-${String(n).padStart(3, '0')}.webp`)),
   ]).then(() => undefined);
   return loading;
 }
@@ -285,7 +293,7 @@ export function loadMatieres(list: (number | undefined)[], grande = false): Prom
 
 /** Le catalogue complet, pour choisir sa matière. */
 export function loadCatalogue(): Promise<void> {
-  return loadMatieres(Array.from({ length: NB_TACHES }, (_, i) => i + 1));
+  return loadMatieres(CATALOGUE_LISTE);
 }
 
 /**
@@ -323,9 +331,8 @@ export function chargerMatiere(n: number, src: string): Promise<void> {
 export function matiereFor(seed: number): number {
   if (GOTHIQUE) return MATIERE_ENCRE + planche4[seed % planche4.length]!;
   if (melange.length) return melange[seed % melange.length]!.n;
-  if (LUMIERE) return PLANCHE5 + planche4[seed % planche4.length]!;
-  // l'aquarelle cousue (0) fait partie du tirage, comme chacune des taches
-  return seed % (NB_TACHES + 1);
+  // avec les anciennes taches, l'aquarelle cousue (0) fait partie du tirage ; la planche 5 se tire seule
+  return CATALOGUE === PALETTES.A ? seed % (NB_TACHES + 1) : CATALOGUE.debut + (seed % 100);
 }
 
 /**

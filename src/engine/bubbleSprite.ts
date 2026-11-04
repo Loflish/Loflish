@@ -1,5 +1,5 @@
 import { hexToRgb, hsl, rgbToHsl } from '../lib/palette';
-import { MATIERE_COUSUE, MATIERE_ENCRE, matiereFor, tacheFor } from '../lib/hd';
+import { MATIERE_COUSUE, MATIERE_ENCRE, matiereFor, PALETTES, tacheFor } from '../lib/hd';
 import { gaussian, hashString, rng } from '../lib/random';
 
 /**
@@ -108,7 +108,7 @@ export function bubbleSprite(seedKey: string, hex: string, opts: SpriteOptions =
 
   const tache = matiere === MATIERE_COUSUE ? null : tacheFor(matiere, opts.grande);
   if (tache) {
-    paintTache(ctx, tache, hex, c, R, r, matiere >= MATIERE_ENCRE);
+    paintTache(ctx, tache, hex, c, R, r, matiere >= MATIERE_ENCRE, matiere >= PALETTES.L.debut);
   } else {
     // 0. léger halo : le pigment qui a « bu » dans la fibre autour de la tache
     for (let i = 0; i < 6; i++) {
@@ -281,7 +281,7 @@ export function bubbleSprite(seedKey: string, hex: string, opts: SpriteOptions =
  * matière. Elle est teintée exactement dans la couleur GRIS de la personne ;
  * ses variations de densité, sa granulation et son bord séché sont conservés.
  */
-function paintTache(ctx: Ctx, tache: CanvasImageSource, hex: string, c: number, R: number, r: () => number, encre: boolean): void {
+function paintTache(ctx: Ctx, tache: CanvasImageSource, hex: string, c: number, R: number, r: () => number, encre: boolean, couverture = false): void {
   const size = ctx.canvas.width;
   const side = (2 * R) / 0.82; // la tache occupe ~82 % de sa vignette
   const angle = r() * Math.PI * 2;
@@ -302,8 +302,9 @@ function paintTache(ctx: Ctx, tache: CanvasImageSource, hex: string, c: number, 
     t.drawImage(tache, -side / 2, -side / 2, side, side);
     t.setTransform(1, 0, 0, 1, 0, 0);
   };
-  // 1. le pigment : couleur GRIS exacte, découpée par la forme de la tache
+  // 1. le pigment : couleur GRIS exacte, découpée par la forme de la tache ; la planche 5 posée deux fois (sa couleur couvre, ses réserves restent)
   place();
+  if (couverture) place();
   t.globalCompositeOperation = 'source-in';
   t.fillStyle = hex;
   t.fillRect(0, 0, size, size);

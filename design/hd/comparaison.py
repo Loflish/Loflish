@@ -37,7 +37,7 @@ def main():
         'Planche 2 — tes détails de vie dans tes taches': [(HD / 'taches-melange' / f'melange-{n:03d}.webp', 0.28, 1) for n in pick(2)],
         'Planche 3 — l’autre conversation': [(HD / 'taches-claude' / f'{n:03d}.webp', 0.28, 1) for n in pick(3)],
         'Planche 4 — filaments gothiques (rendu F)': [(HD / 'taches-gothique' / f'gothique-{n:03d}.webp', 1.5, 3) for n in pick(4)],
-        'Planche 5 — filaments de lumière (2 couches, 1,2)': [(HD / 'taches-lumiere' / f'lumiere-{n:03d}.webp', 1.2, 2) for n in pick(5)],
+        'Planche 5 — filaments de lumière (2 couches, 1,2)': [(HD / 'taches-lumiere' / '1024' / f'lumiere-{n:02d}.webp', 1.0, 2) for n in pick(5)],
         'Le mélange — 100 bulles choisies dans les planches 2, 3, 4': [],
     }
     bulles = sel['bulles']

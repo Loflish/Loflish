@@ -171,7 +171,7 @@ export class Constellation {
   readonly peintre = new Peintre((s) => {
     const b = this.byId.get(s.id);
     // une réponse d'avant un changement de taille ou de matière ne compte plus
-    if (!b || s.size !== this.spriteSize || s.matiere !== b.p.matiere) return void s.image.close();
+    if (!b || s.size !== this.spriteSize || s.matiere !== (b.p.matiere ?? matiereFor(hashString(b.p.id)))) return void s.image.close();
     b.sprite = s.image;
   });
   events: EngineEvents = {};

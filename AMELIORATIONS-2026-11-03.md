@@ -218,3 +218,12 @@ Mesures d'abord, retouches ensuite, remesures : tout est dans `Desktop/Claude Co
 | 125 | Derrière les pages éditoriales et les profils, les nappes continuent de respirer aux aplats des Nabis (sauge, rose ancien, miel, lilas, tilleul) au lieu de s'arrêter ; formulaires et juridique restent sur le papier seul ; `?nappes=0` rend les pages d'avant | `src/engine/atmosphere.ts` (`uPage`, `setPage`), `Backdrop.tsx` (`AVEC_NAPPES`), `design-fable.css` | ouvrir une trace, regarder le fond bouger |
 
 Non faits (choix de Tom) : 3 (fil de Ruth Rae) et 4 (tapis tufté). En attente : l'adresse de son tableau Pinterest pour accorder les cinq couleurs du 125.
+
+## Lot « Bulles » (4 novembre) — le choix de Tom après la grande comparaison
+
+| N° | Amélioration | Fichiers | Vérifier |
+| --- | --- | --- | --- |
+| 126 | Planche 5 « filaments de lumière » : 100 matières peintes par code (lavis clair à réserves, filaments dans un champ tourbillonnant), 512 px pour la constellation, 1 024 px pour la page d'une trace et Créer ; c'est le catalogue du site (palette L, `CATALOGUE`) ; `?bulles=anciennes` rend les 100 taches ; les matières déjà choisies (numéros A) restent servies | `design/hd/lumiere.py`, `design/planche-5-lumiere.{json,md}`, `public/hd/taches-lumiere/`, `src/lib/hd.ts`, `bubbleSprite.ts` (posée deux fois), `Creer.tsx` | ouvrir le site, zoomer ; `reports/Bulles 2026-11-04/` |
+| 127 | Le mélange : 100 bulles choisies à poids égal parmi les 290 gardées au tri (planches 2, 3, 4), `?melange=1` en développement | `design/hd/selection_bulles.py`, `design/selection-bulles.json` | `/?melange=1&bulles=anciennes` |
+| 128 | Le travailleur reçoit la matière décidée par la page (drapeaux d'adresse) et ses sprites sont acceptés (ils étaient jetés quand la matière n'était pas choisie : les bulles restaient provisoires) | `constellation.ts` | `__nmmDebug.engine.bubbles` : des ImageBitmap |
+| 129 | Outils de comparaison à égalité : `design/hd/comparaison.py` (mêmes couleurs, 38 / 96 / 190 px, vrai fond), `scripts/capturer.mjs` (constellation en 1920 avec zoom) | `design/hd/`, `scripts/` | les lancer |

@@ -6,7 +6,7 @@ dans les bords. La sortie suit le format des encres (taches_gothique.py : gris p
 
   python design/hd/lumiere.py [numéros…]       (sans numéro : les 100)
   → .claude/nmm-inspiration/lumiere-2026-11-04/NNN.png (aperçu gris sur papier, 2 048 px)
-  → public/hd/taches-lumiere/lumiere-NNN.webp (matière 1 024 px) + index.json
+  → public/hd/taches-lumiere/lumiere-NN.webp (512 px, constellation) et 1024/lumiere-NN.webp (trace, Créer) + index.json
 """
 import json
 import sys
@@ -358,7 +358,10 @@ def main():
         b = dict(bulles[n], **(RECETTES.get(n) or recette(bulles[n], np.random.default_rng(n))))
         d, fils, garde = peindre(b, seed=1000 + n)
         apercu(d, fils).save(APERCUS / f'{n:03d}.png')
-        matiere(d, fils, garde).save(OUT / f'lumiere-{n:03d}.webp', quality=90, method=4)
+        m = matiere(d, fils, garde)
+        (OUT / '1024').mkdir(exist_ok=True)
+        m.save(OUT / '1024' / f'lumiere-{n:02d}.webp', quality=90, method=4)
+        m.resize((512, 512), Image.LANCZOS).save(OUT / f'lumiere-{n:02d}.webp', quality=88, method=4)
         index.append(dict(n=n, nom=b['nom'], famille=b['famille']))
         print(f"{n:03d} {b['nom']:28s} {b['fond']:10s} lavis {d[garde > 0.5].mean():.2f} fils {fils[garde > 0.5].mean():.3f}")
     if len(voulus) >= 8:
