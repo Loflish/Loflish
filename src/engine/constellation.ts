@@ -1,4 +1,5 @@
 import { drift, gaussian, hashString, rng } from '../lib/random';
+import { matiereFor } from '../lib/hd';
 import { bubbleSprite, provisionalSprite, SPRITE_DIAMETER, type Toile } from './bubbleSprite';
 import { Peintre } from './peintre';
 
@@ -884,7 +885,8 @@ export class Constellation {
       // à côté : une vingtaine de bulles en route à la fois, les plus proches d'abord ; la page ne s'arrête jamais
       while (this.spritesAllowed && this.spriteQueue.length && this.peintre.enAttente < 24) {
         const b = this.spriteQueue.shift()!;
-        this.peintre.peindre(b.p.id, b.p.hex, this.spriteSize, b.p.matiere, ECLAT);
+        // le travailleur ne lit pas l'adresse (?gothique, ?melange) : la matière se décide ici
+        this.peintre.peindre(b.p.id, b.p.hex, this.spriteSize, b.p.matiere ?? matiereFor(hashString(b.p.id)), ECLAT);
       }
     } else if (!this.peintre.actif) {
       while (this.spritesAllowed && this.spriteQueue.length && performance.now() - t0 < 7) {

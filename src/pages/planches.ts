@@ -1,4 +1,4 @@
-import { chargerMatiere, MATIERE_ENCRE } from '../lib/hd';
+import { chargerMatiere, CLAUDE, MATIERE_ENCRE, MELANGE } from '../lib/hd';
 
 /**
  * Les planches 2, 3 et 4, pour les ateliers (local seulement). public/hd/taches-melange vient de design/hd/taches_melange.py ;
@@ -6,9 +6,7 @@ import { chargerMatiere, MATIERE_ENCRE } from '../lib/hd';
  * public/hd/taches-gothique vient de design/hd/taches_gothique.py.
  */
 
-/** numéros des matières fabriquées ici, loin du catalogue */
-export const MELANGE = 3000;
-export const CLAUDE = 4000;
+export { CLAUDE, MELANGE };
 export const GOTHIQUE = MATIERE_ENCRE;
 
 export interface DetailMelange {

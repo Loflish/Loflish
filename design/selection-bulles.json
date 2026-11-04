@@ -1,0 +1,912 @@
+{
+ "date": "2026-11-04",
+ "regle": "un tiers par planche, familles à tour de rôle, poids le plus proche de la médiane, sans bille ni extrême",
+ "planche2": [
+  1,
+  7,
+  11,
+  12,
+  15,
+  16,
+  19,
+  20,
+  26,
+  28,
+  30,
+  34,
+  37,
+  41,
+  44,
+  45,
+  49,
+  51,
+  53,
+  54,
+  59,
+  63,
+  64,
+  69,
+  72,
+  79,
+  82,
+  87,
+  88,
+  89,
+  91,
+  93,
+  96
+ ],
+ "planche3": [
+  2,
+  3,
+  4,
+  6,
+  12,
+  14,
+  16,
+  18,
+  22,
+  25,
+  26,
+  28,
+  34,
+  35,
+  36,
+  40,
+  46,
+  48,
+  51,
+  54,
+  56,
+  62,
+  70,
+  71,
+  72,
+  74,
+  80,
+  81,
+  82,
+  88,
+  93,
+  94,
+  99
+ ],
+ "planche4": [
+  3,
+  4,
+  5,
+  7,
+  10,
+  16,
+  19,
+  21,
+  25,
+  28,
+  29,
+  30,
+  32,
+  37,
+  39,
+  40,
+  47,
+  48,
+  50,
+  54,
+  56,
+  60,
+  62,
+  63,
+  65,
+  73,
+  77,
+  83,
+  84,
+  87,
+  90,
+  91,
+  94,
+  96
+ ],
+ "bulles": [
+  {
+   "id": "m88",
+   "planche": 2,
+   "n": 88,
+   "nom": "Les feuilles d'un livre tombé dans le bain, séchées en vagues douces",
+   "famille": "le temps qui passe",
+   "poids": 0.212
+  },
+  {
+   "id": "m51",
+   "planche": 2,
+   "n": 51,
+   "nom": "Le trou de pouce dans le poignet d'une manche",
+   "famille": "les vêtements",
+   "poids": 0.211
+  },
+  {
+   "id": "m16",
+   "planche": 2,
+   "n": 16,
+   "nom": "L'éclat minuscule sur le bord d'un bol",
+   "famille": "la table",
+   "poids": 0.213
+  },
+  {
+   "id": "m96",
+   "planche": 2,
+   "n": 96,
+   "nom": "La traînée grise qui suit la pente d'un escalier, sur le mur, à hauteur de main",
+   "famille": "les autres",
+   "poids": 0.211
+  },
+  {
+   "id": "m37",
+   "planche": 2,
+   "n": 37,
+   "nom": "La petite bosse qu'un orteil a poussée dans le bout d'un soulier devenu trop petit",
+   "famille": "le corps",
+   "poids": 0.214
+  },
+  {
+   "id": "m41",
+   "planche": 2,
+   "n": 41,
+   "nom": "Le trait de crayon gommé dont on devine encore le fantôme",
+   "famille": "les mains",
+   "poids": 0.214
+  },
+  {
+   "id": "m12",
+   "planche": 2,
+   "n": 12,
+   "nom": "La tache grise derrière le crochet où le même manteau pend chaque jour",
+   "famille": "la maison",
+   "poids": 0.209
+  },
+  {
+   "id": "m69",
+   "planche": 2,
+   "n": 69,
+   "nom": "Le coin lisse d'un doudou, usé par un pouce qui frotte",
+   "famille": "les enfants",
+   "poids": 0.208
+  },
+  {
+   "id": "m20",
+   "planche": 2,
+   "n": 20,
+   "nom": "Le petit tas de miettes qu'un doigt a poussé près d'une assiette",
+   "famille": "la table",
+   "poids": 0.21
+  },
+  {
+   "id": "m49",
+   "planche": 2,
+   "n": 49,
+   "nom": "La spirale griffonnée machinalement au coin d'une feuille",
+   "famille": "les mains",
+   "poids": 0.214
+  },
+  {
+   "id": "m82",
+   "planche": 2,
+   "n": 82,
+   "nom": "Le ruban adhésif jauni qui retient un papier au mur depuis vingt ans",
+   "famille": "le temps qui passe",
+   "poids": 0.214
+  },
+  {
+   "id": "m28",
+   "planche": 2,
+   "n": 28,
+   "nom": "Les pas nus mouillés sur un carrelage, déjà en train de sécher",
+   "famille": "le corps",
+   "poids": 0.208
+  },
+  {
+   "id": "m59",
+   "planche": 2,
+   "n": 59,
+   "nom": "Le tablier marqué aux endroits où l'on s'essuie les mains",
+   "famille": "les vêtements",
+   "poids": 0.216
+  },
+  {
+   "id": "m7",
+   "planche": 2,
+   "n": 7,
+   "nom": "Le chemin plus clair que les pas ont aplati dans un tapis de couloir",
+   "famille": "la maison",
+   "poids": 0.206
+  },
+  {
+   "id": "m72",
+   "planche": 2,
+   "n": 72,
+   "nom": "La ligne pâle de l'ancien ourlet, sur un pantalon rallongé parce que l'enfant a grandi",
+   "famille": "les enfants",
+   "poids": 0.221
+  },
+  {
+   "id": "m89",
+   "planche": 2,
+   "n": 89,
+   "nom": "Le cheveu d'un autre, resté sur une manche",
+   "famille": "les autres",
+   "poids": 0.225
+  },
+  {
+   "id": "m26",
+   "planche": 2,
+   "n": 26,
+   "nom": "Le liseré doré d'une tasse effacé sur un petit tronçon, là où l'on boit toujours",
+   "famille": "la table",
+   "poids": 0.21
+  },
+  {
+   "id": "m87",
+   "planche": 2,
+   "n": 87,
+   "nom": "Le bord à petits trous déchiré d'une feuille de cahier à spirale",
+   "famille": "le temps qui passe",
+   "poids": 0.217
+  },
+  {
+   "id": "m34",
+   "planche": 2,
+   "n": 34,
+   "nom": "Les petites encoches de dents sur un capuchon de stylo mâchonné",
+   "famille": "le corps",
+   "poids": 0.207
+  },
+  {
+   "id": "m44",
+   "planche": 2,
+   "n": 44,
+   "nom": "Les quatre traînées de doigts glissés dans la poussière d'un meuble",
+   "famille": "les mains",
+   "poids": 0.206
+  },
+  {
+   "id": "m53",
+   "planche": 2,
+   "n": 53,
+   "nom": "Le bouton recousu avec un fil d'un autre ton",
+   "famille": "les vêtements",
+   "poids": 0.218
+  },
+  {
+   "id": "m64",
+   "planche": 2,
+   "n": 64,
+   "nom": "Les petites paumes sur une vitre, à hauteur d'enfant",
+   "famille": "les enfants",
+   "poids": 0.221
+  },
+  {
+   "id": "m1",
+   "planche": 2,
+   "n": 1,
+   "nom": "Les fines rayures en étoile autour d'une serrure, laissées par des clés qui cherchent le trou dans le noir",
+   "famille": "la maison",
+   "poids": 0.2
+  },
+  {
+   "id": "m93",
+   "planche": 2,
+   "n": 93,
+   "nom": "Le chambranle de porte adouci à hauteur d'épaule, là où l'on s'appuie pour bavarder",
+   "famille": "les autres",
+   "poids": 0.23
+  },
+  {
+   "id": "m15",
+   "planche": 2,
+   "n": 15,
+   "nom": "Les fines rayures de couteau au centre d'une vieille assiette",
+   "famille": "la table",
+   "poids": 0.216
+  },
+  {
+   "id": "m54",
+   "planche": 2,
+   "n": 54,
+   "nom": "Le poignet de manche effiloché",
+   "famille": "les vêtements",
+   "poids": 0.218
+  },
+  {
+   "id": "m45",
+   "planche": 2,
+   "n": 45,
+   "nom": "Le manche d'un balai ou d'un outil assombri à l'endroit où on le tient toujours",
+   "famille": "les mains",
+   "poids": 0.223
+  },
+  {
+   "id": "m11",
+   "planche": 2,
+   "n": 11,
+   "nom": "Le coin de rideau froissé à force d'être écarté pour regarder dehors",
+   "famille": "la maison",
+   "poids": 0.199
+  },
+  {
+   "id": "m63",
+   "planche": 2,
+   "n": 63,
+   "nom": "Les tirets au crayon sur un montant de porte, un à chaque fois qu'un enfant a grandi",
+   "famille": "les enfants",
+   "poids": 0.227
+  },
+  {
+   "id": "m79",
+   "planche": 2,
+   "n": 79,
+   "nom": "Le rectangle plus clair sur le mur, là où un cadre a longtemps pendu",
+   "famille": "le temps qui passe",
+   "poids": 0.191
+  },
+  {
+   "id": "m30",
+   "planche": 2,
+   "n": 30,
+   "nom": "Le talon de chaussure usé en biais",
+   "famille": "le corps",
+   "poids": 0.19
+  },
+  {
+   "id": "m91",
+   "planche": 2,
+   "n": 91,
+   "nom": "Le brin de laine d'un passant, resté accroché à une planche rugueuse",
+   "famille": "les autres",
+   "poids": 0.183
+  },
+  {
+   "id": "m19",
+   "planche": 2,
+   "n": 19,
+   "nom": "La cuillère en bois usée en biais d'un seul côté",
+   "famille": "la table",
+   "poids": 0.222
+  },
+  {
+   "id": "c16",
+   "planche": 3,
+   "n": 16,
+   "nom": "Danse et fumée",
+   "famille": "Aimer",
+   "poids": 0.212
+  },
+  {
+   "id": "c35",
+   "planche": 3,
+   "n": 35,
+   "nom": "Sillons et empreinte",
+   "famille": "Les mains, les métiers",
+   "poids": 0.211
+  },
+  {
+   "id": "c74",
+   "planche": 3,
+   "n": 74,
+   "nom": "Rides et sillons",
+   "famille": "La mémoire",
+   "poids": 0.207
+  },
+  {
+   "id": "c62",
+   "planche": 3,
+   "n": 62,
+   "nom": "Larme et océan",
+   "famille": "Les épreuves, la tendresse",
+   "poids": 0.204
+  },
+  {
+   "id": "c48",
+   "planche": 3,
+   "n": 48,
+   "nom": "Nuages et laine",
+   "famille": "La nature, le temps",
+   "poids": 0.22
+  },
+  {
+   "id": "c3",
+   "planche": 3,
+   "n": 3,
+   "nom": "Ventre et lune",
+   "famille": "Naître, grandir",
+   "poids": 0.221
+  },
+  {
+   "id": "c93",
+   "planche": 3,
+   "n": 93,
+   "nom": "Étoiles dans l'eau",
+   "famille": "Ta direction artistique",
+   "poids": 0.201
+  },
+  {
+   "id": "c34",
+   "planche": 3,
+   "n": 34,
+   "nom": "Miettes et étoiles",
+   "famille": "La maison, la table",
+   "poids": 0.224
+  },
+  {
+   "id": "c18",
+   "planche": 3,
+   "n": 18,
+   "nom": "Battement et cernes",
+   "famille": "Aimer",
+   "poids": 0.207
+  },
+  {
+   "id": "c36",
+   "planche": 3,
+   "n": 36,
+   "nom": "Filet et toile",
+   "famille": "Les mains, les métiers",
+   "poids": 0.205
+  },
+  {
+   "id": "c88",
+   "planche": 3,
+   "n": 88,
+   "nom": "Motifs et lumière",
+   "famille": "Ta direction artistique",
+   "poids": 0.226
+  },
+  {
+   "id": "c71",
+   "planche": 3,
+   "n": 71,
+   "nom": "Braises et oiseaux",
+   "famille": "Les épreuves, la tendresse",
+   "poids": 0.226
+  },
+  {
+   "id": "c81",
+   "planche": 3,
+   "n": 81,
+   "nom": "Maison et brouillard",
+   "famille": "La mémoire",
+   "poids": 0.19
+  },
+  {
+   "id": "c51",
+   "planche": 3,
+   "n": 51,
+   "nom": "Montagne et dos",
+   "famille": "La nature, le temps",
+   "poids": 0.185
+  },
+  {
+   "id": "c26",
+   "planche": 3,
+   "n": 26,
+   "nom": "Nappe et prairie",
+   "famille": "La maison, la table",
+   "poids": 0.183
+  },
+  {
+   "id": "c6",
+   "planche": 3,
+   "n": 6,
+   "nom": "Petits pas et marée",
+   "famille": "Naître, grandir",
+   "poids": 0.268
+  },
+  {
+   "id": "c12",
+   "planche": 3,
+   "n": 12,
+   "nom": "Deux nuages",
+   "famille": "Aimer",
+   "poids": 0.207
+  },
+  {
+   "id": "c40",
+   "planche": 3,
+   "n": 40,
+   "nom": "Pages et ruche",
+   "famille": "Les mains, les métiers",
+   "poids": 0.193
+  },
+  {
+   "id": "c70",
+   "planche": 3,
+   "n": 70,
+   "nom": "Vague et couverture",
+   "famille": "Les épreuves, la tendresse",
+   "poids": 0.24
+  },
+  {
+   "id": "c80",
+   "planche": 3,
+   "n": 80,
+   "nom": "Berceuse et vent",
+   "famille": "La mémoire",
+   "poids": 0.183
+  },
+  {
+   "id": "c94",
+   "planche": 3,
+   "n": 94,
+   "nom": "Tesselles et eau",
+   "famille": "Ta direction artistique",
+   "poids": 0.166
+  },
+  {
+   "id": "c54",
+   "planche": 3,
+   "n": 54,
+   "nom": "Feuille et paume",
+   "famille": "La nature, le temps",
+   "poids": 0.157
+  },
+  {
+   "id": "c25",
+   "planche": 3,
+   "n": 25,
+   "nom": "Soupe et brume",
+   "famille": "La maison, la table",
+   "poids": 0.278
+  },
+  {
+   "id": "c2",
+   "planche": 3,
+   "n": 2,
+   "nom": "Premier cri et onde",
+   "famille": "Naître, grandir",
+   "poids": 0.145
+  },
+  {
+   "id": "c14",
+   "planche": 3,
+   "n": 14,
+   "nom": "Lettre et pluie",
+   "famille": "Aimer",
+   "poids": 0.204
+  },
+  {
+   "id": "c46",
+   "planche": 3,
+   "n": 46,
+   "nom": "Barques et lunes",
+   "famille": "Les mains, les métiers",
+   "poids": 0.185
+  },
+  {
+   "id": "c72",
+   "planche": 3,
+   "n": 72,
+   "nom": "Souffle et lac",
+   "famille": "Les épreuves, la tendresse",
+   "poids": 0.242
+  },
+  {
+   "id": "c82",
+   "planche": 3,
+   "n": 82,
+   "nom": "Traces et sable",
+   "famille": "La mémoire",
+   "poids": 0.172
+  },
+  {
+   "id": "c56",
+   "planche": 3,
+   "n": 56,
+   "nom": "Forêt et voûtes",
+   "famille": "La nature, le temps",
+   "poids": 0.152
+  },
+  {
+   "id": "c99",
+   "planche": 3,
+   "n": 99,
+   "nom": "Dentelle et givre",
+   "famille": "Ta direction artistique",
+   "poids": 0.148
+  },
+  {
+   "id": "c4",
+   "planche": 3,
+   "n": 4,
+   "nom": "Doigts et racines",
+   "famille": "Naître, grandir",
+   "poids": 0.145
+  },
+  {
+   "id": "c28",
+   "planche": 3,
+   "n": 28,
+   "nom": "Clés et branches",
+   "famille": "La maison, la table",
+   "poids": 0.145
+  },
+  {
+   "id": "c22",
+   "planche": 3,
+   "n": 22,
+   "nom": "Ombres au crépuscule",
+   "famille": "Aimer",
+   "poids": 0.199
+  },
+  {
+   "id": "g62",
+   "planche": 4,
+   "n": 62,
+   "nom": "L’écart",
+   "famille": "Fibres",
+   "poids": 0.212
+  },
+  {
+   "id": "g21",
+   "planche": 4,
+   "n": 21,
+   "nom": "Les arcades",
+   "famille": "Voûtes",
+   "poids": 0.212
+  },
+  {
+   "id": "g87",
+   "planche": 4,
+   "n": 87,
+   "nom": "Les griffures",
+   "famille": "Gestes",
+   "poids": 0.212
+  },
+  {
+   "id": "g29",
+   "planche": 4,
+   "n": 29,
+   "nom": "La masse suspendue",
+   "famille": "Masses",
+   "poids": 0.212
+  },
+  {
+   "id": "g16",
+   "planche": 4,
+   "n": 16,
+   "nom": "Le voile en ogive",
+   "famille": "Plis",
+   "poids": 0.211
+  },
+  {
+   "id": "g47",
+   "planche": 4,
+   "n": 47,
+   "nom": "La couronne",
+   "famille": "Couronnes",
+   "poids": 0.213
+  },
+  {
+   "id": "g77",
+   "planche": 4,
+   "n": 77,
+   "nom": "La brume levée",
+   "famille": "Eaux",
+   "poids": 0.213
+  },
+  {
+   "id": "g96",
+   "planche": 4,
+   "n": 96,
+   "nom": "Le chemin",
+   "famille": "Vie",
+   "poids": 0.211
+  },
+  {
+   "id": "g39",
+   "planche": 4,
+   "n": 39,
+   "nom": "L’écharpe",
+   "famille": "Ailes",
+   "poids": 0.219
+  },
+  {
+   "id": "g10",
+   "planche": 4,
+   "n": 10,
+   "nom": "Le pinceau sec",
+   "famille": "Gestes",
+   "poids": 0.214
+  },
+  {
+   "id": "g73",
+   "planche": 4,
+   "n": 73,
+   "nom": "L’écume",
+   "famille": "Eaux",
+   "poids": 0.215
+  },
+  {
+   "id": "g60",
+   "planche": 4,
+   "n": 60,
+   "nom": "Les radicelles",
+   "famille": "Fibres",
+   "poids": 0.215
+  },
+  {
+   "id": "g91",
+   "planche": 4,
+   "n": 91,
+   "nom": "L’escalier",
+   "famille": "Vie",
+   "poids": 0.208
+  },
+  {
+   "id": "g25",
+   "planche": 4,
+   "n": 25,
+   "nom": "Le faisceau",
+   "famille": "Voûtes",
+   "poids": 0.217
+  },
+  {
+   "id": "g30",
+   "planche": 4,
+   "n": 30,
+   "nom": "La falaise",
+   "famille": "Masses",
+   "poids": 0.218
+  },
+  {
+   "id": "g48",
+   "planche": 4,
+   "n": 48,
+   "nom": "L’auréole",
+   "famille": "Couronnes",
+   "poids": 0.205
+  },
+  {
+   "id": "g3",
+   "planche": 4,
+   "n": 3,
+   "nom": "L’aile",
+   "famille": "Ailes",
+   "poids": 0.223
+  },
+  {
+   "id": "g63",
+   "planche": 4,
+   "n": 63,
+   "nom": "Le grand pli",
+   "famille": "Plis",
+   "poids": 0.227
+  },
+  {
+   "id": "g83",
+   "planche": 4,
+   "n": 83,
+   "nom": "Le sismographe",
+   "famille": "Gestes",
+   "poids": 0.217
+  },
+  {
+   "id": "g90",
+   "planche": 4,
+   "n": 90,
+   "nom": "La lettre",
+   "famille": "Vie",
+   "poids": 0.219
+  },
+  {
+   "id": "g19",
+   "planche": 4,
+   "n": 19,
+   "nom": "La rose",
+   "famille": "Voûtes",
+   "poids": 0.22
+  },
+  {
+   "id": "g56",
+   "planche": 4,
+   "n": 56,
+   "nom": "Le buisson",
+   "famille": "Fibres",
+   "poids": 0.202
+  },
+  {
+   "id": "g7",
+   "planche": 4,
+   "n": 7,
+   "nom": "Horizon tremblant",
+   "famille": "Eaux",
+   "poids": 0.223
+  },
+  {
+   "id": "g40",
+   "planche": 4,
+   "n": 40,
+   "nom": "La retombée",
+   "famille": "Ailes",
+   "poids": 0.224
+  },
+  {
+   "id": "g4",
+   "planche": 4,
+   "n": 4,
+   "nom": "Deux éventails qui se touchent",
+   "famille": "Couronnes",
+   "poids": 0.226
+  },
+  {
+   "id": "g65",
+   "planche": 4,
+   "n": 65,
+   "nom": "La toile au vent",
+   "famille": "Plis",
+   "poids": 0.229
+  },
+  {
+   "id": "g32",
+   "planche": 4,
+   "n": 32,
+   "nom": "La nuée",
+   "famille": "Masses",
+   "poids": 0.247
+  },
+  {
+   "id": "g54",
+   "planche": 4,
+   "n": 54,
+   "nom": "Le nid",
+   "famille": "Fibres",
+   "poids": 0.201
+  },
+  {
+   "id": "g28",
+   "planche": 4,
+   "n": 28,
+   "nom": "L’abside",
+   "famille": "Voûtes",
+   "poids": 0.223
+  },
+  {
+   "id": "g84",
+   "planche": 4,
+   "n": 84,
+   "nom": "Les lignes tenues",
+   "famille": "Gestes",
+   "poids": 0.223
+  },
+  {
+   "id": "g94",
+   "planche": 4,
+   "n": 94,
+   "nom": "Le lit",
+   "famille": "Vie",
+   "poids": 0.227
+  },
+  {
+   "id": "g50",
+   "planche": 4,
+   "n": 50,
+   "nom": "Le halo",
+   "famille": "Couronnes",
+   "poids": 0.228
+  },
+  {
+   "id": "g5",
+   "planche": 4,
+   "n": 5,
+   "nom": "Les deux courants",
+   "famille": "Eaux",
+   "poids": 0.237
+  },
+  {
+   "id": "g37",
+   "planche": 4,
+   "n": 37,
+   "nom": "Deux souffles",
+   "famille": "Ailes",
+   "poids": 0.238
+  }
+ ]
+}

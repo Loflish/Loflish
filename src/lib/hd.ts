@@ -7,6 +7,8 @@
  * (fond et bulles entièrement procéduraux). Si un fichier manque, le site
  * revient aussi au rendu procédural.
  */
+import selection from '../../design/selection-bulles.json';
+
 export const HD = true;
 
 const base = `${import.meta.env.BASE_URL}hd/`;
@@ -21,6 +23,9 @@ export const NB_MATIERES = 100;
 export const MATIERE_COUSUE = 0;
 /** à partir de ce numéro, la matière est une encre (design/hd/taches_gothique.py) : son gris vaut pleinement, et elle garde son sens */
 export const MATIERE_ENCRE = 5000;
+/** numéros des matières des ateliers (planches 2 et 3), loin du catalogue */
+export const MELANGE = 3000;
+export const CLAUDE = 4000;
 const NB_TACHES = NB_MATIERES;
 
 /**
@@ -180,6 +185,19 @@ export function installSurfaces(): void {
 /** Essai, en développement seulement : ?gothique=1 donne à toutes les bulles une matière de la planche 4. */
 const GOTHIQUE = import.meta.env.DEV && parametres?.get('gothique') === '1';
 const planche4 = Array.from({ length: 100 }, (_, i) => i + 1);
+/** Essai, en développement seulement : ?lumiere=1 donne à toutes les bulles une matière de la planche 5 (design/hd/lumiere.py). */
+const LUMIERE = import.meta.env.DEV && parametres?.get('lumiere') === '1';
+export const PLANCHE5 = MATIERE_ENCRE + 500;
+/** Essai, en développement seulement : ?melange=1 donne aux bulles les 100 du mélange des trois planches (design/selection-bulles.json). */
+const MELANGE_SEL = import.meta.env.DEV && parametres?.get('melange') === '1';
+const DOSSIERS = {
+  2: [MELANGE, (n: number) => `taches-melange/melange-${String(n).padStart(3, '0')}.webp`],
+  3: [CLAUDE, (n: number) => `taches-claude/${String(n).padStart(3, '0')}.webp`],
+  4: [MATIERE_ENCRE, (n: number) => `taches-gothique/gothique-${String(n).padStart(3, '0')}.webp`],
+} as const;
+const melange = MELANGE_SEL
+  ? selection.bulles.map((b) => ({ n: DOSSIERS[b.planche as 2 | 3 | 4][0] + b.n, src: DOSSIERS[b.planche as 2 | 3 | 4][1](b.n) }))
+  : [];
 
 const taches = new Map<number, HTMLImageElement | HTMLCanvasElement | ImageBitmap>();
 /** chantier 2 : les mêmes taches en 1 024 px (public/hd/taches/1024), pour les grandes bulles (trace, Créer) seulement */
@@ -250,6 +268,8 @@ export function loadTaches(): Promise<void> {
   loading ??= Promise.all([
     ...indices.map(charger),
     ...(GOTHIQUE ? planche4 : []).map((n) => chargerMatiere(MATIERE_ENCRE + n, `${base}taches-gothique/gothique-${String(n).padStart(3, '0')}.webp`)),
+    ...melange.map((m) => chargerMatiere(m.n, `${base}${m.src}`)),
+    ...(LUMIERE ? planche4 : []).map((n) => chargerMatiere(PLANCHE5 + n, `${base}taches-lumiere/lumiere-${String(n).padStart(3, '0')}.webp`)),
   ]).then(() => undefined);
   return loading;
 }
@@ -302,6 +322,8 @@ export function chargerMatiere(n: number, src: string): Promise<void> {
 /** Sans choix, la matière d'une personne est tirée de son identifiant : au hasard, mais fixe. */
 export function matiereFor(seed: number): number {
   if (GOTHIQUE) return MATIERE_ENCRE + planche4[seed % planche4.length]!;
+  if (melange.length) return melange[seed % melange.length]!.n;
+  if (LUMIERE) return PLANCHE5 + planche4[seed % planche4.length]!;
   // l'aquarelle cousue (0) fait partie du tirage, comme chacune des taches
   return seed % (NB_TACHES + 1);
 }
