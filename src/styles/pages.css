@@ -1661,8 +1661,8 @@
   justify-content: center;
   max-width: none;
 }
-/* le blanc qui sépare un groupe de trois du suivant */
-.comparer-trios li:nth-child(3n) {
+/* le blanc qui sépare un groupe de quatre du suivant */
+.comparer-trios li:nth-child(4n) {
   width: calc(var(--taille) + 1.25rem);
   padding-right: 1.25rem;
 }

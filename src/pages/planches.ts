@@ -1,4 +1,4 @@
-import { chargerMatiere, CLAUDE, MATIERE_ENCRE, MELANGE } from '../lib/hd';
+import { chargerMatiere, CLAUDE, MATIERE_ENCRE, MELANGE, PALETTES } from '../lib/hd';
 
 /**
  * Les planches 2, 3 et 4, pour les ateliers (local seulement). public/hd/taches-melange vient de design/hd/taches_melange.py ;
@@ -8,6 +8,8 @@ import { chargerMatiere, CLAUDE, MATIERE_ENCRE, MELANGE } from '../lib/hd';
 
 export { CLAUDE, MELANGE };
 export const GOTHIQUE = MATIERE_ENCRE;
+/** la planche 5 (le catalogue du site depuis le 4 novembre) : ses matières portent déjà leurs numéros de palette L */
+export const LUMIERE = PALETTES.L.debut - 1;
 
 export interface DetailMelange {
   n: number;
@@ -29,16 +31,17 @@ export interface BulleGothique {
   famille: string;
 }
 
-export async function chargerPlanches(): Promise<{ melange: DetailMelange[]; claude: BulleClaude[]; gothique: BulleGothique[] }> {
-  const [melange, claude, gothique] = (await Promise.all([
+export async function chargerPlanches(): Promise<{ melange: DetailMelange[]; claude: BulleClaude[]; gothique: BulleGothique[]; lumiere: BulleGothique[] }> {
+  const [melange, claude, gothique, lumiere] = (await Promise.all([
     fetch('/hd/taches-melange/index.json').then((r) => r.json()),
     fetch('/hd/taches-claude/index.json').then((r) => r.json()),
     fetch('/hd/taches-gothique/index.json').then((r) => r.json()),
-  ])) as [DetailMelange[], BulleClaude[], BulleGothique[]];
+    fetch('/hd/taches-lumiere/index.json').then((r) => r.json()),
+  ])) as [DetailMelange[], BulleClaude[], BulleGothique[], BulleGothique[]];
   await Promise.all([
     ...melange.map((d) => chargerMatiere(MELANGE + d.n, `/hd/taches-melange/melange-${String(d.n).padStart(3, '0')}.webp`)),
     ...claude.map((d) => chargerMatiere(CLAUDE + d.n, `/hd/taches-claude/${d.f}`)),
     ...gothique.map((d) => chargerMatiere(GOTHIQUE + d.n, `/hd/taches-gothique/gothique-${String(d.n).padStart(3, '0')}.webp`)),
   ]);
-  return { melange, claude, gothique };
+  return { melange, claude, gothique, lumiere };
 }
