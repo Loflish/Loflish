@@ -15,31 +15,34 @@ function atelierBulles(): Plugin {
     '/__atelier-bulles': path.join(dossier, 'atelier-bulles.json'),
     '/__coupe-bulles': path.join(dossier, 'coupe-bulles.json'),
     '/__tri-bulles': path.join(dossier, 'tri-bulles.json'),
+    '/__doublons': path.join(dossier, 'doublons-bulles.json'),
+    '/__doublons-choix': path.join(dossier, 'doublons-choix.json'),
   };
   return {
     name: 'atelier-bulles',
     apply: 'serve',
     configureServer(server) {
-      for (const [adresse, fichier] of Object.entries(fichiers)) server.middlewares.use(adresse, (req, res) => {
-        if (req.method === 'POST') {
-          let corps = '';
-          req.on('data', (morceau) => (corps += morceau));
-          req.on('end', () => {
-            try {
-              JSON.parse(corps);
-              fs.mkdirSync(path.dirname(fichier), { recursive: true });
-              fs.writeFileSync(fichier, corps);
-              res.statusCode = 204;
-            } catch {
-              res.statusCode = 400;
-            }
-            res.end();
-          });
-          return;
-        }
-        res.setHeader('Content-Type', 'application/json');
-        res.end(fs.existsSync(fichier) ? fs.readFileSync(fichier, 'utf8') : '{}');
-      });
+      for (const [adresse, fichier] of Object.entries(fichiers))
+        server.middlewares.use(adresse, (req, res) => {
+          if (req.method === 'POST') {
+            let corps = '';
+            req.on('data', (morceau) => (corps += morceau));
+            req.on('end', () => {
+              try {
+                JSON.parse(corps);
+                fs.mkdirSync(path.dirname(fichier), { recursive: true });
+                fs.writeFileSync(fichier, corps);
+                res.statusCode = 204;
+              } catch {
+                res.statusCode = 400;
+              }
+              res.end();
+            });
+            return;
+          }
+          res.setHeader('Content-Type', 'application/json');
+          res.end(fs.existsSync(fichier) ? fs.readFileSync(fichier, 'utf8') : '{}');
+        });
     },
   };
 }
@@ -56,8 +59,12 @@ function sansEssais(): Plugin {
     apply: 'build',
     closeBundle() {
       ['taches-vie', 'taches-da', 'taches-melange', 'taches-claude', 'taches-gothique', 'palerme'].forEach(retirer);
-      fs.readdirSync(hd).filter((f) => f.startsWith('fond-explorer-')).forEach(retirer);
-      fs.readdirSync(path.join(hd, 'essais')).filter((f) => !f.startsWith('fond-feutre-')).forEach((f) => retirer(path.join('essais', f)));
+      fs.readdirSync(hd)
+        .filter((f) => f.startsWith('fond-explorer-'))
+        .forEach(retirer);
+      fs.readdirSync(path.join(hd, 'essais'))
+        .filter((f) => !f.startsWith('fond-feutre-'))
+        .forEach((f) => retirer(path.join('essais', f)));
     },
   };
 }

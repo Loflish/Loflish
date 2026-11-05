@@ -1785,3 +1785,14 @@
   background: transparent;
   color: var(--encre);
 }
+
+/* l'atelier des doublons : un groupe par section, titre discret */
+.doublons-groupe {
+  margin-top: 2rem;
+}
+.doublons-titre {
+  font-size: var(--t-m);
+  font-weight: 400;
+  color: var(--encre-2);
+  margin: 0 0 0.75rem;
+}

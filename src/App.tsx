@@ -27,6 +27,7 @@ const CoupeBulles = import.meta.env.DEV ? lazy(() => import('./pages/CoupeBulles
 const AtelierMelange = import.meta.env.DEV ? lazy(() => import('./pages/AtelierMelange')) : null;
 const AtelierComparer = import.meta.env.DEV ? lazy(() => import('./pages/AtelierComparer')) : null;
 const AtelierTri = import.meta.env.DEV ? lazy(() => import('./pages/AtelierTri')) : null;
+const AtelierDoublons = import.meta.env.DEV ? lazy(() => import('./pages/AtelierDoublons')) : null;
 
 /** Le temps qu'une page arrive : le papier, et une phrase. */
 function Attente() {
@@ -91,6 +92,7 @@ export function App() {
           {AtelierMelange && <Route path="/atelier/melange" element={lent(<AtelierMelange />)} />}
           {AtelierComparer && <Route path="/atelier/comparer" element={lent(<AtelierComparer />)} />}
           {AtelierTri && <Route path="/atelier/tri" element={lent(<AtelierTri />)} />}
+          {AtelierDoublons && <Route path="/atelier/doublons" element={lent(<AtelierDoublons />)} />}
           <Route path="*" element={<Explorer />} />
         </Routes>
       </div>
