@@ -358,7 +358,9 @@ html:not(.sans-fable) .backdrop:not(.mode-explore) .papier-page {
 /* le texte reste tel quel ; seul le fond change : un voile d'ivoire plus dense sous la colonne de lecture (à gauche),
    qui s'efface vers la droite où le tissu teint respire */
 /* même tissu, même force que dans « Se perdre » : seul un léger souffle d'ivoire sous la colonne de lecture, qui s'efface vite */
-html:not(.sans-fable) main.page {
+html:not(.sans-fable) main.page,
+html:not(.sans-fable) main.trace,
+html:not(.sans-fable) main.creer {
   background: linear-gradient(to right, rgba(238, 235, 229, 0.42) 0%, rgba(238, 235, 229, 0.22) 38%, rgba(238, 235, 229, 0) 68%);
 }
 
