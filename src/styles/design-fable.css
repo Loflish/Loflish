@@ -350,3 +350,13 @@ html:not(.sans-fable):not(.sans-nappes) .backdrop:not(.mode-explore) .backdrop-a
   z-index: 1;
   opacity: 0.7;
 }
+
+/* ——— le tissu teint derrière les pages (5 novembre) : le papier ivoire s'allège pour le laisser voir (museum.css le met à 1) */
+html:not(.sans-fable) .backdrop:not(.mode-explore) .papier-page {
+  opacity: 0.3;
+}
+/* le texte reste tel quel ; seul le fond change : un voile d'ivoire plus dense sous la colonne de lecture (à gauche),
+   qui s'efface vers la droite où le tissu teint respire */
+html:not(.sans-fable) main.page {
+  background: linear-gradient(to right, rgba(238, 235, 229, 0.74) 0%, rgba(238, 235, 229, 0.62) 48%, rgba(238, 235, 229, 0.3) 100%);
+}

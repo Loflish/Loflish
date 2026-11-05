@@ -168,7 +168,8 @@ const ATMOSPHERE_BY_MODE = { explore: 1, perdre: 0.9, trace: 0.7, creer: 0.55, t
  * continuent de respirer, aux aplats des Nabis ; formulaires et juridique (C, retrait) restent sur le papier seul.
  * `?nappes=0` rend les pages d'avant.
  */
-const NAPPES = !(typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('nappes') === '0');
+// 5 novembre : Tom n'aime pas le drap coloré derrière les pages ; il reste derrière ?nappes=1 pour comparer
+const NAPPES = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('nappes') === '1';
 const AVEC_NAPPES = new Set<keyof typeof MODES>(NAPPES ? (Object.keys(MODES) as (keyof typeof MODES)[]) : ['explore']);
 if (!NAPPES && typeof document !== 'undefined') document.documentElement.classList.add('sans-nappes');
 

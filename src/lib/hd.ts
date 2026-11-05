@@ -57,6 +57,11 @@ export const FOND_ESSAI: string | null = ESSAIS_FOND[fondDemande] ?? null;
 export const FOND_FEUTRE = fondDemande === 'feutre';
 const PAGES_MARBRE = parametres?.get('pages') === 'marbre';
 /**
+ * Le fond des pages depuis le 5 novembre : le coton teint « aura-31 » fait dans Google Flow (design/fond-tissu-aura-31.jpg),
+ * choisi par Tom après cinq séries. `?tissu=coton` rend le coton ivoire d'avant ; `?tissu=<nom>` un essai de public/hd/essais.
+ */
+const TISSU_ESSAI = parametres?.get('tissu');
+/**
  * La constellation sur une toile plus brute (Tom, 21 octobre au soir : « un tissu encore plus brut »,
  * dans l'esprit des tissus de Ruth Rae) : `?toile=1` (mousseline de coton écrue) ou `?toile=2` (mousseline voilée
  * de gaze déchirée, plus brute).
@@ -101,9 +106,14 @@ export const FONDS: Record<Fond, { large: string; haut: string; largeHD?: string
       }
     : { large: `${base}fond-16x9.webp`, haut: `${base}fond-9x16.webp` },
   /** Toutes les pages sauf la constellation : un tissu de coton ivoire, plis doux, fibres visibles. */
-  tissu: PAGES_MARBRE
-    ? { large: `${base}palerme/page-marbre-16x9.webp`, haut: `${base}palerme/page-marbre-9x16.webp` }
-    : { large: `${base}fond-tissu-16x9.webp`, haut: `${base}fond-tissu-9x16.webp` },
+  tissu:
+    TISSU_ESSAI === 'coton'
+      ? { large: `${base}fond-tissu-coton-16x9.webp`, haut: `${base}fond-tissu-coton-9x16.webp` }
+      : TISSU_ESSAI
+        ? { large: `${base}essais/tissu-${TISSU_ESSAI}-16x9.webp`, haut: `${base}essais/tissu-${TISSU_ESSAI}-9x16.webp` }
+        : PAGES_MARBRE
+          ? { large: `${base}palerme/page-marbre-16x9.webp`, haut: `${base}palerme/page-marbre-9x16.webp` }
+          : { large: `${base}fond-tissu-16x9.webp`, haut: `${base}fond-tissu-9x16.webp` },
 };
 
 /** Téléphone ou connexion économe : on garde les images fixes, plus légères. */
