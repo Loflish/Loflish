@@ -667,7 +667,13 @@ export async function deposerFragment(traceId: string, rubrique: RubriqueId, e: 
     if (!addElement(traceId, rubrique, { ...e, id, medias: medias.map((m) => m.id) }, medias)) throw new Error('Cette rubrique est complète.');
     return;
   }
-  const donnees = { rubrique, ...e, mediaTitre: mediaTitre || undefined, mediaLien: choix && 'url' in choix ? { url: choix.url } : undefined };
+  const donnees = {
+    rubrique,
+    ...e,
+    mediaTitre: mediaTitre || undefined,
+    mediaLien: choix && 'url' in choix ? { url: choix.url } : undefined,
+    droits: choix && 'file' in choix ? true : undefined,
+  };
   const r =
     choix && 'file' in choix
       ? await appel<{ trace: Trace }>('POST', `/api/traces/${traceId}/fragments`, formulaire(donnees, (await preparerEnvoi(choix.file)).fichier))
@@ -683,7 +689,13 @@ export async function deposerMedia(traceId: string, choix: NonNullable<MediaChoi
     return;
   }
   const prepare = 'file' in choix ? await preparerEnvoi(choix.file) : null;
-  const donnees = { titre: titre || undefined, legende: legende || undefined, duree: prepare?.duree, lien: 'url' in choix ? choix.url : undefined };
+  const donnees = {
+    titre: titre || undefined,
+    legende: legende || undefined,
+    duree: prepare?.duree,
+    lien: 'url' in choix ? choix.url : undefined,
+    droits: prepare ? true : undefined,
+  };
   const r = await appel<{ trace: Trace }>('POST', `/api/traces/${traceId}/medias`, prepare ? formulaire(donnees, prepare.fichier) : donnees);
   retenir(r.trace);
 }

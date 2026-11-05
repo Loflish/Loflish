@@ -9,6 +9,7 @@ import { fileTypeFromFile } from 'file-type';
 import type pg from 'pg';
 import { z } from 'zod';
 import { exigerCompte, publicCompte, Refus, type Compte } from '../auth';
+import { empreinteIp } from '../bannis';
 import { journaliser, pool, requete, transaction, une, type Client } from '../db';
 import { LIMITES, MAX_MEDIAS, TAILLES_MAX, couleurValide, estRubrique, lienValide, limiteDe, natureDe, reouverture, scelleEncore } from '../regles';
 import { trace as serialiserTrace, type LigneFragment, type LigneMedia, type LigneTrace } from '../serialiser';
@@ -65,6 +66,8 @@ const schemaFragment = z.object({
   /** un lien joint au fragment (sinon, un fichier dans le formulaire) */
   mediaLien: z.object({ url: z.string().max(2000), titre: facultatif(200) }).optional(),
   mediaTitre: facultatif(200),
+  /** le déposant a les droits sur le fichier et l'accord des personnes qu'on y voit ou entend (exigé pour un fichier) */
+  droits: z.boolean().optional(),
 });
 
 const schemaMedia = z.object({
@@ -72,7 +75,9 @@ const schemaMedia = z.object({
   legende: facultatif(600),
   duree: facultatif(12),
   lien: z.string().max(2000).optional(),
+  droits: z.boolean().optional(),
 });
+const DROITS = 'Confirme que tu as les droits sur ce fichier et l’accord des personnes qu’on y voit ou qu’on y entend.';
 
 /** La trace de l'auteur, verrouillée pour la durée de l'écriture (deux dépôts simultanés ne dépassent jamais une limite). */
 async function maTrace(c: pg.PoolClient, compte: Compte, id: string): Promise<LigneTrace> {
@@ -157,8 +162,8 @@ export async function routesAuteur(app: FastifyInstance) {
     try {
       await requete(
         `insert into traces (id, compte_id, type, nom, pseudo, couleur, matiere, pays, q1, q2, q3, q4, q2_destinataire,
-                             memoire_deposee_par, memoire_relation, memoire_origine, memoire_apercu, parametres)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+                             memoire_deposee_par, memoire_relation, memoire_origine, memoire_apercu, parametres, ip)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
         [
           id,
           c.id,
@@ -175,6 +180,7 @@ export async function routesAuteur(app: FastifyInstance) {
           d.type === 'memoire' ? (d.memoire.origine ?? null) : null,
           d.type === 'memoire' ? d.memoire.aperçu : null,
           d.parametres ?? {},
+          empreinteIp(req.ip),
         ],
       );
     } catch (e) {
@@ -233,6 +239,7 @@ export async function routesAuteur(app: FastifyInstance) {
     const { donnees, fichier } = await lireFormulaire(req);
     try {
       const d = schemaFragment.parse(donnees);
+      if (fichier && !d.droits) throw new Refus(400, DROITS, 'droits');
       if (fichier) await verifierProprietaire(c, id);
       const range = fichier ? await rangerFichier(id, fichier) : null;
       const r = await transaction(async (tx) => {
@@ -245,14 +252,25 @@ export async function routesAuteur(app: FastifyInstance) {
         if (Number(n!.n) >= limiteDe(d.rubrique)) throw new Refus(409, `Cette rubrique a déjà ses ${limiteDe(d.rubrique)} fragments.`, 'plein');
         // un nouveau fragment se range à la fin : l'auteur le monte s'il veut le montrer sur son profil
         const f = (await une<{ id: string }>(
-          `insert into fragments (trace_id, rubrique, titre, texte, quand, lieu, lien, categorie, ordre)
-           values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id`,
-          [id, d.rubrique, d.titre ?? null, d.texte, d.quand ?? null, d.lieu ?? null, d.lien ?? null, d.categorie ?? null, (n!.ordre ?? -1) + 1],
+          `insert into fragments (trace_id, rubrique, titre, texte, quand, lieu, lien, categorie, ordre, ip)
+           values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning id`,
+          [
+            id,
+            d.rubrique,
+            d.titre ?? null,
+            d.texte,
+            d.quand ?? null,
+            d.lieu ?? null,
+            d.lien ?? null,
+            d.categorie ?? null,
+            (n!.ordre ?? -1) + 1,
+            empreinteIp(req.ip),
+          ],
           tx,
         ))!;
         if (range)
           await requete(
-            'insert into medias (trace_id, fragment_id, kind, titre, cle, mime, nom_fichier, taille) values ($1,$2,$3,$4,$5,$6,$7,$8)',
+            'insert into medias (trace_id, fragment_id, kind, titre, cle, mime, nom_fichier, taille, ip, droits_le) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,now())',
             [
               id,
               f.id,
@@ -262,6 +280,7 @@ export async function routesAuteur(app: FastifyInstance) {
               range.mime,
               fichier!.nom.slice(0, 200),
               range.taille,
+              empreinteIp(req.ip),
             ],
             tx,
           );
@@ -269,8 +288,8 @@ export async function routesAuteur(app: FastifyInstance) {
           const url = lienValide(d.mediaLien.url);
           if (!url) throw new Refus(400, 'Ce lien ne mène pas à une page web.', 'lien');
           await requete(
-            'insert into medias (trace_id, fragment_id, kind, titre, url) values ($1,$2,$3,$4,$5)',
-            [id, f.id, 'lien', d.mediaLien.titre ?? new URL(url).hostname, url],
+            'insert into medias (trace_id, fragment_id, kind, titre, url, ip) values ($1,$2,$3,$4,$5,$6)',
+            [id, f.id, 'lien', d.mediaLien.titre ?? new URL(url).hostname, url, empreinteIp(req.ip)],
             tx,
           );
         }
@@ -353,6 +372,7 @@ export async function routesAuteur(app: FastifyInstance) {
     const { donnees, fichier } = await lireFormulaire(req);
     try {
       const d = schemaMedia.parse(donnees);
+      if (fichier && !d.droits) throw new Refus(400, DROITS, 'droits');
       if (!fichier && !d.lien) throw new Refus(400, 'Choisis un fichier ou un lien.', 'vide');
       if (fichier) await verifierProprietaire(c, id);
       const range = fichier ? await rangerFichier(id, fichier) : null;
@@ -367,7 +387,7 @@ export async function routesAuteur(app: FastifyInstance) {
         const ordre = (n!.ordre ?? -1) + 1;
         if (range) {
           await requete(
-            'insert into medias (trace_id, kind, titre, legende, duree, cle, mime, nom_fichier, taille, ordre) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
+            'insert into medias (trace_id, kind, titre, legende, duree, cle, mime, nom_fichier, taille, ordre, ip, droits_le) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now())',
             [
               id,
               range.nature,
@@ -379,6 +399,7 @@ export async function routesAuteur(app: FastifyInstance) {
               fichier!.nom.slice(0, 200),
               range.taille,
               ordre,
+              empreinteIp(req.ip),
             ],
             tx,
           );
@@ -386,8 +407,8 @@ export async function routesAuteur(app: FastifyInstance) {
           const url = lienValide(d.lien!);
           if (!url) throw new Refus(400, 'Ce lien ne mène pas à une page web.', 'lien');
           await requete(
-            'insert into medias (trace_id, kind, titre, legende, url, ordre) values ($1,$2,$3,$4,$5,$6)',
-            [id, 'lien', d.titre ?? new URL(url).hostname, d.legende ?? null, url, ordre],
+            'insert into medias (trace_id, kind, titre, legende, url, ordre, ip) values ($1,$2,$3,$4,$5,$6,$7)',
+            [id, 'lien', d.titre ?? new URL(url).hostname, d.legende ?? null, url, ordre, empreinteIp(req.ip)],
             tx,
           );
         }

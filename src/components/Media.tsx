@@ -59,7 +59,12 @@ export function MediaThumb({ m, size = 'm' }: { m: Media; size?: 's' | 'm' | 'l'
   return (
     <figure className={`media media-${m.kind} media-${size}`}>
       {ouvrir ? (
-        <button type="button" className="media-ouvrir" onClick={() => ouvrir(m)} aria-label={`Ouvrir : ${LABEL[m.kind]}, ${m.titre}${m.duree ? `, ${m.duree}` : ''}`}>
+        <button
+          type="button"
+          className="media-ouvrir"
+          onClick={() => ouvrir(m)}
+          aria-label={`Ouvrir : ${LABEL[m.kind]}, ${m.titre}${m.duree ? `, ${m.duree}` : ''}`}
+        >
           {surface}
         </button>
       ) : (
@@ -115,11 +120,21 @@ export function MediaVue({ m, onClose }: { m: Media; onClose: () => void }) {
     return () => window.removeEventListener('keydown', onKey, true);
   }, [onClose]);
   const lecteur = m.kind === 'lien' && m.url ? lecteurIntegre(m.url) : null;
+  // la vidéo d'un service tiers (YouTube, Vimeo) ne se charge qu'après un clic informé : elle peut poser des traceurs
+  const [lire, setLire] = useState(false);
   const demo = !url && m.kind !== 'lien';
 
   return createPortal(
     <div className="media-vue-scrim" onClick={onClose}>
-      <div className="media-vue" role="dialog" aria-modal="true" aria-label={`${LABEL[m.kind]} : ${m.titre}`} tabIndex={-1} ref={ref} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="media-vue"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${LABEL[m.kind]} : ${m.titre}`}
+        tabIndex={-1}
+        ref={ref}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="media-vue-entete">
           <p className="media-vue-titre">
             {m.titre} <span className="media-kind">({LABEL[m.kind].toLowerCase()})</span>
@@ -152,7 +167,19 @@ export function MediaVue({ m, onClose }: { m: Media; onClose: () => void }) {
           )}
           {m.kind === 'lien' && m.url && (
             <div className="media-vue-lien">
-              {lecteur && <iframe src={lecteur} title={m.titre} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />}
+              {lecteur &&
+                (lire ? (
+                  <iframe src={lecteur} title={m.titre} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
+                ) : (
+                  <div className="media-vue-tiers">
+                    <p className="muted petit">
+                      Cette vidéo est hébergée par {hote(m.url)}. En la lisant ici, ce service peut déposer des traceurs sur ton appareil.
+                    </p>
+                    <button type="button" className="bouton" onClick={() => setLire(true)}>
+                      Lire la vidéo ici
+                    </button>
+                  </div>
+                ))}
               <p className="media-vue-url">{m.url}</p>
               <a className="lien-entrer" href={lienValide(m.url)?.href} target="_blank" rel="noopener noreferrer">
                 Ouvrir le lien ({hote(m.url)}) <Icon name="fleche" size={16} />
@@ -175,7 +202,10 @@ export function ChoixMedia({ value, onChange, id }: { value: MediaChoisi; onChan
   const [mode, setMode] = useState<'fichier' | 'lien'>(value && 'url' in value ? 'lien' : 'fichier');
   const [lien, setLien] = useState(value && 'url' in value ? value.url : '');
   const [erreur, setErreur] = useState('');
-  const apercu = useMemo(() => (value && 'file' in value && value.file.type.startsWith('image/') ? URL.createObjectURL(value.file) : null), [value]);
+  // le fichier choisi mais pas encore déclaré (droits) : il n'est transmis au parent qu'après la case cochée
+  const [attente, setAttente] = useState<File | null>(null);
+  const fichierChoisi = value && 'file' in value ? value.file : attente;
+  const apercu = useMemo(() => (fichierChoisi && fichierChoisi.type.startsWith('image/') ? URL.createObjectURL(fichierChoisi) : null), [fichierChoisi]);
   useEffect(() => () => void (apercu && URL.revokeObjectURL(apercu)), [apercu]);
 
   return (
@@ -189,15 +219,40 @@ export function ChoixMedia({ value, onChange, id }: { value: MediaChoisi; onChan
         </button>
       </div>
       {mode === 'fichier' ? (
-        value && 'file' in value ? (
+        attente || (value && 'file' in value) ? (
           <div className="choix-media-fichier">
-            {apercu ? <img src={apercu} alt="" /> : <Icon name={natureDe(value.file) === 'document' ? 'document' : 'play'} size={20} />}
+            {apercu ? <img src={apercu} alt="" /> : <Icon name={natureDe(fichierChoisi!) === 'document' ? 'document' : 'play'} size={20} />}
             <span>
-              {value.file.name}, {tailleLisible(value.file.size)}
+              {fichierChoisi!.name}, {tailleLisible(fichierChoisi!.size)}
             </span>
-            <button type="button" className="lien-discret petit" onClick={() => onChange(null)}>
+            <button
+              type="button"
+              className="lien-discret petit"
+              onClick={() => {
+                setAttente(null);
+                onChange(null);
+              }}
+            >
               Retirer
             </button>
+            {/* droit à l'image et droit d'auteur : le fichier ne compte qu'une fois les droits déclarés */}
+            <label className="check choix-media-droits">
+              <input
+                type="checkbox"
+                checked={!!(value && 'file' in value)}
+                onChange={(e) => {
+                  const f = fichierChoisi!;
+                  if (e.target.checked) {
+                    setAttente(null);
+                    onChange({ file: f });
+                  } else {
+                    setAttente(f);
+                    onChange(null);
+                  }
+                }}
+              />
+              <span>J’ai les droits sur ce fichier et l’accord des personnes qu’on y voit ou qu’on y entend.</span>
+            </label>
           </div>
         ) : (
           <>
@@ -219,7 +274,9 @@ export function ChoixMedia({ value, onChange, id }: { value: MediaChoisi; onChan
                   return;
                 }
                 setErreur('');
-                onChange({ file: f });
+                // le fichier attend la déclaration de droits avant de compter
+                setAttente(f);
+                onChange(null);
               }}
             />
           </>

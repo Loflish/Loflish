@@ -161,22 +161,26 @@ export async function routesPubliques(app: FastifyInstance) {
         traceId: z.string().max(40),
         fragmentId: z.string().uuid().optional(),
         mediaId: z.string().uuid().optional(),
-        motif: z.enum(['danger', 'haine', 'autre']),
+        motif: z.enum(['danger', 'haine', 'vie_privee', 'autre']),
         message: z.string().trim().max(2000).optional(),
+        /** pour répondre : exigé quand une personne s'oppose à un contenu qui la concerne */
+        email: z.string().trim().toLowerCase().email().max(200).optional(),
       })
       .parse(req.body);
     const t = await une<{ nom: string }>('select nom from traces where id = $1', [s.traceId]);
     if (!t) throw new Refus(404, 'Cette trace n’existe pas.', 'introuvable');
-    await requete('insert into signalements (trace_id, fragment_id, media_id, motif, message, compte_id) values ($1, $2, $3, $4, $5, $6)', [
+    if (s.motif === 'vie_privee' && !s.email) throw new Refus(400, 'Laisse une adresse e-mail : la réponse à ton opposition arrive sous un mois.', 'email');
+    await requete('insert into signalements (trace_id, fragment_id, media_id, motif, message, compte_id, email) values ($1, $2, $3, $4, $5, $6, $7)', [
       s.traceId,
       s.fragmentId ?? null,
       s.mediaId ?? null,
       s.motif,
       s.message ?? null,
       req.compte?.id ?? null,
+      s.email ?? null,
     ]);
     // le fondateur le reçoit aussitôt par e-mail (sans faire attendre la personne qui signale)
-    void envoyerSignalement({ motif: s.motif, message: s.message, traceId: s.traceId, traceNom: t.nom });
+    void envoyerSignalement({ motif: s.motif, message: s.message, traceId: s.traceId, traceNom: t.nom, email: s.email });
     return { ok: true };
   });
 

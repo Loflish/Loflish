@@ -47,7 +47,10 @@ export async function creerApp(): Promise<FastifyInstance> {
     if (req.method !== 'GET' && req.method !== 'HEAD' && rep.statusCode < 400) {
       changement();
       // l'adresse (son empreinte) de qui écrit dans le musée : c'est elle que le fondateur peut bannir
-      if (req.compte) void requete('update comptes set derniere_ip = $2 where id = $1 and derniere_ip is distinct from $2', [req.compte.id, empreinteIp(req.ip)]).catch(() => undefined);
+      if (req.compte)
+        void requete('update comptes set derniere_ip = $2 where id = $1 and derniere_ip is distinct from $2', [req.compte.id, empreinteIp(req.ip)]).catch(
+          () => undefined,
+        );
     }
     rep.header('content-security-policy', POLITIQUE);
     rep.header('x-content-type-options', 'nosniff');
@@ -60,9 +63,18 @@ export async function creerApp(): Promise<FastifyInstance> {
   // les refus du musée et les données mal formées reçoivent une réponse claire, en français
   app.setErrorHandler((e, req, rep) => {
     if (e instanceof Refus) return rep.status(e.statut).send({ erreur: e.message, code: e.code });
-    if (e instanceof ZodError) return rep.status(400).send({ erreur: 'Certaines informations ne conviennent pas.', code: 'invalide', details: e.issues.map((i) => ({ champ: i.path.join('.'), message: i.message })) });
-    if ((e as { statusCode?: number }).statusCode === 429) return rep.status(429).send({ erreur: 'Doucement : trop de demandes. Réessaie dans quelques minutes.', code: 'trop' });
-    if ((e as { statusCode?: number }).statusCode && (e as { statusCode: number }).statusCode < 500) return rep.status((e as { statusCode: number }).statusCode).send({ erreur: (e as Error).message, code: 'requete' });
+    if (e instanceof ZodError)
+      return rep
+        .status(400)
+        .send({
+          erreur: 'Certaines informations ne conviennent pas.',
+          code: 'invalide',
+          details: e.issues.map((i) => ({ champ: i.path.join('.'), message: i.message })),
+        });
+    if ((e as { statusCode?: number }).statusCode === 429)
+      return rep.status(429).send({ erreur: 'Doucement : trop de demandes. Réessaie dans quelques minutes.', code: 'trop' });
+    if ((e as { statusCode?: number }).statusCode && (e as { statusCode: number }).statusCode < 500)
+      return rep.status((e as { statusCode: number }).statusCode).send({ erreur: (e as Error).message, code: 'requete' });
     req.log.error(e);
     return rep.status(500).send({ erreur: 'Une erreur est survenue de notre côté. Réessaie un peu plus tard.', code: 'serveur' });
   });
@@ -114,7 +126,17 @@ export async function creerApp(): Promise<FastifyInstance> {
 }
 
 /** Ménage régulier : sessions et liens expirés. */
+/** Les durées annoncées dans « Juridique & confidentialité » et docs/registre-des-traitements.md, appliquées toutes les six heures. */
 export async function menage() {
   await requete('delete from sessions where expire_le < now()');
   await requete(`delete from liens_connexion where expire_le < now() - interval '1 day'`);
+  await requete(`delete from journal where cree_le < now() - interval '1 year'`);
+  await requete(`delete from signalements where statut <> 'ouvert' and traite_le < now() - interval '1 year'`);
+  await requete(`delete from bannissements where cree_le < now() - interval '1 year'`);
+  await requete(`delete from demandes_deces where statut in ('traitee', 'refusee') and traitee_le < now() - interval '3 years'`);
+  // un compte sans trace, sans directive « Après moi », inactif depuis trois ans
+  await requete(`delete from comptes c where role = 'membre'
+    and coalesce(derniere_connexion, cree_le) < now() - interval '3 years'
+    and not exists (select 1 from traces where compte_id = c.id)
+    and not exists (select 1 from directives_post_mortem where compte_id = c.id)`);
 }

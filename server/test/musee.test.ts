@@ -255,7 +255,7 @@ describe('traces', () => {
   });
 
   it('dépose une vraie photo, refuse un faux fichier, sert le fichier', async () => {
-    const f = formulaire({ rubrique: 'voir', texte: 'Le soleil sur l’océan.' }, { nom: 'ocean.png', contenu: png(), type: 'image/png' });
+    const f = formulaire({ rubrique: 'voir', texte: 'Le soleil sur l’océan.', droits: true }, { nom: 'ocean.png', contenu: png(), type: 'image/png' });
     const r = await auteur.post(`/api/traces/${id}/fragments`, f.corps, f.entetes);
     expect(r.statusCode).toBe(200);
     const m = r.json().trace.medias.find((x: any) => x.kind === 'image');
@@ -264,7 +264,10 @@ describe('traces', () => {
     expect(fichier.statusCode).toBe(200);
     expect(fichier.headers['content-type']).toBe('image/png');
     // un texte déguisé en photo est refusé
-    const faux = formulaire({ rubrique: 'voir', texte: 'x' }, { nom: 'faux.png', contenu: Buffer.from('<script>alert(1)</script>'), type: 'image/png' });
+    const faux = formulaire(
+      { rubrique: 'voir', texte: 'x', droits: true },
+      { nom: 'faux.png', contenu: Buffer.from('<script>alert(1)</script>'), type: 'image/png' },
+    );
     expect((await auteur.post(`/api/traces/${id}/fragments`, faux.corps, faux.entetes)).statusCode).toBe(415);
   });
 
@@ -388,7 +391,7 @@ describe('RGPD', () => {
     await v.connecter('partir@exemple.fr');
     await v.post('/api/moi/majeur', { majeur: true });
     const t = (await v.post('/api/traces', personnelle('Partir'))).json().trace;
-    const f = formulaire({ rubrique: 'voir', texte: 'Une photo.' }, { nom: 'p.png', contenu: png(), type: 'image/png' });
+    const f = formulaire({ rubrique: 'voir', texte: 'Une photo.', droits: true }, { nom: 'p.png', contenu: png(), type: 'image/png' });
     const src = (await v.post(`/api/traces/${t.id}/fragments`, f.corps, f.entetes)).json().trace.medias[0].src;
     const exp = (await v.get('/api/moi/export')).json();
     expect(exp.traces[0].id).toBe(t.id);
@@ -435,6 +438,46 @@ describe('après moi (loi Informatique et Libertés, article 85)', () => {
   });
 });
 
+describe('droits au dépôt, opposition, retrait motivé', () => {
+  it('un fichier sans déclaration de droits est refusé ; un lien n’en demande pas', async () => {
+    const v = visiteur();
+    await v.connecter('droits@exemple.fr');
+    await v.post('/api/moi/majeur', { majeur: true });
+    const t = (await v.post('/api/traces', personnelle('Droits'))).json().trace;
+    const sans = formulaire({ rubrique: 'voir', texte: 'Sans droits.' }, { nom: 'p.png', contenu: png(), type: 'image/png' });
+    const r = await v.post(`/api/traces/${t.id}/fragments`, sans.corps, sans.entetes);
+    expect(r.statusCode).toBe(400);
+    expect(r.json().code).toBe('droits');
+    expect((await v.post(`/api/traces/${t.id}/medias`, { lien: 'exemple.fr/sans-droits' })).statusCode).toBe(200);
+    const avec = formulaire({ titre: 'Avec droits', droits: true }, { nom: 'p.png', contenu: png(), type: 'image/png' });
+    expect((await v.post(`/api/traces/${t.id}/medias`, avec.corps, avec.entetes)).statusCode).toBe(200);
+    const m = await pool.query('select droits_le, ip from medias where trace_id = $1 and cle is not null', [t.id]);
+    expect(m.rows[0].droits_le).toBeTruthy();
+    expect(m.rows[0].ip).toBeTruthy();
+    const tr = await pool.query('select ip from traces where id = $1', [t.id]);
+    expect(tr.rows[0].ip).toBeTruthy();
+  });
+
+  it('une personne concernée s’oppose, avec une adresse pour lui répondre', async () => {
+    const v = visiteur();
+    await v.connecter('opposition@exemple.fr');
+    await v.post('/api/moi/majeur', { majeur: true });
+    const t = (await v.post('/api/traces', personnelle('Opposition'))).json().trace;
+    expect((await visiteur().post('/api/signalements', { traceId: t.id, motif: 'vie_privee', message: 'On parle de ma maladie.' })).statusCode).toBe(400);
+    expect(
+      (await visiteur().post('/api/signalements', { traceId: t.id, motif: 'vie_privee', message: 'On parle de ma maladie.', email: 'Moi@Exemple.fr' }))
+        .statusCode,
+    ).toBe(200);
+    const s = await pool.query('select motif, email from signalements where trace_id = $1', [t.id]);
+    expect(s.rows[0]).toMatchObject({ motif: 'vie_privee', email: 'moi@exemple.fr' });
+  });
+
+  it('le ménage des durées annoncées passe sans erreur', async () => {
+    const { menage } = await import('../src/app');
+    await expect(menage()).resolves.toBeUndefined();
+  });
+});
+
 describe('rapidité et lecture des médias', () => {
   const v = visiteur();
   let id = '';
@@ -446,7 +489,7 @@ describe('rapidité et lecture des médias', () => {
     await v.post('/api/moi/majeur', { majeur: true });
     id = (await v.post('/api/traces', personnelle('Rapide'))).json().trace.id;
     const image = png();
-    const f = formulaire({ rubrique: 'voir', texte: 'Une image.' }, { nom: 'i.png', contenu: image, type: 'image/png' });
+    const f = formulaire({ rubrique: 'voir', texte: 'Une image.', droits: true }, { nom: 'i.png', contenu: image, type: 'image/png' });
     src = (await v.post(`/api/traces/${id}/fragments`, f.corps, f.entetes)).json().trace.medias[0].src;
 
     const tout = await visiteur().get(src);
@@ -469,7 +512,10 @@ describe('rapidité et lecture des médias', () => {
   });
 
   it('propose un nom de téléchargement sans risque pour les documents', async () => {
-    const f = formulaire({ titre: 'Lettre' }, { nom: 'lettre à Jeannot.txt', contenu: Buffer.from('Cher Jeannot,\nà bientôt.'), type: 'text/plain' });
+    const f = formulaire(
+      { titre: 'Lettre', droits: true },
+      { nom: 'lettre à Jeannot.txt', contenu: Buffer.from('Cher Jeannot,\nà bientôt.'), type: 'text/plain' },
+    );
     const r = await v.post(`/api/traces/${id}/medias`, f.corps, f.entetes);
     expect(r.statusCode).toBe(200);
     doc = r.json().trace.medias.find((m: any) => m.kind === 'document').src;
@@ -505,7 +551,7 @@ describe('rapidité et lecture des médias', () => {
     expect((await v.post(`/api/traces/${id}/fragments`, corps, { 'content-type': `multipart/form-data; boundary=${limite}` })).statusCode).toBe(400);
     const intrus = visiteur();
     await intrus.connecter('intrus@exemple.fr');
-    const f = formulaire({ rubrique: 'voir', texte: 'x' }, { nom: 'i.png', contenu: png(), type: 'image/png' });
+    const f = formulaire({ rubrique: 'voir', texte: 'x', droits: true }, { nom: 'i.png', contenu: png(), type: 'image/png' });
     expect((await intrus.post(`/api/traces/${id}/fragments`, f.corps, f.entetes)).statusCode).toBe(404);
   });
 

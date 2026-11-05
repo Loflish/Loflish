@@ -86,11 +86,12 @@ const MOTIFS: Record<string, string> = {
   haine: 'Haine, harcèlement ou violence',
   autre: 'Autre chose',
   intime: 'Vie privée exposée',
+  vie_privee: 'Opposition d’une personne concernée (vie privée)',
   usurpation: 'Usurpation',
 };
 
 /** Le fondateur reçoit chaque signalement, aussitôt (adresses de ADMIN_EMAILS). */
-export async function envoyerSignalement(s: { motif: string; message?: string; traceId: string; traceNom: string }): Promise<void> {
+export async function envoyerSignalement(s: { motif: string; message?: string; traceId: string; traceNom: string; email?: string }): Promise<void> {
   if (!config.admins.length) return;
   const motif = MOTIFS[s.motif] ?? s.motif;
   const lien = `${config.siteUrl}/#/trace/${s.traceId}`;
@@ -99,6 +100,7 @@ export async function envoyerSignalement(s: { motif: string; message?: string; t
     `Un signalement vient d’arriver : ${motif}.`,
     `Trace : ${s.traceNom} (${lien})`,
     s.message ? `Message : ${s.message}` : 'Pas de message.',
+    s.email ? `Adresse pour répondre : ${s.email} (réponse attendue sous un mois)` : 'Pas d’adresse de réponse.',
     `Pour décider (retirer la bulle, bannir, ou classer) : ${admin}`,
   ];
   const sujet = `${s.motif === 'danger' ? 'Urgent, ' : ''}signalement : ${motif}`;
@@ -118,4 +120,17 @@ export async function envoyerDemandeDeces(d: { email: string; nomDefunt: string;
     await envoyer(email, 'Demande liée à un décès', lignes.join('\n\n'), lettre(lignes), `demande de décès (${d.nomDefunt}) pour ${email}`).catch(
       () => undefined,
     );
+}
+
+/** L'auteur d'une trace retirée reçoit les motifs et la voie de réclamation (règlement sur les services numériques, article 17). */
+export async function envoyerRetrait(r: { email: string; traceId: string; traceNom: string; raison: string }): Promise<void> {
+  const lignes = [
+    `Ta trace « ${r.traceNom} » a été retirée du musée.`,
+    `Motif : ${r.raison}`,
+    'Elle n’est pas effacée : tu la retrouves dans ton compte, et tu peux la modifier. Si tu penses que ce retrait est une erreur, réponds à ce message en expliquant pourquoi : je relirai, et je te répondrai sous un mois. Tu peux aussi saisir un médiateur ou un tribunal.',
+    `Ton compte : ${config.siteUrl}/#/compte`,
+  ];
+  await envoyer(r.email, 'Ta trace a été retirée du musée', lignes.join('\n\n'), lettre(lignes), `retrait de ${r.traceId} notifié à ${r.email}`).catch(
+    () => undefined,
+  );
 }

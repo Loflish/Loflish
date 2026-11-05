@@ -5,6 +5,7 @@ import { journaliser, requete, transaction, une } from '../db';
 import { relireBannissements } from '../bannis';
 import { presence, type LigneTrace } from '../serialiser';
 import { stockage } from '../stockage';
+import { envoyerRetrait } from '../courriel';
 
 /**
  * L'espace de l'équipe du musée : modération (« moderation ») et administration
@@ -47,7 +48,12 @@ export async function routesAdmin(app: FastifyInstance) {
     const c = exigerRole(req, 'moderation', 'admin');
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const d = z.object({ statut: z.enum(['traite', 'rejete']), decision: z.string().trim().max(1000).optional() }).parse(req.body);
-    await requete('update signalements set statut = $2, decision = $3, traite_par = $4, traite_le = now() where id = $1', [id, d.statut, d.decision ?? null, c.id]);
+    await requete('update signalements set statut = $2, decision = $3, traite_par = $4, traite_le = now() where id = $1', [
+      id,
+      d.statut,
+      d.decision ?? null,
+      c.id,
+    ]);
     await journaliser(c.id, `signalement.${d.statut}`, id, { decision: d.decision });
     return { ok: true };
   });
@@ -87,9 +93,16 @@ export async function routesAdmin(app: FastifyInstance) {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const d = z.object({ statut: z.enum(['publiee', 'retiree']), raison: z.string().trim().max(500).optional() }).parse(req.body);
     if (d.statut === 'retiree' && !d.raison) throw new Refus(400, 'Indique la raison : l’auteur la lira.', 'raison');
-    const r = await une('update traces set statut = $2, retiree_raison = $3 where id = $1 returning id', [id, d.statut, d.statut === 'retiree' ? d.raison : null]);
+    const r = await une<{ id: string; nom: string; email: string | null }>(
+      `update traces t set statut = $2, retiree_raison = $3, retiree_le = case when $2 = 'retiree' then now() else null end
+       from (select id from traces where id = $1) x left join comptes c on c.id = (select compte_id from traces where id = $1)
+       where t.id = x.id returning t.id, t.nom, c.email`,
+      [id, d.statut, d.statut === 'retiree' ? d.raison : null],
+    );
     if (!r) throw new Refus(404, 'Cette trace n’existe pas.', 'introuvable');
     await journaliser(c.id, d.statut === 'retiree' ? 'trace.retiree' : 'trace.remise', id, { raison: d.raison });
+    // l'auteur reçoit les motifs et la voie de réclamation (DSA art. 17) ; sans e-mail (trace sans compte), rien ne part
+    if (d.statut === 'retiree' && r.email) void envoyerRetrait({ email: r.email, traceId: id, traceNom: r.nom, raison: d.raison! });
     return { ok: true };
   });
 
@@ -110,7 +123,11 @@ export async function routesAdmin(app: FastifyInstance) {
         tx,
       );
       for (const { ip } of ips)
-        await requete('insert into bannissements (ip, raison, compte_id, par) values ($1, $2, $3, $4) on conflict (ip) do nothing', [ip, raison, t.compte_id, c.id], tx);
+        await requete(
+          'insert into bannissements (ip, raison, compte_id, par) values ($1, $2, $3, $4) on conflict (ip) do nothing',
+          [ip, raison, t.compte_id, c.id],
+          tx,
+        );
       await requete(`update traces set statut = 'retiree', retiree_raison = $2 where compte_id = $1`, [t.compte_id, raison], tx);
       await requete('update comptes set suspendu = true where id = $1', [t.compte_id], tx);
       await requete('delete from sessions where compte_id = $1', [t.compte_id], tx);
@@ -175,7 +192,10 @@ export async function routesAdmin(app: FastifyInstance) {
     return { traits: lignes };
   });
 
-  for (const [chemin, masque] of [['masquer', true], ['reafficher', false]] as const) {
+  for (const [chemin, masque] of [
+    ['masquer', true],
+    ['reafficher', false],
+  ] as const) {
     app.post(`/api/admin/traits/:id/${chemin}`, async (req) => {
       const c = exigerRole(req, 'moderation', 'admin');
       const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
@@ -213,11 +233,20 @@ export async function routesAdmin(app: FastifyInstance) {
   // les éditions des archives
   app.post('/api/admin/editions', async (req) => {
     const c = exigerRole(req, 'admin');
-    const d = z.object({ id: z.string().regex(/^[a-z0-9-]{1,60}$/), titre: z.string().trim().min(1).max(80), annee: z.number().int().min(2020).max(3000), note: z.string().trim().max(300).default('') }).parse(req.body);
-    await requete(
-      'insert into editions (id, titre, annee, note) values ($1,$2,$3,$4) on conflict (id) do update set titre = $2, annee = $3, note = $4',
-      [d.id, d.titre, d.annee, d.note],
-    );
+    const d = z
+      .object({
+        id: z.string().regex(/^[a-z0-9-]{1,60}$/),
+        titre: z.string().trim().min(1).max(80),
+        annee: z.number().int().min(2020).max(3000),
+        note: z.string().trim().max(300).default(''),
+      })
+      .parse(req.body);
+    await requete('insert into editions (id, titre, annee, note) values ($1,$2,$3,$4) on conflict (id) do update set titre = $2, annee = $3, note = $4', [
+      d.id,
+      d.titre,
+      d.annee,
+      d.note,
+    ]);
     await journaliser(c.id, 'edition.enregistree', d.id, d);
     return { ok: true };
   });
@@ -264,9 +293,7 @@ export async function routesAdmin(app: FastifyInstance) {
 
   app.get('/api/admin/journal', async (req) => {
     exigerRole(req, 'admin');
-    const lignes = await requete(
-      'select j.*, c.email from journal j left join comptes c on c.id = j.compte_id order by j.cree_le desc limit 300',
-    );
+    const lignes = await requete('select j.*, c.email from journal j left join comptes c on c.id = j.compte_id order by j.cree_le desc limit 300');
     return { journal: lignes };
   });
 }

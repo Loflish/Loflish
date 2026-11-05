@@ -1870,3 +1870,15 @@
 .deces {
   margin-top: 2rem;
 }
+
+/* la déclaration de droits sous le fichier choisi, et l'avertissement avant une vidéo tierce */
+.choix-media-droits {
+  flex-basis: 100%;
+  margin-top: 0.4rem;
+}
+.media-vue-tiers {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  padding: 1rem 0;
+}
