@@ -227,3 +227,10 @@ Non faits (choix de Tom) : 3 (fil de Ruth Rae) et 4 (tapis tufté). En attente :
 | 127 | Le mélange : 100 bulles choisies à poids égal parmi les 290 gardées au tri (planches 2, 3, 4), `?melange=1` en développement | `design/hd/selection_bulles.py`, `design/selection-bulles.json` | `/?melange=1&bulles=anciennes` |
 | 128 | Le travailleur reçoit la matière décidée par la page (drapeaux d'adresse) et ses sprites sont acceptés (ils étaient jetés quand la matière n'était pas choisie : les bulles restaient provisoires) | `constellation.ts` | `__nmmDebug.engine.bubbles` : des ImageBitmap |
 | 129 | Outils de comparaison à égalité : `design/hd/comparaison.py` (mêmes couleurs, 38 / 96 / 190 px, vrai fond), `scripts/capturer.mjs` (constellation en 1920 avec zoom) | `design/hd/`, `scripts/` | les lancer |
+
+## 5 novembre
+
+| N° | Amélioration | Fichiers | Vérifier |
+| --- | --- | --- | --- |
+| 130 | Le drap coloré derrière toutes les pages sauf la constellation : les nappes des Nabis étaient cachées par le papier ivoire (ordre d'empilement) ; elles passent au-dessus, multipliées, à 0,7, pigments plus francs et nappes plus larges sur les pages ; validé par Tom ; `?nappes=0` rend le papier seul | `design-fable.css`, `Backdrop.tsx`, `atmosphere.ts` | ouvrir Le projet ou Créer |
+| 131 | Atelier des bulles sur les planches 2 et 3 (détails de vie, autre conversation) pour le choix de Tom ; l'atelier Comparer montre la planche 5 à côté des autres ; les grandes matières (1 024 px) servent à partir de 150 px | `AtelierBulles.tsx`, `AtelierComparer.tsx`, `planches.ts`, `Chrome.tsx` | `/#/atelier/bulles`, `/#/atelier/comparer` |
