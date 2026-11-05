@@ -24,6 +24,8 @@ export const MATIERE_COUSUE = 0;
 /** à partir de ce numéro, la matière est une encre (design/hd/taches_gothique.py) : son gris vaut pleinement, et elle garde son sens */
 export const MATIERE_ENCRE = 5000;
 /** numéros des matières des ateliers (planches 2 et 3), loin du catalogue */
+/** taille du catalogue M (design/hd/catalogue.py écrit public/hd/taches-catalogue/index.json ; ce nombre suit son dernier numéro) */
+export const NB_CATALOGUE = 183;
 export const MELANGE = 3000;
 export const CLAUDE = 4000;
 const NB_TACHES = NB_MATIERES;
@@ -147,20 +149,23 @@ export const PALETTES = {
   C: { debut: 201, fin: 252, dossier: 'taches-da', prefixe: 'da' },
   /** L = la planche 5 « filaments de lumière » (4 novembre, design/planche-5-lumiere.md), peinte par design/hd/lumiere.py ; des encres */
   L: { debut: MATIERE_ENCRE + 501, fin: MATIERE_ENCRE + 600, dossier: 'taches-lumiere', prefixe: 'lumiere' },
+  /** M = le catalogue choisi par Tom le 5 novembre : ses bulles aimées des planches 2 et 3, moins les doublons (design/hd/catalogue.py) ; des aquarelles */
+  M: { debut: 1001, fin: 1000 + NB_CATALOGUE, dossier: 'taches-catalogue', prefixe: 'cat' },
 } as const;
 /**
- * Le catalogue du site depuis le 4 novembre 2026 : la planche 5, choisie par Tom après la grande comparaison
- * (reports/Bulles 2026-11-04/). `?bulles=anciennes` rend les 100 taches d'aquarelle (A). Les matières déjà choisies
- * par des personnes (numéros A) restent servies telles quelles.
+ * Le catalogue du site depuis le 5 novembre 2026 : les bulles que Tom aime dans les planches 2 et 3, moins les doublons
+ * (palette M). `?bulles=lumiere` rend la planche 5, `?bulles=anciennes` les 100 taches d'aquarelle (A). Les matières
+ * déjà choisies par des personnes (numéros A ou L) restent servies telles quelles.
  */
-export const CATALOGUE = parametres?.get('bulles') === 'anciennes' ? PALETTES.A : PALETTES.L;
-export const CATALOGUE_LISTE = Array.from({ length: 100 }, (_, i) => CATALOGUE.debut + i);
+export const CATALOGUE = parametres?.get('bulles') === 'anciennes' ? PALETTES.A : parametres?.get('bulles') === 'lumiere' ? PALETTES.L : PALETTES.M;
+export const CATALOGUE_LISTE = Array.from({ length: CATALOGUE.fin - CATALOGUE.debut + 1 }, (_, i) => CATALOGUE.debut + i);
 // Sur téléphone, 30 matières réparties dans le catalogue suffisent (site plus léger).
-const indices = petitEcran ? Array.from({ length: 30 }, (_, i) => CATALOGUE.debut + Math.floor((i * 100) / 30)) : CATALOGUE_LISTE;
+const indices = petitEcran ? Array.from({ length: 30 }, (_, i) => CATALOGUE_LISTE[Math.floor((i * CATALOGUE_LISTE.length) / 30)]!) : CATALOGUE_LISTE;
 const NB_TOUTES = PALETTES.C.fin;
 /** le numéro affiché dans sa palette (B 14 pour la matière 114) */
-export function numeroDansPalette(n: number): { palette: 'A' | 'B' | 'C' | 'L'; numero: number } {
+export function numeroDansPalette(n: number): { palette: 'A' | 'B' | 'C' | 'L' | 'M'; numero: number } {
   if (n >= PALETTES.L.debut && n <= PALETTES.L.fin) return { palette: 'L', numero: n - PALETTES.L.debut + 1 };
+  if (n >= PALETTES.M.debut && n <= PALETTES.M.fin) return { palette: 'M', numero: n - PALETTES.M.debut + 1 };
   if (n >= PALETTES.C.debut) return { palette: 'C', numero: n - PALETTES.C.debut + 1 };
   if (n >= PALETTES.B.debut) return { palette: 'B', numero: n - PALETTES.B.debut + 1 };
   return { palette: 'A', numero: n };
@@ -238,7 +243,7 @@ const enCours = new Map<number, Promise<void>>();
 let loading: Promise<void> | null = null;
 
 function charger(n: number): Promise<void> {
-  if (!HD || n < 1 || (n > NB_TOUTES && numeroDansPalette(n).palette !== 'L')) return Promise.resolve();
+  if (!HD || n < 1 || (n > NB_TOUTES && !['L', 'M'].includes(numeroDansPalette(n).palette))) return Promise.resolve();
   let p = enCours.get(n);
   if (!p) {
     p = new Promise<void>((res) => {
@@ -332,7 +337,7 @@ export function matiereFor(seed: number): number {
   if (GOTHIQUE) return MATIERE_ENCRE + planche4[seed % planche4.length]!;
   if (melange.length) return melange[seed % melange.length]!.n;
   // avec les anciennes taches, l'aquarelle cousue (0) fait partie du tirage ; la planche 5 se tire seule
-  return CATALOGUE === PALETTES.A ? seed % (NB_TACHES + 1) : CATALOGUE.debut + (seed % 100);
+  return CATALOGUE === PALETTES.A ? seed % (NB_TACHES + 1) : CATALOGUE_LISTE[seed % CATALOGUE_LISTE.length]!;
 }
 
 /**
