@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BubbleImage } from '../components/Chrome';
 import { loadPalettes, matiereDisponible, NB_MATIERES, numeroDansPalette, PALETTES } from '../lib/hd';
+import { chargerPlanches, CLAUDE, MELANGE } from './planches';
 import { GRIS_PALETTE } from '../lib/palette';
 import { NOMS_B, NOMS_C } from '../lib/palettesNoms';
 import { Page } from './Pages';
 
-type Palette = 'A' | 'B' | 'C' | 'L';
+type Palette = 'A' | 'B' | 'C' | 'L' | '2' | '3';
 const PALETTE_LIBELLE: Record<Palette, string> = {
+  '2': 'Planche 2 · tes détails de vie dans tes taches',
+  '3': 'Planche 3 · l’autre conversation',
   L: 'L · les filaments de lumière (le site maintenant)',
   A: 'A · les taches d’aquarelle',
   B: 'B · les éléments de la vie',
@@ -34,6 +37,9 @@ const REFAITES = new Set([15, 50, 70, 81, 85, 95]);
 /** ses préférées, le 19 octobre */
 const PREFEREES = new Set([0, 81, 95]);
 const LIBELLE_OCTOBRE: Record<string, string> = { g: 'garder', a: 'affiner', m: 'plaît moins' };
+
+/** le 5 novembre, Tom veut choisir dans les planches 2 et 3 seulement (design/planche-4-gothique.md pour les numéros) */
+const ONGLETS: Palette[] = ['2', '3'];
 
 const BOUTONS: [Avis, string][] = [
   ['aime', 'J’aime'],
@@ -75,8 +81,15 @@ export default function AtelierBulles() {
   }, [choix, relu]);
 
   // les palettes B et C : seules les matières déjà faites s'affichent
-  const [palette, setPalette] = useState<Palette>('L');
+  const [palette, setPalette] = useState<Palette>(ONGLETS[0]!);
   const [pretes, setPretes] = useState<Record<'B' | 'C', number[]>>({ B: [], C: [] });
+  // les planches 2 et 3 : numéros de matière et noms, lus dans leurs index.json
+  const [planches, setPlanches] = useState<{ '2': { n: number; nom: string }[]; '3': { n: number; nom: string }[] }>({ '2': [], '3': [] });
+  useEffect(() => {
+    void chargerPlanches().then(({ melange, claude }) =>
+      setPlanches({ '2': melange.map((d) => ({ n: MELANGE + d.n, nom: d.fr })), '3': claude.map((d) => ({ n: CLAUDE + d.n, nom: d.nom })) }),
+    );
+  }, []);
   useEffect(() => {
     let vivant = true;
     void loadPalettes().then(() => {
@@ -96,8 +109,10 @@ export default function AtelierBulles() {
         ? Array.from({ length: NB_MATIERES + 1 }, (_, i) => i)
         : palette === 'L'
           ? Array.from({ length: 100 }, (_, i) => PALETTES.L.debut + i)
-          : pretes[palette],
-    [palette, pretes],
+          : palette === '2' || palette === '3'
+            ? planches[palette].map((d) => d.n)
+            : pretes[palette],
+    [palette, pretes, planches],
   );
   const compte = (a?: Avis) => numeros.filter((n) => choix[n]?.avis === a).length;
   const visibles = numeros.filter((n) => (filtre === 'toutes' ? true : filtre === 'sans' ? !choix[n]?.avis : choix[n]?.avis === filtre));
@@ -117,7 +132,7 @@ export default function AtelierBulles() {
       </p>
 
       <div className="atelier-palettes" role="group" aria-label="Palette">
-        {(['L', 'A', 'B', 'C'] as const).map((p) => (
+        {ONGLETS.map((p) => (
           <button key={p} className={`lien-discret${palette === p ? ' est-actif' : ''}`} aria-pressed={palette === p} onClick={() => setPalette(p)}>
             {PALETTE_LIBELLE[p]}
             {(p === 'B' || p === 'C') && ` (${pretes[p].length} / ${PALETTES[p].fin - PALETTES[p].debut + 1})`}
@@ -159,8 +174,15 @@ export default function AtelierBulles() {
           const c = choix[n] ?? {};
           const teinte = couleur === 'melange' ? GRIS_PALETTE[(n * 7) % GRIS_PALETTE.length]!.id : couleur;
           const oct = n <= NB_MATIERES ? (AVIS_5_OCTOBRE[n] ?? '') : '';
-          const { palette: pal, numero } = numeroDansPalette(n);
-          const nom = pal === 'B' ? NOMS_B[numero - 1] : pal === 'C' ? NOMS_C[numero - 1] : '';
+          const planche = n > CLAUDE ? '3' : n > MELANGE ? '2' : null;
+          const { palette: pal, numero } = planche ? { palette: planche, numero: n - (planche === '3' ? CLAUDE : MELANGE) } : numeroDansPalette(n);
+          const nom = planche
+            ? (planches[planche].find((d) => d.n === n)?.nom ?? '')
+            : pal === 'B'
+              ? NOMS_B[numero - 1]
+              : pal === 'C'
+                ? NOMS_C[numero - 1]
+                : '';
           return (
             <li key={n} className={`atelier-carte${c.avis ? ` avis-${c.avis}` : ''}`}>
               <BubbleImage id={`atelier-${n}`} couleur={teinte} matiere={n} size={120} />
