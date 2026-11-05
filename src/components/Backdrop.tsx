@@ -169,7 +169,8 @@ const ATMOSPHERE_BY_MODE = { explore: 1, perdre: 0.9, trace: 0.7, creer: 0.55, t
  * `?nappes=0` rend les pages d'avant.
  */
 const NAPPES = !(typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('nappes') === '0');
-const AVEC_NAPPES = new Set<keyof typeof MODES>(NAPPES ? ['explore', 'texte', 'trace'] : ['explore']);
+const AVEC_NAPPES = new Set<keyof typeof MODES>(NAPPES ? (Object.keys(MODES) as (keyof typeof MODES)[]) : ['explore']);
+if (!NAPPES && typeof document !== 'undefined') document.documentElement.classList.add('sans-nappes');
 
 export function Backdrop() {
   const { engine, mode, reducedMotion, enPause } = useMuseum();

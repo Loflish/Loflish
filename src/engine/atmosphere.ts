@@ -44,6 +44,8 @@ vec3 wash(vec3 col, vec2 uv, vec2 off, float sc, float t, vec3 pig, float amount
   vec2 q = uv * sc + off;
   vec2 w = vec2(fbm(q + vec2(0.0, t)), fbm(q + vec2(5.2, -t * 0.8) + 1.3));
   float f = fbm(q + 1.7 * w + vec2(t * 0.35, -t * 0.2));
+  // sur une page (uPage = 1), les nappes s'élargissent : le drap coloré doit se voir sous le papier
+  th -= 0.09 * uPage;
   float m = smoothstep(th, th + 0.2, f);
   float rim = smoothstep(th, th + 0.035, f) - smoothstep(th + 0.035, th + 0.14, f);
   float gran = 0.75 + 0.5 * noise(gl_FragCoord.xy * uScale * 0.9);
@@ -64,14 +66,14 @@ void main(){
   // zone calme : le logo brodé doit se détacher immédiatement
   vec2 calmP = vec2(uCalm.x, uRes.y - uCalm.y);
   float calm = smoothstep(uCalm.z * 0.6, uCalm.z * 1.6, distance(frag, calmP));
-  float k = uIntensity * mix(0.25, 1.0, calm);
+  float k = uIntensity * mix(0.25, 1.0, calm) * mix(1.0, 2.6, uPage);
 
   // atmosphère : lavande, eau, pêche, rose, lumière jaune
-  col = wash(col, uv, vec2(0.0, 0.0), 0.9, t * 0.011, mix(vec3(0.84, 0.86, 0.96), vec3(0.80, 0.78, 0.89), uPage), 0.48 * k, 0.53);
-  col = wash(col, uv, vec2(7.3, 2.1), 0.75, t * 0.009, mix(vec3(0.84, 0.93, 0.88), vec3(0.74, 0.82, 0.81), uPage), 0.42 * k, 0.55);
-  col = wash(col, uv, vec2(3.1, 9.4), 1.1, t * 0.013, mix(vec3(0.99, 0.88, 0.82), vec3(0.93, 0.80, 0.76), uPage), 0.42 * k, 0.56);
-  col = wash(col, uv, vec2(11.7, 5.5), 0.85, t * 0.010, mix(vec3(0.97, 0.86, 0.90), vec3(0.92, 0.82, 0.70), uPage), 0.38 * k, 0.57);
-  col = wash(col, uv, vec2(2.4, 13.3), 1.3, t * 0.012, mix(vec3(0.99, 0.95, 0.80), vec3(0.90, 0.90, 0.72), uPage), 0.40 * k, 0.55);
+  col = wash(col, uv, vec2(0.0, 0.0), 0.9, t * 0.011, mix(vec3(0.84, 0.86, 0.96), vec3(0.68, 0.60, 0.88), uPage), 0.48 * k, 0.53);
+  col = wash(col, uv, vec2(7.3, 2.1), 0.75, t * 0.009, mix(vec3(0.84, 0.93, 0.88), vec3(0.50, 0.74, 0.66), uPage), 0.42 * k, 0.55);
+  col = wash(col, uv, vec2(3.1, 9.4), 1.1, t * 0.013, mix(vec3(0.99, 0.88, 0.82), vec3(0.92, 0.60, 0.58), uPage), 0.42 * k, 0.56);
+  col = wash(col, uv, vec2(11.7, 5.5), 0.85, t * 0.010, mix(vec3(0.97, 0.86, 0.90), vec3(0.94, 0.74, 0.40), uPage), 0.38 * k, 0.57);
+  col = wash(col, uv, vec2(2.4, 13.3), 1.3, t * 0.012, mix(vec3(0.99, 0.95, 0.80), vec3(0.80, 0.86, 0.46), uPage), 0.40 * k, 0.55);
 
   // lumière de Monet : une clarté chaude qui se déplace lentement
   vec2 lp = vec2(0.5 + 0.35 * sin(t * 0.004), 0.55 + 0.25 * cos(t * 0.0031)) * vec2(uRes.x / uRes.y, 1.0);

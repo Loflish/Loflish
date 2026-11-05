@@ -6,8 +6,9 @@ import { GRIS_PALETTE } from '../lib/palette';
 import { NOMS_B, NOMS_C } from '../lib/palettesNoms';
 import { Page } from './Pages';
 
-type Palette = 'A' | 'B' | 'C';
+type Palette = 'A' | 'B' | 'C' | 'L';
 const PALETTE_LIBELLE: Record<Palette, string> = {
+  L: 'L · les filaments de lumière (le site maintenant)',
   A: 'A · les taches d’aquarelle',
   B: 'B · les éléments de la vie',
   C: 'C · la direction artistique',
@@ -74,13 +75,14 @@ export default function AtelierBulles() {
   }, [choix, relu]);
 
   // les palettes B et C : seules les matières déjà faites s'affichent
-  const [palette, setPalette] = useState<Palette>('A');
+  const [palette, setPalette] = useState<Palette>('L');
   const [pretes, setPretes] = useState<Record<'B' | 'C', number[]>>({ B: [], C: [] });
   useEffect(() => {
     let vivant = true;
     void loadPalettes().then(() => {
       if (!vivant) return;
-      const faites = (p: 'B' | 'C') => Array.from({ length: PALETTES[p].fin - PALETTES[p].debut + 1 }, (_, i) => PALETTES[p].debut + i).filter(matiereDisponible);
+      const faites = (p: 'B' | 'C') =>
+        Array.from({ length: PALETTES[p].fin - PALETTES[p].debut + 1 }, (_, i) => PALETTES[p].debut + i).filter(matiereDisponible);
       setPretes({ B: faites('B'), C: faites('C') });
     });
     return () => {
@@ -89,7 +91,12 @@ export default function AtelierBulles() {
   }, []);
 
   const numeros = useMemo(
-    () => (palette === 'A' ? Array.from({ length: NB_MATIERES + 1 }, (_, i) => i) : pretes[palette]),
+    () =>
+      palette === 'A'
+        ? Array.from({ length: NB_MATIERES + 1 }, (_, i) => i)
+        : palette === 'L'
+          ? Array.from({ length: 100 }, (_, i) => PALETTES.L.debut + i)
+          : pretes[palette],
     [palette, pretes],
   );
   const compte = (a?: Avis) => numeros.filter((n) => choix[n]?.avis === a).length;
@@ -100,8 +107,8 @@ export default function AtelierBulles() {
     <Page className="atelier" titre="L’atelier des bulles">
       <h1 className="page-titre">Les matières des bulles</h1>
       <p className="lead">
-        Pour chacune : <em>J’aime</em>, <em>À revoir</em> ou <em>Retirer</em>, et un mot si tu veux. Tout reste sur cet appareil ; dis-moi « c’est fait »
-        quand tu as fini, je lirai tes choix.
+        Pour chacune : <em>J’aime</em>, <em>À revoir</em> ou <em>Retirer</em>, et un mot si tu veux. Tout reste sur cet appareil ; dis-moi « c’est fait » quand
+        tu as fini, je lirai tes choix.
       </p>
       <p>
         <Link className="lien-discret" to="/atelier/coupe">
@@ -110,10 +117,10 @@ export default function AtelierBulles() {
       </p>
 
       <div className="atelier-palettes" role="group" aria-label="Palette">
-        {(['A', 'B', 'C'] as const).map((p) => (
+        {(['L', 'A', 'B', 'C'] as const).map((p) => (
           <button key={p} className={`lien-discret${palette === p ? ' est-actif' : ''}`} aria-pressed={palette === p} onClick={() => setPalette(p)}>
             {PALETTE_LIBELLE[p]}
-            {p !== 'A' && ` (${pretes[p].length} / ${PALETTES[p].fin - PALETTES[p].debut + 1})`}
+            {(p === 'B' || p === 'C') && ` (${pretes[p].length} / ${PALETTES[p].fin - PALETTES[p].debut + 1})`}
           </button>
         ))}
       </div>
@@ -162,17 +169,26 @@ export default function AtelierBulles() {
                 {n === 0 && ' · aquarelle cousue'}
                 {PREFEREES.has(n) && <span className="atelier-pastille">préférée</span>}
               </p>
-              <p className="atelier-rappel">
-                {nom || (REFAITES.has(n) ? 'refaite et validée en octobre' : oct && `5 oct. : ${LIBELLE_OCTOBRE[oct]}`)}
-              </p>
+              <p className="atelier-rappel">{nom || (REFAITES.has(n) ? 'refaite et validée en octobre' : oct && `5 oct. : ${LIBELLE_OCTOBRE[oct]}`)}</p>
               <div className="atelier-avis" role="group" aria-label={`Avis sur la matière ${n}`}>
                 {BOUTONS.map(([a, t]) => (
-                  <button key={a} className={c.avis === a ? 'est-actif' : ''} aria-pressed={c.avis === a} onClick={() => maj(n, { avis: c.avis === a ? undefined : a })}>
+                  <button
+                    key={a}
+                    className={c.avis === a ? 'est-actif' : ''}
+                    aria-pressed={c.avis === a}
+                    onClick={() => maj(n, { avis: c.avis === a ? undefined : a })}
+                  >
                     {t}
                   </button>
                 ))}
               </div>
-              <input className="atelier-note" placeholder="un mot…" value={c.note ?? ''} onChange={(e) => maj(n, { note: e.target.value })} aria-label={`Note sur la matière ${n}`} />
+              <input
+                className="atelier-note"
+                placeholder="un mot…"
+                value={c.note ?? ''}
+                onChange={(e) => maj(n, { note: e.target.value })}
+                aria-label={`Note sur la matière ${n}`}
+              />
             </li>
           );
         })}

@@ -344,10 +344,9 @@ html:not(.sans-fable) .trace-nav-right .lien-discret {
   }
 }
 
-/* ——— chantier 5 : les nappes des Nabis respirent derrière les pages éditoriales et les profils (cahier §53.6) */
-html:not(.sans-fable) .backdrop.mode-texte .backdrop-atmosphere.sur-fond-peint {
-  opacity: 0.42;
-}
-html:not(.sans-fable) .backdrop.mode-trace .backdrop-atmosphere.sur-fond-peint {
-  opacity: 0.26;
+/* ——— chantier 5 : les nappes des Nabis respirent derrière toutes les pages sauf la constellation (cahier §53.6).
+   Le papier ivoire (.papier-page) vient après elles dans l'empilement : on les passe au-dessus, multipliées, pour qu'on les voie. */
+html:not(.sans-fable):not(.sans-nappes) .backdrop:not(.mode-explore) .backdrop-atmosphere.sur-fond-peint {
+  z-index: 1;
+  opacity: 0.7;
 }
