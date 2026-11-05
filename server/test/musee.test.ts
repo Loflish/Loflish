@@ -40,7 +40,19 @@ function visiteur() {
     return r;
   };
   const req = async (method: string, url: string, payload?: unknown, headers: Record<string, string> = {}) =>
-    garder((await app.inject({ method: method as 'GET', url, payload: payload as never, headers: { ...headers, cookie: Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ') } })) as unknown as Rep);
+    garder(
+      (await app.inject({
+        method: method as 'GET',
+        url,
+        payload: payload as never,
+        headers: {
+          ...headers,
+          cookie: Object.entries(cookies)
+            .map(([k, v]) => `${k}=${v}`)
+            .join('; '),
+        },
+      })) as unknown as Rep,
+    );
   return {
     get: (u: string, h?: Record<string, string>) => req('GET', u, undefined, h),
     post: (u: string, p?: unknown, h?: Record<string, string>) => req('POST', u, p ?? {}, h),
@@ -89,7 +101,12 @@ function png(): Buffer {
   ihdr.writeUInt32BE(1, 4);
   ihdr[8] = 8;
   ihdr[9] = 2;
-  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), bloc('IHDR', ihdr), bloc('IDAT', deflateSync(Buffer.from([0, 200, 180, 170]))), bloc('IEND', Buffer.alloc(0))]);
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    bloc('IHDR', ihdr),
+    bloc('IDAT', deflateSync(Buffer.from([0, 200, 180, 170]))),
+    bloc('IEND', Buffer.alloc(0)),
+  ]);
 }
 
 /** Un formulaire avec des données et un fichier, comme l'enverrait le navigateur. */
@@ -97,7 +114,11 @@ function formulaire(donnees: unknown, fichier?: { nom: string; contenu: Buffer; 
   const limite = '----nmm' + Math.random().toString(16).slice(2);
   const morceaux: Buffer[] = [Buffer.from(`--${limite}\r\nContent-Disposition: form-data; name="donnees"\r\n\r\n${JSON.stringify(donnees)}\r\n`)];
   if (fichier) {
-    morceaux.push(Buffer.from(`--${limite}\r\nContent-Disposition: form-data; name="fichier"; filename="${fichier.nom}"\r\nContent-Type: ${fichier.type}\r\n\r\n`), fichier.contenu, Buffer.from('\r\n'));
+    morceaux.push(
+      Buffer.from(`--${limite}\r\nContent-Disposition: form-data; name="fichier"; filename="${fichier.nom}"\r\nContent-Type: ${fichier.type}\r\n\r\n`),
+      fichier.contenu,
+      Buffer.from('\r\n'),
+    );
   }
   morceaux.push(Buffer.from(`--${limite}--\r\n`));
   return { corps: Buffer.concat(morceaux), entetes: { 'content-type': `multipart/form-data; boundary=${limite}` } };
@@ -173,11 +194,21 @@ describe('traces', () => {
   it('deux bulles au plus : une trace, une mémoire', async () => {
     expect((await auteur.post('/api/traces', personnelle('Encore'))).statusCode).toBe(409);
     // une mémoire : ce que l'on peut dire de la personne, 500 caractères au plus
-    expect((await auteur.post('/api/traces', { type: 'memoire', nom: 'Jeannot', couleur: 'v3', memoire: { deposeePar: 'Léa', aperçu: 'x'.repeat(501) } })).statusCode).toBe(400);
-    const m = await auteur.post('/api/traces', { type: 'memoire', nom: 'Jeannot', couleur: 'v3', memoire: { deposeePar: 'Léa', aperçu: 'Il semait des radis. '.repeat(20).trim() } });
+    expect(
+      (await auteur.post('/api/traces', { type: 'memoire', nom: 'Jeannot', couleur: 'v3', memoire: { deposeePar: 'Léa', aperçu: 'x'.repeat(501) } }))
+        .statusCode,
+    ).toBe(400);
+    const m = await auteur.post('/api/traces', {
+      type: 'memoire',
+      nom: 'Jeannot',
+      couleur: 'v3',
+      memoire: { deposeePar: 'Léa', aperçu: 'Il semait des radis. '.repeat(20).trim() },
+    });
     expect(m.statusCode).toBe(200);
     expect(m.json().trace.memoire.aperçu.length).toBeGreaterThan(400);
-    expect((await auteur.post('/api/traces', { type: 'memoire', nom: 'Autre', couleur: 'v3', memoire: { deposeePar: 'Léa', aperçu: 'x' } })).statusCode).toBe(409);
+    expect((await auteur.post('/api/traces', { type: 'memoire', nom: 'Autre', couleur: 'v3', memoire: { deposeePar: 'Léa', aperçu: 'x' } })).statusCode).toBe(
+      409,
+    );
   });
 
   it('les réponses restent scellées cinq ans', async () => {
@@ -370,6 +401,40 @@ describe('RGPD', () => {
   });
 });
 
+describe('après moi (loi Informatique et Libertés, article 85)', () => {
+  it('un choix distinct, horodaté, modifiable et révocable ; confier exige l’adresse de la personne', async () => {
+    const v = visiteur();
+    await v.connecter('apres-moi@exemple.fr');
+    expect((await v.get('/api/moi/apres-moi')).json().directives).toBeNull();
+    const refus = await v.put('/api/moi/apres-moi', { choix: 'transmettre', versionTexte: '2026-11-05' });
+    expect(refus.statusCode).toBe(400);
+    const ok = await v.put('/api/moi/apres-moi', { choix: 'transmettre', tiersNom: 'Léa', tiersEmail: 'Lea@Exemple.fr', versionTexte: '2026-11-05' });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json().directives).toMatchObject({ choix: 'transmettre', tiersNom: 'Léa', tiersEmail: 'lea@exemple.fr', versionTexte: '2026-11-05' });
+    expect(typeof ok.json().directives.consentiLe).toBe('string');
+    const maj = await v.put('/api/moi/apres-moi', { choix: 'effacer', versionTexte: '2026-11-05' });
+    expect(maj.json().directives.choix).toBe('effacer');
+    expect((await v.get('/api/moi/export')).json().apresMoi.choix).toBe('effacer');
+    expect((await v.del('/api/moi/apres-moi')).statusCode).toBe(200);
+    expect((await v.get('/api/moi/apres-moi')).json().directives).toBeNull();
+    expect((await visiteur().get('/api/moi/apres-moi')).statusCode).toBe(401);
+  });
+
+  it('un proche signale un décès : la demande est gardée', async () => {
+    const r = await visiteur().post('/api/deces', {
+      email: 'Proche@Exemple.fr',
+      nomDefunt: 'Jean',
+      lien: 'fils',
+      demande: 'cloturer',
+      message: 'Il nous a quittés en octobre.',
+    });
+    expect(r.statusCode).toBe(200);
+    const rangee = await pool.query('select email, demande, statut from demandes_deces where nom_defunt = $1', ['Jean']);
+    expect(rangee.rows[0]).toMatchObject({ email: 'proche@exemple.fr', demande: 'cloturer', statut: 'recue' });
+    expect((await visiteur().post('/api/deces', { email: 'pas-une-adresse', nomDefunt: 'Jean', lien: 'fils', demande: 'cloturer' })).statusCode).toBe(400);
+  });
+});
+
 describe('rapidité et lecture des médias', () => {
   const v = visiteur();
   let id = '';
@@ -445,7 +510,10 @@ describe('rapidité et lecture des médias', () => {
   });
 
   it('un formulaire illisible ne laisse aucun fichier temporaire sur le serveur', async () => {
-    const temporaires = () => readdirSync(tmpdir()).filter((n) => n.startsWith('nmm-')).sort();
+    const temporaires = () =>
+      readdirSync(tmpdir())
+        .filter((n) => n.startsWith('nmm-'))
+        .sort();
     const avant = temporaires();
     const limite = '----nmmt';
     const corps = Buffer.concat([
@@ -461,9 +529,19 @@ describe('rapidité et lecture des médias', () => {
     const c = await pool.connect();
     try {
       await c.query('set enable_seqscan = off');
-      const plan = (await c.query(`explain select id from traces where texte_recherche_trace(nom, pays, q1, q2, q3, q4, memoire_apercu) like lower(sans_accents('%ocean%'))`)).rows.map((r) => r['QUERY PLAN']).join('\n');
+      const plan = (
+        await c.query(
+          `explain select id from traces where texte_recherche_trace(nom, pays, q1, q2, q3, q4, memoire_apercu) like lower(sans_accents('%ocean%'))`,
+        )
+      ).rows
+        .map((r) => r['QUERY PLAN'])
+        .join('\n');
       expect(plan).toContain('traces_recherche');
-      const planF = (await c.query(`explain select trace_id from fragments where texte_recherche_fragment(titre, texte, lieu) like lower(sans_accents('%ocean%'))`)).rows.map((r) => r['QUERY PLAN']).join('\n');
+      const planF = (
+        await c.query(`explain select trace_id from fragments where texte_recherche_fragment(titre, texte, lieu) like lower(sans_accents('%ocean%'))`)
+      ).rows
+        .map((r) => r['QUERY PLAN'])
+        .join('\n');
       expect(planF).toContain('fragments_recherche');
     } finally {
       await c.query('reset enable_seqscan');

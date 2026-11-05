@@ -10,6 +10,11 @@ import {
   demanderCode,
   effacerMonCompte,
   emailDuCompte,
+  enregistrerApresMoi,
+  lireApresMoi,
+  revoquerApresMoi,
+  signalerDeces,
+  type ApresMoi,
   entrerAvecCode,
   exporterLocal,
   importerLocal,
@@ -25,7 +30,17 @@ import { adresseApi, EN_LIGNE } from '../lib/api';
 import { useMuseumMode } from '../lib/museum';
 import { useTitre } from '../lib/titre';
 
-export function Page({ children, mode = 'texte', className = '', titre }: { children: ReactNode; mode?: 'texte' | 'minimal'; className?: string; titre?: string }) {
+export function Page({
+  children,
+  mode = 'texte',
+  className = '',
+  titre,
+}: {
+  children: ReactNode;
+  mode?: 'texte' | 'minimal';
+  className?: string;
+  titre?: string;
+}) {
   useMuseumMode(mode);
   useTitre(titre);
   return (
@@ -46,33 +61,31 @@ export function Projet() {
     <Page className="projet" titre="Le projet">
       <h1 className="page-titre">Le projet</h1>
       <p className="lead">
-        Nous mourons trois fois. D’abord notre corps. Puis nos possessions, qui se dispersent. Et enfin l’oubli : la mort la plus fatale, celle
-        qui confirme que nous n’existons plus pour personne.
+        Nous mourons trois fois. D’abord notre corps. Puis nos possessions, qui se dispersent. Et enfin l’oubli : la mort la plus fatale, celle qui confirme que
+        nous n’existons plus pour personne.
       </p>
       <p className="projet-mission">
-        Mon objectif : lutter contre l’oubli de nos existences, pour que le monde de demain apprenne à nous connaître à travers nos propres
-        mots. Des mots qui deviendront mémoriaux.
+        Mon objectif : lutter contre l’oubli de nos existences, pour que le monde de demain apprenne à nous connaître à travers nos propres mots. Des mots qui
+        deviendront mémoriaux.
       </p>
 
       <div className={photo ? 'deux-colonnes' : ''}>
         <div className="texte-courant">
           <h2 className="intertitre">Pourquoi ce musée</h2>
           <p>
-            J’ai toujours trouvé injuste que la mort des célébrités soit tellement plus documentée que celle des inconnus, comme toi et moi.
-            Nous, nous laissons une épitaphe, un testament, quelques souvenirs à nos proches. Nous restons gravés dans le cœur de ceux qui nous
-            ont aimés, mais tôt ou tard, le monde oublie notre visage, notre voix, nos souvenirs, l’existence que nous avons construite. Puis
-            ces personnes partent à leur tour, et notre trace s’efface pour toutes les générations qui suivent. Il ne reste qu’une date, un
-            chiffre parmi d’autres.
+            J’ai toujours trouvé injuste que la mort des célébrités soit tellement plus documentée que celle des inconnus, comme toi et moi. Nous, nous laissons
+            une épitaphe, un testament, quelques souvenirs à nos proches. Nous restons gravés dans le cœur de ceux qui nous ont aimés, mais tôt ou tard, le
+            monde oublie notre visage, notre voix, nos souvenirs, l’existence que nous avons construite. Puis ces personnes partent à leur tour, et notre trace
+            s’efface pour toutes les générations qui suivent. Il ne reste qu’une date, un chiffre parmi d’autres.
           </p>
           <p>
-            Il est normal que l’on raconte la vie de celles et ceux qui ont cherché la gloire. Mais nous n’avons pas encore la chance de
-            découvrir, nous aussi, le parcours de personnes que nous ne connaissons pas. Je crois que chaque vie mérite d’être entendue, que
-            l’on ait le sentiment d’avoir accompli la sienne ou non. Écouter la vie de l’autre, c’est apprendre l’empathie, et sortir un peu
-            de l’individualisme.
+            Il est normal que l’on raconte la vie de celles et ceux qui ont cherché la gloire. Mais nous n’avons pas encore la chance de découvrir, nous aussi,
+            le parcours de personnes que nous ne connaissons pas. Je crois que chaque vie mérite d’être entendue, que l’on ait le sentiment d’avoir accompli la
+            sienne ou non. Écouter la vie de l’autre, c’est apprendre l’empathie, et sortir un peu de l’individualisme.
           </p>
           <p>
-            Nous cherchons déjà à laisser une trace : sur les réseaux sociaux, auprès de nos proches, parfois auprès d’inconnus. Nos Mots
-            Mémoriaux offre à ce besoin un lieu fait pour durer.
+            Nous cherchons déjà à laisser une trace : sur les réseaux sociaux, auprès de nos proches, parfois auprès d’inconnus. Nos Mots Mémoriaux offre à ce
+            besoin un lieu fait pour durer.
           </p>
         </div>
         {photo && (
@@ -87,14 +100,13 @@ export function Projet() {
           Une chance très ancienne
         </h2>
         <p className="projet-paragraphe">
-          Les dernières paroles portent un nom très ancien : <em>ultima verba</em>, les derniers mots. Depuis l’Antiquité, on les recueille et
-          on les transmet ; ceux de Socrate, prononcés en 399 avant notre ère, sont parvenus jusqu’à nous. Au XVᵉ siècle, l’un des premiers
-          livres imprimés en Europe, l’<em>Ars moriendi</em>, apprenait à chacun à préparer sa fin et ce qu’il laisserait derrière lui : il a
-          connu près de cent éditions avant 1500. Ce besoin n’a jamais disparu. En 2015, une lycéenne américaine a simplement demandé à des
-          inconnus de lui confier le dernier message reçu d’un proche : en quelques mois, plus de dix mille personnes ont répondu. Nous voulons
-          tous que nos derniers mots restent quelque part. Pourtant, pendant des siècles, seuls les rois, les saints et les écrivains ont vu
-          les leurs conservés. Nos Mots Mémoriaux redonne cette chance à chacun, sans attendre la fin : ici, de ton vivant et à ton rythme, tu
-          écris ta propre poésie.
+          Les dernières paroles portent un nom très ancien : <em>ultima verba</em>, les derniers mots. Depuis l’Antiquité, on les recueille et on les transmet ;
+          ceux de Socrate, prononcés en 399 avant notre ère, sont parvenus jusqu’à nous. Au XVᵉ siècle, l’un des premiers livres imprimés en Europe, l’
+          <em>Ars moriendi</em>, apprenait à chacun à préparer sa fin et ce qu’il laisserait derrière lui : il a connu près de cent éditions avant 1500. Ce
+          besoin n’a jamais disparu. En 2015, une lycéenne américaine a simplement demandé à des inconnus de lui confier le dernier message reçu d’un proche :
+          en quelques mois, plus de dix mille personnes ont répondu. Nous voulons tous que nos derniers mots restent quelque part. Pourtant, pendant des
+          siècles, seuls les rois, les saints et les écrivains ont vu les leurs conservés. Nos Mots Mémoriaux redonne cette chance à chacun, sans attendre la
+          fin : ici, de ton vivant et à ton rythme, tu écris ta propre poésie.
         </p>
       </section>
 
@@ -106,8 +118,7 @@ export function Projet() {
           <li>
             <span className="projet-numero">1</span>
             <p>
-              Tu réponds aux quatre questions : ce que tu dirais à toi-même, à la personne que tu aimes, au monde entier, puis l’essentiel en
-              200 caractères.
+              Tu réponds aux quatre questions : ce que tu dirais à toi-même, à la personne que tu aimes, au monde entier, puis l’essentiel en 200 caractères.
             </p>
           </li>
           <li>
@@ -120,8 +131,7 @@ export function Projet() {
           </li>
         </ol>
         <p className="projet-note">
-          Le musée est gratuit, pour visiter comme pour participer. Ni compteur, ni classement, ni abonnés : toutes les bulles ont la même
-          taille.
+          Le musée est gratuit, pour visiter comme pour participer. Ni compteur, ni classement, ni abonnés : toutes les bulles ont la même taille.
         </p>
       </section>
 
@@ -133,9 +143,9 @@ export function Projet() {
           <div className="texte-courant">
             <h3 className="projet-sous-titre">Ce qui est déposé est scellé</h3>
             <p>
-              Ton brouillon reste privé. En publiant, tu scelles tes quatre réponses : elles ne changent plus pendant cinq ans. Chaque fragment
-              que tu ajoutes ensuite est scellé à son tour, au moment où tu le déposes. Il faut avoir 18 ans ou plus, et chacun peut avoir deux
-              bulles au plus : la sienne, et une mémoire pour une personne décédée.
+              Ton brouillon reste privé. En publiant, tu scelles tes quatre réponses : elles ne changent plus pendant cinq ans. Chaque fragment que tu ajoutes
+              ensuite est scellé à son tour, au moment où tu le déposes. Il faut avoir 18 ans ou plus, et chacun peut avoir deux bulles au plus : la sienne, et
+              une mémoire pour une personne décédée.
             </p>
             <p>
               Tes données restent à toi : tu peux m’écrire à tout moment pour les consulter, les modifier ou les supprimer (
@@ -145,9 +155,9 @@ export function Projet() {
           <div className="texte-courant">
             <h3 className="projet-sous-titre">Signaler un contenu</h3>
             <p>
-              Chaque trace peut être signalée avec le bouton « Signaler », sur son profil ou dans Se perdre : quelqu’un en danger, de la haine,
-              du harcèlement, de la violence, ou autre chose. Je lis moi-même chaque signalement. Selon la gravité, je retire la bulle du
-              musée, ou je ferme définitivement l’accès au musée à la personne qui l’a déposée.
+              Chaque trace peut être signalée avec le bouton « Signaler », sur son profil ou dans Se perdre : quelqu’un en danger, de la haine, du harcèlement,
+              de la violence, ou autre chose. Je lis moi-même chaque signalement. Selon la gravité, je retire la bulle du musée, ou je ferme définitivement
+              l’accès au musée à la personne qui l’a déposée.
             </p>
           </div>
         </div>
@@ -158,26 +168,26 @@ export function Projet() {
           Mon défi
         </h2>
         <p className="projet-paragraphe">
-          Réunir les mots mémoriaux de toute une génération, pour celle d’aujourd’hui comme pour celles qui viendront. Chaque trace compte, même
-          la plus courte : plus nous serons nombreux, plus cette mémoire collective aura de force pour exister au-delà de l’écran. Avec ton
-          accord, et seulement avec lui, tes mots pourront vivre ailleurs :
+          Réunir les mots mémoriaux de toute une génération, pour celle d’aujourd’hui comme pour celles qui viendront. Chaque trace compte, même la plus courte
+          : plus nous serons nombreux, plus cette mémoire collective aura de force pour exister au-delà de l’écran. Avec ton accord, et seulement avec lui, tes
+          mots pourront vivre ailleurs :
         </p>
         <ol className="projet-cartes trois">
           <li className="projet-carte">
             <Icon name="projet" size={24} />
             <h3>Un musée</h3>
             <p>
-              Certains mots deviendront des tableaux brodés à la main, exposés dans un vrai lieu, le profil complet présenté au dos de chaque
-              œuvre. Plus nous serons nombreux, plus je pourrai convaincre des institutions de soutenir ce musée.
+              Certains mots deviendront des tableaux brodés à la main, exposés dans un vrai lieu, le profil complet présenté au dos de chaque œuvre. Plus nous
+              serons nombreux, plus je pourrai convaincre des institutions de soutenir ce musée.
             </p>
           </li>
           <li className="projet-carte">
             <Icon name="archive" size={24} />
             <h3>L’Arctic World Archive</h3>
             <p>
-              Une copie de la mémoire du musée, confiée à cette archive creusée dans une montagne du Svalbard, pensée pour traverser les
-              siècles. Y conserver ses données coûte d’ordinaire 139 € par personne : si le musée réunit assez de traces, je prendrai ce dépôt à
-              ma charge pour tous ceux qui l’acceptent. Tu n’auras rien à payer.
+              Une copie de la mémoire du musée, confiée à cette archive creusée dans une montagne du Svalbard, pensée pour traverser les siècles. Y conserver
+              ses données coûte d’ordinaire 139 € par personne : si le musée réunit assez de traces, je prendrai ce dépôt à ma charge pour tous ceux qui
+              l’acceptent. Tu n’auras rien à payer.
             </p>
           </li>
           <li className="projet-carte">
@@ -187,8 +197,7 @@ export function Projet() {
           </li>
         </ol>
         <p className="projet-note">
-          Ce sont des projets : je n’ai encore ni date, ni garantie qu’ils aboutissent. Mais ce site en est le point de départ, et chaque trace
-          les rapproche.
+          Ce sont des projets : je n’ai encore ni date, ni garantie qu’ils aboutissent. Mais ce site en est le point de départ, et chaque trace les rapproche.
         </p>
       </section>
 
@@ -215,16 +224,16 @@ export function Ressources() {
           Si tu penses au suicide, des personnes peuvent t’écouter, maintenant.
         </h2>
         <p>
-          Nos Mots Mémoriaux parle de la mémoire et de la vie, pas d’y mettre fin. Si tu traverses un moment très difficile, des personnes
-          formées peuvent t’écouter tout de suite, gratuitement, sans jugement, dans ton pays et dans ta langue.
+          Nos Mots Mémoriaux parle de la mémoire et de la vie, pas d’y mettre fin. Si tu traverses un moment très difficile, des personnes formées peuvent
+          t’écouter tout de suite, gratuitement, sans jugement, dans ton pays et dans ta langue.
         </p>
         <a className="aide-monde" href="https://findahelpline.com" target="_blank" rel="noreferrer">
           <span className="aide-monde-titre">Trouver une ligne d’écoute, partout dans le monde</span>
           <span className="aide-monde-lien">findahelpline.com</span>
         </a>
         <p className="petit">
-          En cas de danger immédiat, appelle les services d’urgence de ton pays (par exemple le <strong>112</strong> en Europe, le{' '}
-          <strong>911</strong> en Amérique du Nord).
+          En cas de danger immédiat, appelle les services d’urgence de ton pays (par exemple le <strong>112</strong> en Europe, le <strong>911</strong> en
+          Amérique du Nord).
         </p>
         <details className="lignes-directes">
           <summary>Quelques lignes directes</summary>
@@ -250,9 +259,7 @@ export function Soutenir() {
   return (
     <Page className="soutenir" titre="Soutenir">
       <h1 className="page-titre">Soutenir</h1>
-      <p className="lead">
-        Le musée est et restera gratuit. Les dons permettent de continuer mes projets et de soutenir le site dans son fonctionnement.
-      </p>
+      <p className="lead">Le musée est et restera gratuit. Les dons permettent de continuer mes projets et de soutenir le site dans son fonctionnement.</p>
       <div className="trois-colonnes">
         {[
           ['Faire vivre le site', 'L’hébergement, la sécurité, les sauvegardes.'],
@@ -291,8 +298,34 @@ const JURIDIQUE: [string, string][] = [
     'Mémoires de personnes décédées',
     'Une mémoire transmet ce que l’on sait réellement d’une personne, sans lui prêter de dernières paroles. Ses proches peuvent demander qu’elle soit retirée.',
   ],
-  ['Après le décès de l’auteur', 'La trace reste telle que son auteur l’a laissée, sauf demande contraire de ses proches.'],
-  ['Mentions légales', 'L’éditeur du site et son hébergeur seront nommés ici à l’ouverture du musée.'],
+  [
+    'Tes données après ta mort',
+    'Depuis ton compte, rubrique « Après moi », tu dis ce que deviendront tes données à ta mort (garder visible, garder sans montrer, confier à une personne que tu désignes, tout effacer) ; ce choix est à part des conditions d’utilisation, horodaté, modifiable et révocable à tout moment (loi Informatique et Libertés, article 85). Sans choix de ta part, tes héritiers peuvent demander la clôture de ton compte ; ton choix, s’il existe, passe avant leur demande.',
+  ],
+  [
+    'Après un décès',
+    'Un proche, ou la personne désignée, peut demander la clôture, la conservation ou la transmission d’une trace avec le formulaire ci-dessous. Le musée demande l’acte de décès et une pièce d’identité, vérifie les directives laissées par la personne, et répond par écrit sous un mois. Une mémoire écrite par un proche n’est pas la trace de la personne décédée : elle relève de son auteur, et peut être signalée ou contestée.',
+  ],
+  [
+    'Vie privée des vivants',
+    'Une mémoire ne doit rien révéler de la santé, des convictions, de la vie intime ou des conflits de personnes vivantes, ni les nommer sans leur accord. Toute personne concernée peut s’opposer : écris à l’adresse ci-dessous, la réponse arrive sous un mois et le contenu peut être retiré en attendant.',
+  ],
+  [
+    'Signalements et retraits',
+    'Chaque trace peut être signalée (motif, message). La demande est gardée, le fondateur la reçoit aussitôt et décide : classer, retirer, ou bannir. L’auteur d’un contenu retiré reçoit les motifs et peut répondre à l’adresse de contact. Le point de contact pour les personnes et pour les autorités est cette même adresse.',
+  ],
+  [
+    'Durées de conservation',
+    'Session : 90 jours. Codes de connexion : 15 minutes. Traces : tant que tu le veux, ou selon ton choix « Après moi » ; scellées cinq ans. Journal et signalements : un an après traitement. Demandes liées à un décès : trois ans. Comptes sans trace et inactifs : effacés après trois ans. Le registre complet est tenu par le fondateur.',
+  ],
+  [
+    'Si le musée devait fermer',
+    'Aucune promesse de « pour toujours ». En cas d’arrêt, un préavis d’au moins six mois serait donné par e-mail et sur le site, avec l’export de toutes tes données et, si possible, la remise des traces à une archive.',
+  ],
+  [
+    'Mentions légales',
+    'Éditeur : [À COMPLÉTER : nom, prénom, domicile ou, pour un particulier, le seul nom de l’hébergeur, l’identité ayant été transmise à celui-ci], directeur de la publication : [À COMPLÉTER]. Hébergeur : [À COMPLÉTER : OVH SAS, 2 rue Kellermann, 59100 Roubaix, +33 9 72 10 10 07]. Contact : voir ci-dessous. (Loi pour la confiance dans l’économie numérique, articles 1-1 et 1-2.)',
+  ],
 ];
 
 export function Juridique() {
@@ -308,10 +341,95 @@ export function Juridique() {
           </li>
         ))}
       </ol>
+      <DemandeDeces />
       <p>
         Pour toute question : <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
       </p>
     </Page>
+  );
+}
+
+/** Signaler un décès (article 85 II) : la demande est gardée ; les pièces (acte de décès, identité) suivent par e-mail. */
+function DemandeDeces() {
+  const [d, setD] = useState({
+    email: '',
+    nomDefunt: '',
+    lien: '',
+    traceId: '',
+    demande: 'cloturer' as 'cloturer' | 'conserver' | 'transmettre' | 'autre',
+    message: '',
+  });
+  const [etat, setEtat] = useState<'' | 'envoi' | 'ok' | 'erreur'>('');
+  const [erreur, setErreur] = useState('');
+  if (!EN_LIGNE) return null;
+  const envoyer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEtat('envoi');
+    try {
+      await signalerDeces({ ...d, traceId: d.traceId.trim() || undefined, message: d.message.trim() || undefined });
+      setEtat('ok');
+    } catch (err) {
+      setErreur(err instanceof Error ? err.message : 'La demande n’a pas pu être envoyée.');
+      setEtat('erreur');
+    }
+  };
+  return (
+    <details className="compte-effacer deces">
+      <summary>Signaler un décès</summary>
+      {etat === 'ok' ? (
+        <p className="compte-ok" role="status">
+          La demande est enregistrée. Envoie l’acte de décès et une pièce d’identité à {CONTACT} ; la réponse arrive sous un mois.
+        </p>
+      ) : (
+        <form onSubmit={(e) => void envoyer(e)} className="deces-form">
+          <label className="field-label" htmlFor="deces-email">
+            Ton adresse e-mail
+          </label>
+          <input id="deces-email" type="email" required value={d.email} onChange={(e) => setD({ ...d, email: e.target.value })} maxLength={200} />
+          <label className="field-label" htmlFor="deces-nom">
+            Nom de la personne décédée
+          </label>
+          <input id="deces-nom" type="text" required value={d.nomDefunt} onChange={(e) => setD({ ...d, nomDefunt: e.target.value })} maxLength={200} />
+          <label className="field-label" htmlFor="deces-lien">
+            Ton lien avec elle
+          </label>
+          <input
+            id="deces-lien"
+            type="text"
+            required
+            value={d.lien}
+            onChange={(e) => setD({ ...d, lien: e.target.value })}
+            maxLength={200}
+            placeholder="fille, frère, personne désignée…"
+          />
+          <label className="field-label" htmlFor="deces-trace">
+            Adresse de sa bulle (facultatif)
+          </label>
+          <input id="deces-trace" type="text" value={d.traceId} onChange={(e) => setD({ ...d, traceId: e.target.value })} maxLength={40} />
+          <label className="field-label" htmlFor="deces-demande">
+            Ta demande
+          </label>
+          <select id="deces-demande" value={d.demande} onChange={(e) => setD({ ...d, demande: e.target.value as typeof d.demande })}>
+            <option value="cloturer">Clôturer son compte et retirer sa trace</option>
+            <option value="conserver">Garder sa trace telle quelle</option>
+            <option value="transmettre">Me la transmettre (personne désignée)</option>
+            <option value="autre">Autre demande</option>
+          </select>
+          <label className="field-label" htmlFor="deces-message">
+            Message (facultatif)
+          </label>
+          <textarea id="deces-message" value={d.message} onChange={(e) => setD({ ...d, message: e.target.value })} maxLength={2000} rows={3} />
+          <button className="bouton" type="submit" disabled={etat === 'envoi'}>
+            Envoyer la demande
+          </button>
+          {etat === 'erreur' && (
+            <p className="editeur-erreur" role="alert">
+              {erreur}
+            </p>
+          )}
+        </form>
+      )}
+    </details>
   );
 }
 
@@ -547,8 +665,8 @@ function CompteReglages() {
         {etat === 'code' ? (
           <form className="compte-changer" onSubmit={confirmer}>
             <p>
-              Pour confirmer que c’est bien toi, un code vient de partir vers <strong>{nouvelle}</strong>. Ton adresse changera dès que tu
-              l’auras donné ici (il est valable 15 minutes).
+              Pour confirmer que c’est bien toi, un code vient de partir vers <strong>{nouvelle}</strong>. Ton adresse changera dès que tu l’auras donné ici (il
+              est valable 15 minutes).
             </p>
             <label className="field">
               <span className="field-label">Le code reçu</span>
@@ -582,7 +700,14 @@ function CompteReglages() {
             <form className="compte-changer" onSubmit={changer}>
               <label className="field">
                 <span className="field-label">Changer d’adresse</span>
-                <input type="email" autoComplete="email" value={nouvelle} onChange={(e) => setNouvelle(e.target.value)} placeholder="nouvelle@adresse.fr" required />
+                <input
+                  type="email"
+                  autoComplete="email"
+                  value={nouvelle}
+                  onChange={(e) => setNouvelle(e.target.value)}
+                  placeholder="nouvelle@adresse.fr"
+                  required
+                />
               </label>
               <button className="bouton bouton-discret" disabled={etat === 'envoi' || !nouvelle.trim()}>
                 {etat === 'envoi' ? 'Envoi…' : EN_LIGNE ? 'Recevoir un code de confirmation' : 'Changer'}
@@ -619,9 +744,9 @@ function CompteReglages() {
           Protection de mes données
         </h2>
         <p>
-          Tes données t’appartiennent, où que tu vives. Ce que tu déposes est scellé pendant cinq ans, mais le scellement ne retire aucun de tes
-          droits : tu peux m’écrire à tout moment pour consulter, modifier ou supprimer tes données, toutes ou en partie. Je m’en occupe
-          moi-même, sans te demander de justification.
+          Tes données t’appartiennent, où que tu vives. Ce que tu déposes est scellé pendant cinq ans, mais le scellement ne retire aucun de tes droits : tu
+          peux m’écrire à tout moment pour consulter, modifier ou supprimer tes données, toutes ou en partie. Je m’en occupe moi-même, sans te demander de
+          justification.
         </p>
         <p>
           <a href={`mailto:${CONTACT}?subject=${encodeURIComponent('Mes données')}`}>{CONTACT}</a>
@@ -666,8 +791,8 @@ function SauvegardeLocale({ nombre }: { nombre: number }) {
         Garder mes traces ailleurs
       </h2>
       <p className="muted petit">
-        Dans cet aperçu, tes traces vivent dans ce navigateur. Un fichier te permet de les garder, et de les reprendre sur un autre appareil. Les
-        photos, vidéos et sons déposés ne sont pas dans le fichier.
+        Dans cet aperçu, tes traces vivent dans ce navigateur. Un fichier te permet de les garder, et de les reprendre sur un autre appareil. Les photos, vidéos
+        et sons déposés ne sont pas dans le fichier.
       </p>
       <div className="compte-sauvegarde">
         <button className="bouton bouton-discret" onClick={exporter} disabled={nombre === 0}>
@@ -692,6 +817,154 @@ function SauvegardeLocale({ nombre }: { nombre: number }) {
   );
 }
 
+/** Version du texte lu au moment du consentement (loi 78-17, art. 85 I : consentement spécifique, distinct des CGU). */
+const VERSION_APRES_MOI = '2026-11-05';
+const CHOIX_APRES_MOI: [ApresMoi['choix'], string, string][] = [
+  ['conserver_publique', 'Garder ma trace visible dans le musée', 'Elle reste telle que je l’ai laissée, dans la constellation et sur sa page.'],
+  ['conserver_famille', 'La garder, mais la retirer du public', 'Elle sort de la constellation ; mes proches peuvent la demander.'],
+  ['transmettre', 'La confier à une personne que je désigne', 'Cette personne pourra la lire, la garder ou la faire retirer.'],
+  ['effacer', 'Tout effacer', 'Ma trace, mes fragments et mes fichiers seront effacés après vérification du décès.'],
+];
+
+/**
+ * Après moi : le sort de mes données à ma mort, et la personne désignée (loi Informatique et Libertés, article 85).
+ * Rien n'est pré-coché ; le choix est horodaté, modifiable et révocable à tout moment.
+ */
+function ApresMoiBloc() {
+  const [actuel, setActuel] = useState<ApresMoi | null | undefined>(undefined);
+  const [choix, setChoix] = useState<ApresMoi['choix'] | ''>('');
+  const [tiersNom, setTiersNom] = useState('');
+  const [tiersEmail, setTiersEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [etat, setEtat] = useState<'' | 'envoi' | 'ok' | 'erreur'>('');
+  const [erreur, setErreur] = useState('');
+  useEffect(() => {
+    lireApresMoi()
+      .then((d) => {
+        setActuel(d);
+        if (d) {
+          setChoix(d.choix);
+          setTiersNom(d.tiersNom ?? '');
+          setTiersEmail(d.tiersEmail ?? '');
+          setMessage(d.message ?? '');
+        }
+      })
+      .catch(() => setActuel(null));
+  }, []);
+  const enregistrer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!choix) return;
+    setEtat('envoi');
+    try {
+      const d = await enregistrerApresMoi({
+        choix,
+        tiersNom: tiersNom.trim() || undefined,
+        tiersEmail: tiersEmail.trim() || undefined,
+        message: message.trim() || undefined,
+        versionTexte: VERSION_APRES_MOI,
+      });
+      setActuel(d);
+      setEtat('ok');
+    } catch (err) {
+      setErreur(err instanceof Error ? err.message : 'Ce choix n’a pas pu être enregistré.');
+      setEtat('erreur');
+    }
+  };
+  const revoquer = async () => {
+    await revoquerApresMoi().catch(() => undefined);
+    setActuel(null);
+    setChoix('');
+    setTiersNom('');
+    setTiersEmail('');
+    setMessage('');
+    setEtat('');
+  };
+  const date = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  return (
+    <section className="compte-bloc" aria-labelledby="h-apres-moi">
+      <h2 id="h-apres-moi" className="intertitre">
+        Après moi
+      </h2>
+      <p>
+        La loi te permet de dire ce que deviendront tes données à ta mort, et de désigner quelqu’un pour s’en occuper (loi Informatique et Libertés, article
+        85). Ce choix est à part des conditions d’utilisation : rien n’est coché d’avance, tu peux le changer ou le retirer quand tu veux. Sans choix de ta
+        part, tes héritiers pourront demander la clôture de ton compte.
+      </p>
+      {actuel === undefined ? (
+        <p className="muted petit">Un instant…</p>
+      ) : (
+        <form onSubmit={(e) => void enregistrer(e)} className="apres-moi">
+          <fieldset className="apres-moi-choix">
+            <legend className="field-label">À ma mort</legend>
+            {CHOIX_APRES_MOI.map(([v, titre, detail]) => (
+              <label key={v} className="apres-moi-option">
+                <input type="radio" name="apres-moi" value={v} checked={choix === v} onChange={() => setChoix(v)} />
+                <span>
+                  <strong>{titre}</strong>
+                  <span className="muted petit"> {detail}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+          <div className="apres-moi-tiers">
+            <label className="field-label" htmlFor="tiers-nom">
+              Personne désignée (facultatif, obligatoire pour confier)
+            </label>
+            <input
+              id="tiers-nom"
+              type="text"
+              value={tiersNom}
+              onChange={(e) => setTiersNom(e.target.value)}
+              placeholder="Son nom"
+              maxLength={120}
+              autoComplete="off"
+            />
+            <input
+              id="tiers-email"
+              type="email"
+              value={tiersEmail}
+              onChange={(e) => setTiersEmail(e.target.value)}
+              placeholder="Son adresse e-mail"
+              maxLength={200}
+              aria-label="Adresse e-mail de la personne désignée"
+              autoComplete="off"
+            />
+            <label className="field-label" htmlFor="apres-moi-message">
+              Un mot pour elle, ou pour le musée (facultatif)
+            </label>
+            <textarea id="apres-moi-message" value={message} onChange={(e) => setMessage(e.target.value)} maxLength={1000} rows={3} />
+          </div>
+          <div className="apres-moi-actions">
+            <button className="bouton" type="submit" disabled={!choix || etat === 'envoi'}>
+              {actuel ? 'Mettre à jour mon choix' : 'Enregistrer mon choix'}
+            </button>
+            {actuel && (
+              <button type="button" className="lien-discret" onClick={() => void revoquer()}>
+                Retirer mon choix
+              </button>
+            )}
+          </div>
+          {actuel && (
+            <p className="muted petit" role="status">
+              Choix enregistré le {date(actuel.consentiLe)}, texte du {actuel.versionTexte}.
+            </p>
+          )}
+          {etat === 'ok' && (
+            <p className="compte-ok" role="status">
+              C’est enregistré.
+            </p>
+          )}
+          {etat === 'erreur' && (
+            <p className="editeur-erreur" role="alert">
+              {erreur}
+            </p>
+          )}
+        </form>
+      )}
+    </section>
+  );
+}
+
 function CompteConnecte({ compte }: { compte: CompteSession }) {
   const navigate = useNavigate();
   const [effacer, setEffacer] = useState('');
@@ -700,6 +973,7 @@ function CompteConnecte({ compte }: { compte: CompteSession }) {
     <div className="compte-connecte">
       <MesTraces />
       <CompteReglages />
+      <ApresMoiBloc />
       <h2 className="intertitre">Et aussi</h2>
       <div className="liens-colonne">
         {compte.role !== 'membre' && (
@@ -717,8 +991,8 @@ function CompteConnecte({ compte }: { compte: CompteSession }) {
       <details className="compte-effacer">
         <summary>Effacer mon compte et tout ce que j’ai déposé</summary>
         <p>
-          Tout sera effacé : tes traces, tes fragments, tes fichiers, ton trait dans l’œuvre commune. Le scellement ne l’empêche pas : c’est ton
-          droit. Cela ne peut pas être annulé. Écris <strong>EFFACER</strong> pour confirmer.
+          Tout sera effacé : tes traces, tes fragments, tes fichiers, ton trait dans l’œuvre commune. Le scellement ne l’empêche pas : c’est ton droit. Cela ne
+          peut pas être annulé. Écris <strong>EFFACER</strong> pour confirmer.
         </p>
         <input value={effacer} onChange={(e) => setEffacer(e.target.value)} aria-label="Écris EFFACER pour confirmer" />
         {erreur && (

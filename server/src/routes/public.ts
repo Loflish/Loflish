@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { exigerCompte, Refus } from '../auth';
 import { dejaAJour, etiquette, memoire } from '../cache';
 import { config } from '../config';
-import { envoyerSignalement } from '../courriel';
+import { envoyerDemandeDeces, envoyerSignalement } from '../courriel';
 import { journaliser, requete, une } from '../db';
 import { dansLOeuvre, LONGUEUR_TRAIT, RUBRIQUE_IDS } from '../regles';
 import { presence, trace, type LigneFragment, type LigneMedia, type LigneTrace } from '../serialiser';
@@ -69,10 +69,11 @@ export async function routesPubliques(app: FastifyInstance) {
   // rechercher un nom, un mot, un lieu (accents et majuscules ignorés),
   // et/ou les présences qui ont des fragments dans certaines rubriques
   app.get('/api/recherche', async (req) => {
-    const { q, rubriques } = z
-      .object({ q: z.string().trim().min(2).max(80).optional(), rubriques: z.string().max(400).optional() })
-      .parse(req.query);
-    const rubs = (rubriques ?? '').split(',').map((r) => r.trim()).filter((r) => RUBRIQUE_IDS.has(r));
+    const { q, rubriques } = z.object({ q: z.string().trim().min(2).max(80).optional(), rubriques: z.string().max(400).optional() }).parse(req.query);
+    const rubs = (rubriques ?? '')
+      .split(',')
+      .map((r) => r.trim())
+      .filter((r) => RUBRIQUE_IDS.has(r));
     if (!q && rubs.length === 0) throw new Refus(400, 'Écris au moins deux lettres, ou choisis une rubrique.', 'recherche');
     // le motif est comparé au texte sans accents ni majuscules ; les index de la migration 002 rendent
     // cette recherche rapide (les expressions doivent rester identiques à celles des index)
@@ -104,7 +105,9 @@ export async function routesPubliques(app: FastifyInstance) {
 
   app.get('/api/editions/:id/presences', async (req) => {
     const { id } = z.object({ id: z.string().max(60) }).parse(req.params);
-    const e = await une<{ annee: number; figee_le: Date | null; presences: string[] | null }>('select annee, figee_le, presences from editions where id = $1', [id]);
+    const e = await une<{ annee: number; figee_le: Date | null; presences: string[] | null }>('select annee, figee_le, presences from editions where id = $1', [
+      id,
+    ]);
     if (!e) throw new Refus(404, 'Cette édition n’existe pas.', 'introuvable');
     const ids = e.figee_le
       ? (e.presences ?? [])
@@ -141,7 +144,10 @@ export async function routesPubliques(app: FastifyInstance) {
     const lisible = m.mime === 'application/pdf' || m.mime.startsWith('image/') || m.mime.startsWith('video/') || m.mime.startsWith('audio/');
     rep.header('content-disposition', lisible ? 'inline' : nomDeTelechargement(m.nom_fichier));
     if (plage) {
-      rep.status(206).header('content-range', `bytes ${plage.debut}-${plage.fin}/${f.taille}`).header('content-length', plage.fin - plage.debut + 1);
+      rep
+        .status(206)
+        .header('content-range', `bytes ${plage.debut}-${plage.fin}/${f.taille}`)
+        .header('content-length', plage.fin - plage.debut + 1);
     } else {
       rep.header('content-length', f.taille);
     }
@@ -174,6 +180,31 @@ export async function routesPubliques(app: FastifyInstance) {
     return { ok: true };
   });
 
+  // signaler un décès (loi 78-17, art. 85 II) : un proche, ou la personne désignée, demande la clôture, la conservation
+  // ou la transmission ; la demande est gardée, le fondateur la reçoit, et répond sous un mois
+  app.post('/api/deces', { config: { rateLimit: { max: 5, timeWindow: '1 hour' } } }, async (req) => {
+    const d = z
+      .object({
+        email: z.string().trim().toLowerCase().email().max(200),
+        nomDefunt: z.string().trim().min(1).max(200),
+        lien: z.string().trim().min(1).max(200),
+        traceId: z.string().max(40).optional(),
+        demande: z.enum(['cloturer', 'conserver', 'transmettre', 'autre']),
+        message: z.string().trim().max(2000).optional(),
+      })
+      .parse(req.body);
+    await requete('insert into demandes_deces (email, nom_defunt, lien, trace_id, demande, message) values ($1, $2, $3, $4, $5, $6)', [
+      d.email,
+      d.nomDefunt,
+      d.lien,
+      d.traceId ?? null,
+      d.demande,
+      d.message ?? null,
+    ]);
+    void envoyerDemandeDeces({ email: d.email, nomDefunt: d.nomDefunt, lien: d.lien, demande: d.demande, message: d.message });
+    return { ok: true };
+  });
+
   // le lien partagé : une page minuscule qui donne un aperçu propre dans les messageries
   // (le nom, les premiers mots), puis ouvre le musée sur la bulle de la personne
   app.get('/b/:id', async (req, rep) => {
@@ -182,7 +213,7 @@ export async function routesPubliques(app: FastifyInstance) {
     const cible = `${config.siteUrl}/#/bulle/${encodeURIComponent(id)}`;
     const e = (x: string) => x.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
     const titre = t ? `${t.nom}, sur Nos Mots Mémoriaux` : 'Nos Mots Mémoriaux';
-    const texte = t ? (t.type === 'personnelle' ? t.q4 : t.memoire_apercu) ?? '' : 'Un musée vivant des dernières volontés.';
+    const texte = t ? ((t.type === 'personnelle' ? t.q4 : t.memoire_apercu) ?? '') : 'Un musée vivant des dernières volontés.';
     const resume = texte.length > 200 ? texte.slice(0, 197).replace(/\s+\S*$/, '') + '…' : texte;
     rep.header('cache-control', 'public, max-age=300');
     return rep.type('text/html; charset=utf-8').send(`<!doctype html><html lang="fr"><head><meta charset="utf-8">
@@ -213,7 +244,14 @@ export async function routesPubliques(app: FastifyInstance) {
     if (dejaAJour(req, rep, etiquette('traits', empreinte(`${req.compte?.id ?? ''}|${app_ ?? ''}`).slice(0, 12)))) return rep;
     const lignes = await traits();
     return {
-      traits: lignes.map((t) => ({ id: t.id, x1: t.x1, y1: t.y1, x2: t.x2, y2: t.y2, moi: (req.compte && t.compte_id === req.compte.id) || (app_ !== null && t.appareil === app_) || undefined })),
+      traits: lignes.map((t) => ({
+        id: t.id,
+        x1: t.x1,
+        y1: t.y1,
+        x2: t.x2,
+        y2: t.y2,
+        moi: (req.compte && t.compte_id === req.compte.id) || (app_ !== null && t.appareil === app_) || undefined,
+      })),
     };
   });
 
@@ -222,21 +260,18 @@ export async function routesPubliques(app: FastifyInstance) {
     const p = z.object({ x1: z.number(), y1: z.number(), x2: z.number(), y2: z.number() }).parse(req.body);
     if (!dansLOeuvre(p.x1, p.y1) || !dansLOeuvre(p.x2, p.y2)) throw new Refus(400, 'Le trait doit rester dans l’œuvre.', 'hors');
     // tous les fils ont la même longueur
-    if (Math.abs(Math.hypot(p.x2 - p.x1, p.y2 - p.y1) - LONGUEUR_TRAIT) > LONGUEUR_TRAIT * 0.02) throw new Refus(400, 'Chaque fil a la même longueur.', 'longueur');
+    if (Math.abs(Math.hypot(p.x2 - p.x1, p.y2 - p.y1) - LONGUEUR_TRAIT) > LONGUEUR_TRAIT * 0.02)
+      throw new Refus(400, 'Chaque fil a la même longueur.', 'longueur');
     let brut = req.cookies[APPAREIL];
     if (!brut) {
       brut = jeton(18);
       rep.setCookie(APPAREIL, brut, { path: '/', httpOnly: true, sameSite: 'lax', secure: config.production, maxAge: 10 * 365 * 24 * 3600 });
     }
     // la base garde l'unicité : deux clics simultanés ne cousent qu'un trait
-    const t = await une<{ id: string }>('insert into traits (compte_id, appareil, x1, y1, x2, y2) values ($1, $2, $3, $4, $5, $6) on conflict do nothing returning id', [
-      c.id,
-      empreinte(brut),
-      p.x1,
-      p.y1,
-      p.x2,
-      p.y2,
-    ]);
+    const t = await une<{ id: string }>(
+      'insert into traits (compte_id, appareil, x1, y1, x2, y2) values ($1, $2, $3, $4, $5, $6) on conflict do nothing returning id',
+      [c.id, empreinte(brut), p.x1, p.y1, p.x2, p.y2],
+    );
     if (!t) throw new Refus(409, 'Tu as déjà cousu ton trait. Il fait partie de l’œuvre.', 'deja');
     await journaliser(c.id, 'trait.cousu', t.id);
     return { trait: { id: t.id, ...p, moi: true } };

@@ -1,5 +1,13 @@
 # Nos Mots Mémoriaux : état sauvegardé
 
+## Point de reprise — 5 novembre 2026
+
+Catalogue des bulles choisi par Tom : 183 bulles aimées des planches 2 et 3, sans doublons (palette M). Drap coloré
+derrière les pages validé. Audit « tics de l'IA et droit » (`reports/Audit tics et droit 2026-11-05.md`) : trois manques
+nets traités ce jour (écran « Après moi » art. 85, mentions légales structurées à compléter, registre des traitements
+provisoire) ; restent les points partiels (droits au dépôt des médias, motivation des retraits, opposition des proches,
+IP à la création, vidéos tierces, cadre des dons) et les huit points à confirmer par un avocat.
+
 ## Point de reprise — 4 novembre 2026
 
 Chantier des bulles : Tom a trié (290 gardées sur 300), puis voulu une nouvelle direction « filaments comme Beksiński, mais

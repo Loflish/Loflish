@@ -241,7 +241,9 @@
 .objet-reel img {
   width: 100%;
   height: auto;
-  box-shadow: 0 1px 2px rgba(47, 44, 51, 0.12), 0 12px 30px -18px rgba(47, 44, 51, 0.4);
+  box-shadow:
+    0 1px 2px rgba(47, 44, 51, 0.12),
+    0 12px 30px -18px rgba(47, 44, 51, 0.4);
 }
 .objet-reel figcaption {
   margin-top: 1rem;
@@ -464,7 +466,9 @@
   padding: 1.3rem 1.4rem;
   border: 1px solid var(--filet);
   border-radius: var(--rayon);
-  transition: border-color 400ms var(--doux), background 400ms var(--doux);
+  transition:
+    border-color 400ms var(--doux),
+    background 400ms var(--doux);
 }
 .choix-item:hover {
   border-color: var(--filet-fort);
@@ -584,8 +588,14 @@
   animation: bulle-change 900ms var(--doux) both;
 }
 @keyframes bulle-change {
-  from { opacity: 0.2; transform: scale(0.96); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0.2;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .bulle-fleches {
   display: flex;
@@ -668,9 +678,18 @@
   animation: rejoint 4200ms var(--doux) both;
 }
 @keyframes rejoint {
-  0% { opacity: 0; transform: scale(0.94); }
-  60% { opacity: 1; transform: scale(1); }
-  100% { opacity: 1; transform: scale(0.82) translateY(-10px); }
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(0.82) translateY(-10px);
+  }
 }
 .publication-texte {
   font-family: var(--serif);
@@ -703,7 +722,9 @@
     align-items: flex-start;
   }
 }
-.etape-compteur:focus { outline: none; }
+.etape-compteur:focus {
+  outline: none;
+}
 
 /* ——— ma trace */
 .liens-colonne {
@@ -893,7 +914,11 @@
     display: none;
   }
 }
-.creer-lien { margin-top: 1rem; font-size: var(--t-s); line-height: 1.5; }
+.creer-lien {
+  margin-top: 1rem;
+  font-size: var(--t-s);
+  line-height: 1.5;
+}
 .compte-lien {
   max-width: 32rem;
 }
@@ -1300,7 +1325,9 @@
   border-radius: 1rem;
   background: rgba(243, 241, 236, 0.8);
   cursor: pointer;
-  transition: background 300ms var(--doux), border-color 300ms var(--doux);
+  transition:
+    background 300ms var(--doux),
+    border-color 300ms var(--doux);
 }
 .interrupteur input::after {
   content: '';
@@ -1311,7 +1338,9 @@
   height: 0.9rem;
   border-radius: 50%;
   background: var(--encre-2);
-  transition: transform 300ms var(--doux), background 300ms var(--doux);
+  transition:
+    transform 300ms var(--doux),
+    background 300ms var(--doux);
 }
 .interrupteur input:checked {
   background: var(--encre);
@@ -1795,4 +1824,49 @@
   font-weight: 400;
   color: var(--encre-2);
   margin: 0 0 0.75rem;
+}
+
+/* Après moi (article 85) et la demande liée à un décès : des formulaires sobres, une option par ligne */
+.apres-moi-choix {
+  border: 0;
+  padding: 0;
+  margin: 0.5rem 0 1rem;
+  display: grid;
+  gap: 0.6rem;
+}
+.apres-moi-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.6rem;
+  align-items: start;
+}
+.apres-moi-option input {
+  margin-top: 0.35rem;
+}
+.apres-moi-tiers,
+.deces-form {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 34rem;
+}
+.apres-moi-tiers input,
+.apres-moi-tiers textarea,
+.deces-form input,
+.deces-form textarea,
+.deces-form select {
+  font: inherit;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--filet);
+  border-radius: var(--rayon);
+  background: transparent;
+  color: inherit;
+}
+.apres-moi-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+.deces {
+  margin-top: 2rem;
 }

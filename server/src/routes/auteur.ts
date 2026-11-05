@@ -23,7 +23,13 @@ import { stockage } from '../stockage';
  */
 
 const texte = (max: number) => z.string().trim().min(1).max(max);
-const facultatif = (max: number) => z.string().trim().max(max).optional().transform((v) => v || undefined);
+const facultatif = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((v) => v || undefined);
 
 const schemaCreation = z.discriminatedUnion('type', [
   z.object({
@@ -128,7 +134,8 @@ async function rangerFichier(traceId: string, f: { chemin: string; nom: string }
   const nature = natureDe(mime);
   if (!nature) throw new Refus(415, 'Ce type de fichier n’est pas accepté (photos, vidéos, enregistrements, PDF et documents texte).', 'type');
   const { size } = await stat(f.chemin);
-  if (size > TAILLES_MAX[nature]) throw new Refus(413, `Ce fichier est trop lourd (${Math.round(TAILLES_MAX[nature] / 1048576)} Mo au plus pour ce type).`, 'lourd');
+  if (size > TAILLES_MAX[nature])
+    throw new Refus(413, `Ce fichier est trop lourd (${Math.round(TAILLES_MAX[nature] / 1048576)} Mo au plus pour ce type).`, 'lourd');
   const cle = `traces/${traceId}/${randomUUID()}.${type?.ext ?? 'txt'}`;
   await stockage.deposer(cle, f.chemin, mime);
   return { cle, mime, nature, taille: size };
@@ -153,7 +160,14 @@ export async function routesAuteur(app: FastifyInstance) {
                              memoire_deposee_par, memoire_relation, memoire_origine, memoire_apercu, parametres)
          values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
         [
-          id, c.id, d.type, d.nom, d.type === 'personnelle' ? (d.pseudo ?? null) : null, d.couleur, d.matiere ?? null, d.pays ?? null,
+          id,
+          c.id,
+          d.type,
+          d.nom,
+          d.type === 'personnelle' ? (d.pseudo ?? null) : null,
+          d.couleur,
+          d.matiere ?? null,
+          d.pays ?? null,
           ...(d.type === 'personnelle' ? d.questions : [null, null, null, null]),
           d.type === 'personnelle' ? (d.q2Destinataire ?? null) : null,
           d.type === 'memoire' ? d.memoire.deposeePar : null,
@@ -176,13 +190,25 @@ export async function routesAuteur(app: FastifyInstance) {
   app.put('/api/traces/:id/reponses', async (req) => {
     const c = exigerCompte(req);
     const { id } = z.object({ id: z.string() }).parse(req.params);
-    const d = z.object({ questions: z.tuple([texte(LIMITES.q), texte(LIMITES.q), texte(LIMITES.q), texte(LIMITES.q4)]).optional(), q2Destinataire: facultatif(120), apercu: texte(LIMITES.memoire).optional() }).parse(req.body);
+    const d = z
+      .object({
+        questions: z.tuple([texte(LIMITES.q), texte(LIMITES.q), texte(LIMITES.q), texte(LIMITES.q4)]).optional(),
+        q2Destinataire: facultatif(120),
+        apercu: texte(LIMITES.memoire).optional(),
+      })
+      .parse(req.body);
     await transaction(async (tx) => {
       const t = await maTrace(tx, c, id);
-      if (scelleEncore(t.scellee_le)) throw new Refus(403, `Tes réponses sont scellées jusqu’au ${reouverture(t.scellee_le).toLocaleDateString('fr-FR')}.`, 'scelle');
+      if (scelleEncore(t.scellee_le))
+        throw new Refus(403, `Tes réponses sont scellées jusqu’au ${reouverture(t.scellee_le).toLocaleDateString('fr-FR')}.`, 'scelle');
       if (t.type === 'personnelle' && d.questions)
-        await requete('update traces set q1=$2, q2=$3, q3=$4, q4=$5, q2_destinataire = $6, scellee_le = now(), maj_le = now() where id = $1', [id, ...d.questions, d.q2Destinataire ?? null], tx);
-      if (t.type === 'memoire' && d.apercu) await requete('update traces set memoire_apercu = $2, scellee_le = now(), maj_le = now() where id = $1', [id, d.apercu], tx);
+        await requete(
+          'update traces set q1=$2, q2=$3, q3=$4, q4=$5, q2_destinataire = $6, scellee_le = now(), maj_le = now() where id = $1',
+          [id, ...d.questions, d.q2Destinataire ?? null],
+          tx,
+        );
+      if (t.type === 'memoire' && d.apercu)
+        await requete('update traces set memoire_apercu = $2, scellee_le = now(), maj_le = now() where id = $1', [id, d.apercu], tx);
       await journaliser(c.id, 'trace.reponses', id, {}, tx);
     });
     return { trace: await traceComplete(id) };
@@ -227,13 +253,26 @@ export async function routesAuteur(app: FastifyInstance) {
         if (range)
           await requete(
             'insert into medias (trace_id, fragment_id, kind, titre, cle, mime, nom_fichier, taille) values ($1,$2,$3,$4,$5,$6,$7,$8)',
-            [id, f.id, range.nature, d.mediaTitre ?? d.titre ?? fichier!.nom.replace(/\.[^.]+$/, '').slice(0, 200), range.cle, range.mime, fichier!.nom.slice(0, 200), range.taille],
+            [
+              id,
+              f.id,
+              range.nature,
+              d.mediaTitre ?? d.titre ?? fichier!.nom.replace(/\.[^.]+$/, '').slice(0, 200),
+              range.cle,
+              range.mime,
+              fichier!.nom.slice(0, 200),
+              range.taille,
+            ],
             tx,
           );
         else if (d.mediaLien) {
           const url = lienValide(d.mediaLien.url);
           if (!url) throw new Refus(400, 'Ce lien ne mène pas à une page web.', 'lien');
-          await requete('insert into medias (trace_id, fragment_id, kind, titre, url) values ($1,$2,$3,$4,$5)', [id, f.id, 'lien', d.mediaLien.titre ?? new URL(url).hostname, url], tx);
+          await requete(
+            'insert into medias (trace_id, fragment_id, kind, titre, url) values ($1,$2,$3,$4,$5)',
+            [id, f.id, 'lien', d.mediaLien.titre ?? new URL(url).hostname, url],
+            tx,
+          );
         }
         await requete('update traces set maj_le = now() where id = $1', [id], tx);
         await journaliser(c.id, 'fragment.depose', f.id, { trace: id, rubrique: d.rubrique }, tx);
@@ -297,7 +336,11 @@ export async function routesAuteur(app: FastifyInstance) {
       const f = await une<{ trace_id: string; rubrique: string }>('select trace_id, rubrique from fragments where id = $1', [fid], tx);
       if (!f) throw new Refus(404, 'Ce fragment n’existe pas.', 'introuvable');
       await maTrace(tx, c, f.trace_id);
-      const liste = await requete<{ id: string; ordre: number }>('select id, ordre from fragments where trace_id = $1 and rubrique = $2 order by ordre, cree_le', [f.trace_id, f.rubrique], tx);
+      const liste = await requete<{ id: string; ordre: number }>(
+        'select id, ordre from fragments where trace_id = $1 and rubrique = $2 order by ordre, cree_le',
+        [f.trace_id, f.rubrique],
+        tx,
+      );
       await echanger(tx, 'fragments', liste, fid, sens);
     });
     return { ok: true };
@@ -325,13 +368,28 @@ export async function routesAuteur(app: FastifyInstance) {
         if (range) {
           await requete(
             'insert into medias (trace_id, kind, titre, legende, duree, cle, mime, nom_fichier, taille, ordre) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
-            [id, range.nature, d.titre ?? fichier!.nom.replace(/\.[^.]+$/, '').slice(0, 200), d.legende ?? null, d.duree ?? null, range.cle, range.mime, fichier!.nom.slice(0, 200), range.taille, ordre],
+            [
+              id,
+              range.nature,
+              d.titre ?? fichier!.nom.replace(/\.[^.]+$/, '').slice(0, 200),
+              d.legende ?? null,
+              d.duree ?? null,
+              range.cle,
+              range.mime,
+              fichier!.nom.slice(0, 200),
+              range.taille,
+              ordre,
+            ],
             tx,
           );
         } else {
           const url = lienValide(d.lien!);
           if (!url) throw new Refus(400, 'Ce lien ne mène pas à une page web.', 'lien');
-          await requete('insert into medias (trace_id, kind, titre, legende, url, ordre) values ($1,$2,$3,$4,$5,$6)', [id, 'lien', d.titre ?? new URL(url).hostname, d.legende ?? null, url, ordre], tx);
+          await requete(
+            'insert into medias (trace_id, kind, titre, legende, url, ordre) values ($1,$2,$3,$4,$5,$6)',
+            [id, 'lien', d.titre ?? new URL(url).hostname, d.legende ?? null, url, ordre],
+            tx,
+          );
         }
         await requete('update traces set maj_le = now() where id = $1', [id], tx);
         await journaliser(c.id, 'media.depose', id, { kind: range?.nature ?? 'lien' }, tx);
@@ -353,7 +411,11 @@ export async function routesAuteur(app: FastifyInstance) {
       const m = await une<{ trace_id: string }>('select trace_id from medias where id = $1 and fragment_id is null', [mid], tx);
       if (!m) throw new Refus(404, 'Ce fichier n’existe pas.', 'introuvable');
       await maTrace(tx, c, m.trace_id);
-      const liste = await requete<{ id: string; ordre: number }>('select id, ordre from medias where trace_id = $1 and fragment_id is null order by ordre, cree_le', [m.trace_id], tx);
+      const liste = await requete<{ id: string; ordre: number }>(
+        'select id, ordre from medias where trace_id = $1 and fragment_id is null order by ordre, cree_le',
+        [m.trace_id],
+        tx,
+      );
       await echanger(tx, 'medias', liste, mid, sens);
     });
     return { ok: true };
@@ -382,15 +444,84 @@ export async function routesAuteur(app: FastifyInstance) {
     const traces = await Promise.all(ids.map((t) => traceComplete(t.id)));
     const trait = await une('select x1, y1, x2, y2, cousu_le from traits where compte_id = $1', [c.id]);
     rep.header('content-disposition', 'attachment; filename="mes-donnees-nos-mots-memoriaux.json"');
-    return { exporteLe: new Date().toISOString(), compte: publicCompte(c), traces, trait: trait ?? null };
+    const apresMoi = publicApresMoi(await lireApresMoi(c.id));
+    return { exporteLe: new Date().toISOString(), compte: publicCompte(c), apresMoi, traces, trait: trait ?? null };
   });
 
   // effacer son compte : le droit à l'effacement prime sur le scellement
+  // Après moi (loi 78-17, art. 85 III) : le sort de ses données à son décès, et la personne désignée. Consentement
+  // distinct des conditions d'utilisation : on garde la version du texte lu, l'horodatage, et tout est révocable.
+  const schemaApresMoi = z.object({
+    choix: z.enum(['conserver_publique', 'conserver_famille', 'transmettre', 'effacer']),
+    tiersNom: z.string().trim().max(120).optional(),
+    tiersEmail: z.string().trim().toLowerCase().email().max(200).optional(),
+    message: z.string().trim().max(1000).optional(),
+    versionTexte: z.string().max(40),
+  });
+  const lireApresMoi = (compteId: string) =>
+    une<{
+      choix: string;
+      tiers_nom: string | null;
+      tiers_email: string | null;
+      message: string | null;
+      version_texte: string;
+      consenti_le: Date;
+      maj_le: Date;
+    }>('select choix, tiers_nom, tiers_email, message, version_texte, consenti_le, maj_le from directives_post_mortem where compte_id = $1', [compteId]);
+  const publicApresMoi = (d: Awaited<ReturnType<typeof lireApresMoi>>) =>
+    d
+      ? {
+          choix: d.choix,
+          tiersNom: d.tiers_nom ?? undefined,
+          tiersEmail: d.tiers_email ?? undefined,
+          message: d.message ?? undefined,
+          versionTexte: d.version_texte,
+          consentiLe: d.consenti_le,
+          majLe: d.maj_le,
+        }
+      : null;
+
+  app.get('/api/moi/apres-moi', async (req) => {
+    const c = exigerCompte(req);
+    return { directives: publicApresMoi(await lireApresMoi(c.id)) };
+  });
+
+  app.put('/api/moi/apres-moi', async (req) => {
+    const c = exigerCompte(req);
+    const d = schemaApresMoi.parse(req.body);
+    if (d.choix === 'transmettre' && !d.tiersEmail) throw new Refus(400, 'Pour transmettre, il faut l’adresse de la personne désignée.', 'tiers');
+    await transaction(async (tx) => {
+      await requete(
+        `insert into directives_post_mortem (compte_id, choix, tiers_nom, tiers_email, message, version_texte)
+         values ($1, $2, $3, $4, $5, $6)
+         on conflict (compte_id) do update set choix = excluded.choix, tiers_nom = excluded.tiers_nom, tiers_email = excluded.tiers_email,
+           message = excluded.message, version_texte = excluded.version_texte, consenti_le = now(), maj_le = now()`,
+        [c.id, d.choix, d.tiersNom ?? null, d.tiersEmail ?? null, d.message ?? null, d.versionTexte],
+        tx,
+      );
+      await journaliser(c.id, 'apres-moi.enregistre', null, { choix: d.choix }, tx);
+    });
+    return { directives: publicApresMoi(await lireApresMoi(c.id)) };
+  });
+
+  app.delete('/api/moi/apres-moi', async (req) => {
+    const c = exigerCompte(req);
+    await transaction(async (tx) => {
+      await requete('delete from directives_post_mortem where compte_id = $1', [c.id], tx);
+      await journaliser(c.id, 'apres-moi.revoque', null, {}, tx);
+    });
+    return { ok: true };
+  });
+
   app.delete('/api/moi', async (req, rep) => {
     const c = exigerCompte(req);
     z.object({ confirmation: z.literal('EFFACER') }).parse(req.body);
     const cles = await transaction(async (tx) => {
-      const cles = await requete<{ cle: string }>('select m.cle from medias m join traces t on t.id = m.trace_id where t.compte_id = $1 and m.cle is not null', [c.id], tx);
+      const cles = await requete<{ cle: string }>(
+        'select m.cle from medias m join traces t on t.id = m.trace_id where t.compte_id = $1 and m.cle is not null',
+        [c.id],
+        tx,
+      );
       await journaliser(null, 'compte.efface', null, { traces: (await requete('select id from traces where compte_id = $1', [c.id], tx)).length }, tx);
       await requete('delete from comptes where id = $1', [c.id], tx);
       return cles;
