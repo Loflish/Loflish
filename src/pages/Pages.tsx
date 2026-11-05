@@ -323,6 +323,10 @@ const JURIDIQUE: [string, string][] = [
     'Aucune promesse de « pour toujours ». En cas d’arrêt, un préavis d’au moins six mois serait donné par e-mail et sur le site, avec l’export de toutes tes données et, si possible, la remise des traces à une archive.',
   ],
   [
+    'Images et musique du musée',
+    'Les fonds peints, les matières des bulles et les illustrations décoratives ont été faits à la main ou par des outils d’intelligence artificielle, puis retouchés ; aucun ne représente une personne réelle. Ce qui est déposé par les personnes (textes, photos, sons, vidéos) est à elles. (Règlement européen sur l’intelligence artificielle, article 50.)',
+  ],
+  [
     'Mentions légales',
     'Éditeur : [À COMPLÉTER : nom, prénom, domicile ou, pour un particulier, le seul nom de l’hébergeur, l’identité ayant été transmise à celui-ci], directeur de la publication : [À COMPLÉTER]. Hébergeur : [À COMPLÉTER : OVH SAS, 2 rue Kellermann, 59100 Roubaix, +33 9 72 10 10 07]. Contact : voir ci-dessous. (Loi pour la confiance dans l’économie numérique, articles 1-1 et 1-2.)',
   ],
@@ -430,6 +434,23 @@ function DemandeDeces() {
         </form>
       )}
     </details>
+  );
+}
+
+/** Une adresse qui ne mène nulle part : le dire, et proposer la constellation et la recherche (plutôt qu'un retour muet à l'accueil). */
+export function Introuvable() {
+  return (
+    <Page className="introuvable" titre="Page introuvable">
+      <h1 className="page-titre">Cette page n’existe pas</h1>
+      <p className="lead">
+        L’adresse est peut-être incomplète, ou la trace a été retirée par son auteur. Dans la constellation, la touche « / » ouvre la recherche.
+      </p>
+      <div className="liens-colonne">
+        <Link to="/" className="lien-entrer">
+          Revenir à la constellation <Icon name="fleche" size={16} />
+        </Link>
+      </div>
+    </Page>
   );
 }
 

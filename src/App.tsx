@@ -19,6 +19,7 @@ const Soutenir = page(() => import('./pages/Pages'), 'Soutenir');
 const Juridique = page(() => import('./pages/Pages'), 'Juridique');
 const Archives = page(() => import('./pages/Pages'), 'Archives');
 const Compte = page(() => import('./pages/Pages'), 'Compte');
+const Introuvable = page(() => import('./pages/Pages'), 'Introuvable');
 // l'espace de l'équipe n'est téléchargé que par celles et ceux qui l'ouvrent
 const Admin = page(() => import('./pages/Admin'), 'Admin');
 // l'atelier des bulles : un outil de travail local, absent du site publié
@@ -93,7 +94,7 @@ export function App() {
           {AtelierComparer && <Route path="/atelier/comparer" element={lent(<AtelierComparer />)} />}
           {AtelierTri && <Route path="/atelier/tri" element={lent(<AtelierTri />)} />}
           {AtelierDoublons && <Route path="/atelier/doublons" element={lent(<AtelierDoublons />)} />}
-          <Route path="*" element={<Explorer />} />
+          <Route path="*" element={lent(<Introuvable />)} />
         </Routes>
       </div>
     </>
