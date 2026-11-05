@@ -48,13 +48,15 @@ const ESSAIS_FOND: Record<string, string> = {
   m2: 'essais/fond-m2',
   // la version d'avant, plus pâle (palette B des Nabis), gardée pour comparer
   m2b: 'essais/fond-m2b',
-  // la même peinture refaite en feutre de laine (photos de feutres envoyées par Tom le 26 octobre)
-  feutre: 'essais/fond-feutre',
+  // la même peinture refaite en feutre de laine (photos de feutres envoyées par Tom le 26 octobre) ; depuis le 5 novembre,
+  // ses poils clairs sont retenus dans l'image même (traits blancs que le courant étirait) ; ?fond=feutre-poils rend l'original
+  feutre: 'essais/fond-feutre-lisse',
+  'feutre-poils': 'essais/fond-feutre',
 };
 /** le fond de la constellation à l'essai (chemin sans le format), ou null pour le fond actuel */
 export const FOND_ESSAI: string | null = ESSAIS_FOND[fondDemande] ?? null;
 /** le fond feutré porte sa propre matière (la laine) : le lin fin ne s'y pose pas */
-export const FOND_FEUTRE = fondDemande === 'feutre';
+export const FOND_FEUTRE = fondDemande === 'feutre' || fondDemande === 'feutre-poils';
 const PAGES_MARBRE = parametres?.get('pages') === 'marbre';
 /**
  * Le fond des pages depuis le 5 novembre : le coton ivoire « aura-37 » fait dans Google Flow (design/fond-tissu-aura-37.jpg),

@@ -40,6 +40,7 @@ uniform float vivacite;
 uniform float colore;
 uniform float laine;
 uniform float fluide;
+uniform float fibres;
 // l'entrée : des gouttes tombent sur le papier vierge et y déposent exactement la peinture du fond
 uniform vec4 gouttes[20];
 uniform float tApparition;
@@ -97,7 +98,15 @@ void main(){
   // le grain (fibres du feutre) suit en partie le courant : fixe, il frottait contre le pigment qui glisse dessous
   vec2 pg = p + dep * fluide;
   vec3 grain = couleur(pg) - doux(pg);
+  // les poils clairs du feutre (traits blancs fins) sont retenus : étirés par le courant, ils cassaient la fluidité (Tom, 5 novembre) ;
+  // les fibres sombres et la couleur restent entières
+  grain = min(grain, 0.) + max(grain, 0.) * fibres;
   vec3 res = doux(p + dep) + grain;
+  // les poils plus larges (quelques pixels) : ce qui dépasse en clair d'un flou moyen est retenu de même
+  if (fibres < 1.) {
+    vec3 moyen = (anneau(p + dep, 6.) + anneau(p + dep, 14.)) * .5;
+    res -= max(doux(p + dep) - moyen, 0.) * (1. - fibres);
+  }
   // la laine reste, le pigment passe : tout ce qui est plus fin qu'un flou large (fibres, points cousus) ne suit pas le courant
   if (laine > 0.) {
     grain = vec3(dot(couleur(p) - (anneau(p, 4.) + anneau(p, 9.)) * .5, vec3(.3, .59, .11))) * laine;
@@ -176,6 +185,8 @@ export interface ReglagesEau {
   laine: number;
   /** 5 novembre : part du courant que suivent les fibres, et douceur du bord des taches (0 = la version d'avant, « friction ») */
   fluide: number;
+  /** part gardée des poils clairs du feutre (1 = tous, comme avant ; 0 = aucun trait blanc) */
+  fibres: number;
   /**
    * avec une peinture vivante (vidéo) : la part du courant du code qui la porte en plus (1 = tout le courant de la
    * version de base). Mesuré le 26 octobre (écart moyen d'une seconde à l'autre) : base 13,6 ; premier essai
@@ -205,6 +216,7 @@ export function reglagesEau(): ReglagesEau | null {
     colore: nombre('colore', 0.75, 0, 1),
     laine: nombre('laine', 0, 0, 1.5),
     fluide: nombre('fluide', 1, 0, 1),
+    fibres: nombre('fibres', 0.3, 0, 1),
     // la peinture est déjà plus vive (repeinte « imbibée dans la toile ») : une pointe suffit
     vivacite: nombre('vivacite', 1.1, 0.6, 1.6),
     fluxVideo: nombre('fluxvideo', 0.5, 0, 1.5),
@@ -383,6 +395,7 @@ export class FondEau {
           'colore',
           'laine',
           'fluide',
+          'fibres',
           'gouttes',
           'tApparition',
           'apparition',
@@ -422,6 +435,7 @@ export class FondEau {
       g.uniform1f(this.u.colore!, this.reglages.colore);
       g.uniform1f(this.u.laine!, this.reglages.laine);
       g.uniform1f(this.u.fluide!, this.reglages.fluide);
+      g.uniform1f(this.u.fibres!, this.reglages.fibres);
       g.uniform1f(this.u.apparition!, 1);
       g.uniform1f(this.u.vie!, 1);
       g.uniform2f(this.u.aspectImage!, largeur / hauteur, 1);
