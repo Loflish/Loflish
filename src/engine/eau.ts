@@ -55,7 +55,9 @@ float bruit(vec2 p){
 vec2 cercle(float k, float r){ return r * vec2(cos(phase * k), sin(phase * k)); }
 float fbm(vec2 p, float d){
   float s = 0., a = .5;
-  for (int i = 0; i < 4; i++) { s += a * bruit(p + cercle(float(i + 1), d)); p *= 2.03; a *= .5; }
+  // fluide : trois octaves au lieu de quatre ; la quatrième étirait la peinture jusqu'à 135 % entre deux pixels voisins
+  // (mesuré par design/hd/champ_eau.py), ce qui se lisait comme une friction sous les bulles
+  for (int i = 0; i < 4; i++) { if (fluide > 0. && i == 3) break; s += a * bruit(p + cercle(float(i + 1), d)); p *= 2.03; a *= .5; }
   return s;
 }
 vec3 couleur(vec2 p){ return texture2D(peinture, clamp(p, texel, 1. - texel)).rgb; }
@@ -84,12 +86,13 @@ void main(){
   // des tourbillons lents (le rotationnel d'un bruit) : le pigment tourne sur lui-même, dans tous les sens, sans
   // jamais se tasser ni se vider (Tom, 26 octobre : « plus autonome, plus mélangeant, plus vibrant, organique »)
   vec2 pc = p * 1.8 + vec2(5.7, 3.1) + cercle(1., .7);
-  float hc = .04;
-  vec2 tourbillon = vec2(bruit(pc + vec2(0., hc)) - bruit(pc - vec2(0., hc)), bruit(pc - vec2(hc, 0.)) - bruit(pc + vec2(hc, 0.))) / (2. * hc) * .18;
+  // fluide : des dérivées plus larges (le tourbillon et le souffle deviennent plus amples et plus doux)
+  float hc = mix(.04, .10, fluide);
+  vec2 tourbillon = vec2(bruit(pc + vec2(0., hc)) - bruit(pc - vec2(0., hc)), bruit(pc - vec2(hc, 0.)) - bruit(pc + vec2(hc, 0.))) / (2. * hc) * mix(.18, .12, fluide);
   // et une respiration (la pente d'un autre bruit) : par endroits les taches gonflent, ailleurs elles se resserrent,
   // chacune à son rythme
   vec2 ps = p * 1.35 + vec2(2.2, 7.4) + cercle(2., .6);
-  vec2 souffle = vec2(bruit(ps + vec2(hc, 0.)) - bruit(ps - vec2(hc, 0.)), bruit(ps + vec2(0., hc)) - bruit(ps - vec2(0., hc))) / (2. * hc) * .12;
+  vec2 souffle = vec2(bruit(ps + vec2(hc, 0.)) - bruit(ps - vec2(hc, 0.)), bruit(ps + vec2(0., hc)) - bruit(ps - vec2(0., hc))) / (2. * hc) * mix(.12, .08, fluide);
   vec2 dep = ((r - .5) + (g + g2 * .7 + tourbillon + souffle) * flotte) * ampleur * encre * eclosion * vie;
   // le grain (fibres du feutre) suit en partie le courant : fixe, il frottait contre le pigment qui glisse dessous
   vec2 pg = p + dep * fluide;
@@ -201,7 +204,7 @@ export function reglagesEau(): ReglagesEau | null {
     melange: nombre('melange', 1.05, 0, 1.5),
     colore: nombre('colore', 0.75, 0, 1),
     laine: nombre('laine', 0, 0, 1.5),
-    fluide: nombre('fluide', 0.7, 0, 1),
+    fluide: nombre('fluide', 1, 0, 1),
     // la peinture est déjà plus vive (repeinte « imbibée dans la toile ») : une pointe suffit
     vivacite: nombre('vivacite', 1.1, 0.6, 1.6),
     fluxVideo: nombre('fluxvideo', 0.5, 0, 1.5),
