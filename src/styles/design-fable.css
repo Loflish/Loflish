@@ -360,3 +360,11 @@ html:not(.sans-fable) .backdrop:not(.mode-explore) .papier-page {
 html:not(.sans-fable) main.page {
   background: linear-gradient(to right, rgba(238, 235, 229, 0.74) 0%, rgba(238, 235, 229, 0.62) 48%, rgba(238, 235, 229, 0.3) 100%);
 }
+
+/* ——— se perdre (5 novembre) : plus de carré autour de la bulle ; un souffle d'ivoire sans bord, qui se fond dans le tissu */
+html:not(.sans-fable) .perdre-carte {
+  background: radial-gradient(ellipse 72% 64% at 50% 50%, rgba(243, 241, 236, 0.62), rgba(243, 241, 236, 0) 100%);
+  border: 0;
+  border-radius: 0;
+  backdrop-filter: none;
+}
