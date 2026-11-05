@@ -39,6 +39,7 @@ uniform float melange;
 uniform float vivacite;
 uniform float colore;
 uniform float laine;
+uniform float fluide;
 // l'entrée : des gouttes tombent sur le papier vierge et y déposent exactement la peinture du fond
 uniform vec4 gouttes[20];
 uniform float tApparition;
@@ -73,7 +74,9 @@ void main(){
   vec2 r = vec2(fbm(p * 1.6 + 2.2 * q + vec2(1.7, 9.2), 1.3), fbm(p * 1.6 + 2.2 * q + vec2(8.3, 2.8), 1.3));
   vec3 bas = doux(p);
   float chroma = max(max(bas.r, bas.g), bas.b) - min(min(bas.r, bas.g), bas.b);
-  float encre = .3 + .7 * smoothstep(.02, .10, chroma);
+  // le papier bouge moins que le pigment, mais sans cassure au bord des taches (5 novembre, Tom : « une légère friction ») :
+  // la transition s'élargit et le papier suit davantage
+  float encre = mix(.3 + .7 * smoothstep(.02, .10, chroma), .55 + .45 * smoothstep(0., .25, chroma), fluide);
   // les grandes taches flottent d'elles-mêmes, lentement, comme les bulles : un courant très large
   vec2 g = vec2(bruit(p * 1.15 + cercle(1., 1.1)), bruit(p * 1.15 + vec2(7.3, 2.1) + cercle(1., 1.1))) - .5;
   // un second courant, plus large et deux fois plus rapide : chaque tache suit son propre chemin
@@ -88,7 +91,9 @@ void main(){
   vec2 ps = p * 1.35 + vec2(2.2, 7.4) + cercle(2., .6);
   vec2 souffle = vec2(bruit(ps + vec2(hc, 0.)) - bruit(ps - vec2(hc, 0.)), bruit(ps + vec2(0., hc)) - bruit(ps - vec2(0., hc))) / (2. * hc) * .12;
   vec2 dep = ((r - .5) + (g + g2 * .7 + tourbillon + souffle) * flotte) * ampleur * encre * eclosion * vie;
-  vec3 grain = couleur(p) - bas;
+  // le grain (fibres du feutre) suit en partie le courant : fixe, il frottait contre le pigment qui glisse dessous
+  vec2 pg = p + dep * fluide;
+  vec3 grain = couleur(pg) - doux(pg);
   vec3 res = doux(p + dep) + grain;
   // la laine reste, le pigment passe : tout ce qui est plus fin qu'un flou large (fibres, points cousus) ne suit pas le courant
   if (laine > 0.) {
@@ -166,6 +171,8 @@ export interface ReglagesEau {
   colore: number;
   /** force de la laine qui ne coule pas (0 = la peinture bouge d'un seul bloc, comme aujourd'hui) */
   laine: number;
+  /** 5 novembre : part du courant que suivent les fibres, et douceur du bord des taches (0 = la version d'avant, « friction ») */
+  fluide: number;
   /**
    * avec une peinture vivante (vidéo) : la part du courant du code qui la porte en plus (1 = tout le courant de la
    * version de base). Mesuré le 26 octobre (écart moyen d'une seconde à l'autre) : base 13,6 ; premier essai
@@ -194,6 +201,7 @@ export function reglagesEau(): ReglagesEau | null {
     melange: nombre('melange', 1.05, 0, 1.5),
     colore: nombre('colore', 0.75, 0, 1),
     laine: nombre('laine', 0, 0, 1.5),
+    fluide: nombre('fluide', 0.7, 0, 1),
     // la peinture est déjà plus vive (repeinte « imbibée dans la toile ») : une pointe suffit
     vivacite: nombre('vivacite', 1.1, 0.6, 1.6),
     fluxVideo: nombre('fluxvideo', 0.5, 0, 1.5),
@@ -371,6 +379,7 @@ export class FondEau {
           'vivacite',
           'colore',
           'laine',
+          'fluide',
           'gouttes',
           'tApparition',
           'apparition',
@@ -409,6 +418,7 @@ export class FondEau {
       g.uniform1f(this.u.vivacite!, this.reglages.vivacite);
       g.uniform1f(this.u.colore!, this.reglages.colore);
       g.uniform1f(this.u.laine!, this.reglages.laine);
+      g.uniform1f(this.u.fluide!, this.reglages.fluide);
       g.uniform1f(this.u.apparition!, 1);
       g.uniform1f(this.u.vie!, 1);
       g.uniform2f(this.u.aspectImage!, largeur / hauteur, 1);
