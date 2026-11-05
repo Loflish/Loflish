@@ -57,8 +57,8 @@ export const FOND_ESSAI: string | null = ESSAIS_FOND[fondDemande] ?? null;
 export const FOND_FEUTRE = fondDemande === 'feutre';
 const PAGES_MARBRE = parametres?.get('pages') === 'marbre';
 /**
- * Le fond des pages depuis le 5 novembre : le coton teint « aura-31 » fait dans Google Flow (design/fond-tissu-aura-31.jpg),
- * choisi par Tom après cinq séries. `?tissu=coton` rend le coton ivoire d'avant ; `?tissu=<nom>` un essai de public/hd/essais.
+ * Le fond des pages depuis le 5 novembre : le coton ivoire « aura-37 » fait dans Google Flow (design/fond-tissu-aura-37.jpg),
+ * choisi par Tom après six séries (aura-31, plus coloré, reste derrière ?tissu=aura-31). `?tissu=coton` rend le coton ivoire d'avant ; `?tissu=<nom>` un essai de public/hd/essais.
  */
 const TISSU_ESSAI = parametres?.get('tissu');
 /**
