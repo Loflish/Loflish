@@ -206,9 +206,7 @@
   width: 100%;
   height: auto;
 }
-.logo-petit {
-  width: clamp(190px, 18vw, 260px);
-}
+/* la même taille partout : dans la constellation comme en tête des pages (Tom, 6 novembre) ; .logo-petit ne réduit plus rien */
 
 .explorer-actions {
   position: fixed;
@@ -583,9 +581,6 @@
 @media (max-width: 480px) {
   .logo {
     width: 54vw;
-  }
-  .logo-petit {
-    width: 50vw;
   }
 }
 
