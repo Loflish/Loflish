@@ -58,7 +58,8 @@ function sansEssais(): Plugin {
     name: 'sans-essais',
     apply: 'build',
     closeBundle() {
-      ['taches-vie', 'taches-da', 'taches-melange', 'taches-claude', 'taches-gothique', 'palerme'].forEach(retirer);
+      // la planche 5 (palette L, ?bulles=lumiere) est restée un essai : 46 Mo de moins à déployer
+      ['taches-vie', 'taches-da', 'taches-melange', 'taches-claude', 'taches-gothique', 'taches-lumiere', 'palerme'].forEach(retirer);
       fs.readdirSync(hd)
         .filter((f) => f.startsWith('fond-explorer-'))
         .forEach(retirer);

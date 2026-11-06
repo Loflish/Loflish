@@ -188,6 +188,9 @@ const tacheUrl = (n: number) => {
   // les six matières sans perte sont servies en WebP sans perte (pixels identiques au PNG approuvé, deux fois plus léger :
   // 1,8 Mo de moins au premier chargement) ; les PNG restent dans public/hd/taches pour l'atelier
   const suffixe = palette === 'A' && matieresSansPerte.has(n) ? '-sans-perte.webp' : '.webp';
+  // le catalogue (M) : la constellation peint ses bulles en 208 px au plus, les 256 px suffisent (38 Ko au lieu de
+  // 142 : 19,6 Mo de moins au premier chargement sur ordinateur) ; les 512 px restent pour les grandes bulles d'une page
+  if (palette === 'M') return `${base}${p.dossier}/256/${p.prefixe}-${String(numero).padStart(2, '0')}.webp`;
   return `${base}${p.dossier}/${p.prefixe}-${String(numero).padStart(2, '0')}${suffixe}`;
 };
 /** une matière des palettes B et C n'existe que si son image est déjà faite */
@@ -230,6 +233,7 @@ const grandesEnCours = new Map<number, Promise<void>>();
 function tacheGrandeUrl(n: number): string | null {
   const { palette, numero } = numeroDansPalette(n);
   if (palette === 'L') return `${base}taches-lumiere/1024/lumiere-${String(numero).padStart(2, '0')}.webp`;
+  if (palette === 'M') return `${base}taches-catalogue/cat-${String(numero).padStart(2, '0')}.webp`;
   if (palette !== 'A' || n < 1 || matieresSansPerte.has(n)) return null;
   return `${base}taches/1024/tache-${String(n).padStart(2, '0')}.webp`;
 }
