@@ -297,50 +297,65 @@
   color: var(--encre-3);
 }
 
-/* ——— médias */
+/* ——— médias : des photos aux vraies proportions sur un fin passe-partout ivoire, des cartes papier pour les sons,
+   documents et liens ; plus de tuiles 4:3 identiques sur fond coloré (Tom, 6 novembre : « de gros carrés énormes ») */
 
 .media {
   margin: 0;
+  display: inline-flex;
+  flex-direction: column;
+  max-width: 100%;
+  --h: 118px;
+}
+.media-s {
+  --h: 54px;
+}
+.media-m {
+  --h: 118px;
+}
+.media-l {
+  --h: 152px;
 }
 .media-surface {
   position: relative;
-  display: grid;
+  display: inline-grid;
   place-items: center;
   overflow: hidden;
-  background:
-    radial-gradient(120% 90% at 30% 20%, rgba(255, 255, 255, 0.35), transparent 60%),
-    var(--teinte);
+  height: var(--h);
+  width: auto;
+  min-width: calc(var(--h) * 0.78);
+  max-width: min(78vw, calc(var(--h) * 2));
+  background: var(--papier-dense);
+  background-image: var(--papier-chiffon);
+  background-size: 520px 520px;
+  border: 1px solid var(--filet);
   color: var(--encre-2);
   border-radius: 2px;
 }
-.media-s .media-surface {
-  width: 72px;
-  height: 54px;
+/* une photo ou une vidéo : la boîte a les proportions de l'image (--ratio, posé au chargement, 4:3 en attendant),
+   avec un passe-partout de 4 px, comme un tirage posé sur le papier */
+.media-image .media-surface,
+.media-video .media-surface {
+  padding: 4px;
+  width: calc(var(--h) * var(--ratio, 1.333));
 }
-.media-m .media-surface {
-  width: 168px;
-  height: 118px;
+.media-s.media-image .media-surface,
+.media-s.media-video .media-surface {
+  padding: 2px;
 }
-.media-l .media-surface {
-  width: 100%;
-  aspect-ratio: 4 / 3;
+/* un son : une carte plus large, pour que l'onde respire */
+.media-audio .media-surface {
+  width: calc(var(--h) * 1.3);
 }
 .media-img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
+  display: block;
   height: 100%;
+  width: 100%;
   object-fit: cover;
+  border-radius: 1px;
 }
 .media-placeholder {
   color: rgba(47, 44, 51, 0.38);
-}
-.media-s .media-img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 .media-placeholder {
   display: none;
@@ -383,6 +398,9 @@
   font-size: var(--t-xs);
   line-height: 1.45;
   color: var(--encre-2);
+  /* le cartel se plie à la largeur de l'image : il ne l'élargit jamais */
+  width: 0;
+  min-width: 100%;
 }
 .media-kind {
   color: var(--encre-3);
@@ -565,8 +583,9 @@
   margin-top: 1rem;
 }
 .salle-medias {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 1.6rem 1.2rem;
 }
 
@@ -769,7 +788,8 @@ div.trace-bandeau > p {
   filter: brightness(0.96);
 }
 .media-l .media-ouvrir {
-  width: 100%;
+  width: auto;
+  max-width: 100%;
 }
 .media-hote {
   display: block;
@@ -916,9 +936,16 @@ div.trace-bandeau > p {
   margin: 1.2rem 0 0.4rem;
 }
 .salle-medias-tout {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 1.4rem 1.2rem;
+}
+/* au téléphone, deux vignettes par rangée dans le volet (300 px utiles) */
+@media (max-width: 520px) {
+  .media-l {
+    --h: 96px;
+  }
 }
 .trier {
   display: inline-flex;

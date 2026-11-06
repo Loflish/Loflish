@@ -681,6 +681,10 @@ function BulleChoix({
         <p className="bulle-numero" aria-live="polite">
           {matiere === MATIERE_COUSUE ? 'Aquarelle cousue' : `Matière ${rang} sur ${CHOIX_MATIERES.length - 1}`}
         </p>
+        {/* personne ne parcourt 183 matières une à une : le hasard en propose une autre d'un geste */}
+        <button type="button" className="lien-discret petit" onClick={() => onChange({ matiere: matiereAuHasard() })}>
+          Une autre matière, au hasard
+        </button>
       </div>
       <div className="bulle-choix-options">
         <fieldset className="couleurs">

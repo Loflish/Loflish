@@ -5,7 +5,7 @@ import { journaliser, requete, transaction, une } from '../db';
 import { relireBannissements } from '../bannis';
 import { presence, type LigneTrace } from '../serialiser';
 import { stockage } from '../stockage';
-import { envoyerRetrait } from '../courriel';
+import { envoyerRetrait, envoyerRetraitPartie } from '../courriel';
 
 /**
  * L'espace de l'équipe du musée : modération (« moderation ») et administration
@@ -199,14 +199,21 @@ export async function routesAdmin(app: FastifyInstance) {
     const c = exigerRole(req, 'moderation', 'admin');
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const { raison } = z.object({ raison: z.string().trim().min(3).max(500) }).parse(req.body);
-    const cles = await transaction(async (tx) => {
+    const { cles, auteur } = await transaction(async (tx) => {
       const cles = await requete<{ cle: string }>('select cle from medias where fragment_id = $1 and cle is not null', [id], tx);
+      const auteur = await une<{ trace_id: string; nom: string; email: string | null }>(
+        'select t.id as trace_id, t.nom, c.email from fragments f join traces t on t.id = f.trace_id left join comptes c on c.id = t.compte_id where f.id = $1',
+        [id],
+        tx,
+      );
       const f = await une('delete from fragments where id = $1 returning trace_id', [id], tx);
       if (!f) throw new Refus(404, 'Ce fragment n’existe pas.', 'introuvable');
       await journaliser(c.id, 'moderation.fragment_retire', id, { raison, ...f }, tx);
-      return cles;
+      return { cles, auteur };
     });
     for (const { cle } of cles) await stockage.supprimer(cle);
+    // l'auteur apprend le retrait et ses motifs, comme pour une bulle (DSA art. 17)
+    if (auteur?.email) void envoyerRetraitPartie({ email: auteur.email, traceId: auteur.trace_id, traceNom: auteur.nom, partie: 'fragment', raison });
     return { ok: true };
   });
 
@@ -214,10 +221,15 @@ export async function routesAdmin(app: FastifyInstance) {
     const c = exigerRole(req, 'moderation', 'admin');
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const { raison } = z.object({ raison: z.string().trim().min(3).max(500) }).parse(req.body);
+    const auteur = await une<{ trace_id: string; nom: string; email: string | null }>(
+      'select t.id as trace_id, t.nom, c.email from medias m join traces t on t.id = m.trace_id left join comptes c on c.id = t.compte_id where m.id = $1',
+      [id],
+    );
     const m = await une<{ cle: string | null; trace_id: string }>('delete from medias where id = $1 returning cle, trace_id', [id]);
     if (!m) throw new Refus(404, 'Ce fichier n’existe pas.', 'introuvable');
     if (m.cle) await stockage.supprimer(m.cle);
     await journaliser(c.id, 'moderation.media_retire', id, { raison, trace: m.trace_id });
+    if (auteur?.email) void envoyerRetraitPartie({ email: auteur.email, traceId: auteur.trace_id, traceNom: auteur.nom, partie: 'fichier', raison });
     return { ok: true };
   });
 

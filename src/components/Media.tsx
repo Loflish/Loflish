@@ -28,12 +28,34 @@ export function MediaThumb({ m, size = 'm' }: { m: Media; size?: 's' | 'm' | 'l'
   // un fichier introuvable ne laisse jamais d'image cassée : la vignette garde sa teinte
   const [casse, setCasse] = useState(false);
   const vu = url && !casse ? url : null;
+  // la vignette prend les proportions réelles de la photo ou de la vidéo : plus de tuiles 4:3 identiques
+  const [ratio, setRatio] = useState<number | null>(null);
+  const proportions = (w: number, h: number) => w > 0 && h > 0 && setRatio(Math.min(2.2, Math.max(0.6, w / h)));
   const surface = (
-    <div className="media-surface" style={{ ['--teinte' as string]: m.teinte ?? '#DDD8CE' }}>
-      {m.kind === 'image' && vu && <img className="media-img" src={vu} alt="" loading="lazy" decoding="async" onError={() => setCasse(true)} />}
+    <div className="media-surface" style={{ ['--teinte' as string]: m.teinte ?? '#DDD8CE', ...(ratio ? { ['--ratio' as string]: String(ratio) } : {}) }}>
+      {m.kind === 'image' && vu && (
+        <img
+          className="media-img"
+          src={vu}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onLoad={(e) => proportions(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
+          onError={() => setCasse(true)}
+        />
+      )}
       {m.kind === 'image' && !vu && <span className="media-placeholder">photographie</span>}
       {m.kind === 'video' && vu && (
-        <video className="media-img" src={`${vu}#t=0.5`} muted playsInline preload="metadata" aria-hidden="true" onError={() => setCasse(true)} />
+        <video
+          className="media-img"
+          src={`${vu}#t=0.5`}
+          muted
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
+          onLoadedMetadata={(e) => proportions(e.currentTarget.videoWidth, e.currentTarget.videoHeight)}
+          onError={() => setCasse(true)}
+        />
       )}
       {m.kind === 'video' && (
         <span className="media-play" aria-hidden="true">

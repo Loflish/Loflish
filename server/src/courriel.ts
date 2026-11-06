@@ -122,6 +122,29 @@ export async function envoyerDemandeDeces(d: { email: string; nomDefunt: string;
     );
 }
 
+/** L'auteur dont un fragment ou un fichier est retiré reçoit aussi les motifs et la voie de réclamation (DSA, article 17). */
+export async function envoyerRetraitPartie(r: {
+  email: string;
+  traceId: string;
+  traceNom: string;
+  partie: 'fragment' | 'fichier';
+  raison: string;
+}): Promise<void> {
+  const lignes = [
+    `Un ${r.partie} de ta trace « ${r.traceNom} » a été retiré du musée.`,
+    `Motif : ${r.raison}`,
+    'Le reste de ta trace est inchangé. Si tu penses que ce retrait est une erreur, réponds à ce message en expliquant pourquoi : je relirai, et je te répondrai sous un mois. Tu peux aussi saisir un médiateur ou un tribunal.',
+    `Ta trace : ${config.siteUrl}/#/trace/${r.traceId}`,
+  ];
+  await envoyer(
+    r.email,
+    `Un ${r.partie} de ta trace a été retiré`,
+    lignes.join('\n\n'),
+    lettre(lignes),
+    `retrait d’un ${r.partie} de ${r.traceId} notifié à ${r.email}`,
+  ).catch(() => undefined);
+}
+
 /** L'auteur d'une trace retirée reçoit les motifs et la voie de réclamation (règlement sur les services numériques, article 17). */
 export async function envoyerRetrait(r: { email: string; traceId: string; traceNom: string; raison: string }): Promise<void> {
   const lignes = [
