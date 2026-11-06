@@ -53,9 +53,13 @@ function FondsPeints({ actif }: { actif: Fond }) {
   // l'eau : la peinture fixe reste dessous jusqu'à ce que la toile qui coule soit prête
   const eauRef = useRef<HTMLCanvasElement>(null);
   const eau = useRef<FondEau | null>(null);
+  const finEau = useRef<(() => void) | null>(null);
   const [eauPrete, setEauPrete] = useState(false);
+  // l'eau naît à la première constellation et vit ensuite derrière toutes les pages, muette : la détruire et la
+  // recréer à chaque retour rechargeait sa peinture (mesuré le 6 novembre : 306 ms de main + 188 ms de décodage)
   useEffect(() => {
-    if (!EAU || actif !== 'explorer' || !eauRef.current) return;
+    eau.current?.setActif(actif === 'explorer');
+    if (!EAU || actif !== 'explorer' || !eauRef.current || eau.current) return;
     const toile = eauRef.current;
     const source = window.matchMedia('(max-aspect-ratio: 3/4)').matches ? FONDS.explorer.haut : FONDS.explorer.large;
     let e: FondEau | null = null;
@@ -80,13 +84,15 @@ function FondsPeints({ actif }: { actif: Fond }) {
         ((window as unknown as { __nmmDebug?: Record<string, unknown> }).__nmmDebug ??= {}).eau = e;
       });
     });
-    return () => {
-      cancelAnimationFrame(raf);
+    finEau.current = () => {
       window.removeEventListener('resize', onResize);
       e?.stop();
       eau.current = null;
     };
+    return () => cancelAnimationFrame(raf);
   }, [actif, engine]);
+  // l'eau ne s'arrête qu'avec le fond lui-même (jamais démonté en pratique)
+  useEffect(() => () => finEau.current?.(), []);
   useEffect(() => {
     eau.current?.setPause(enPause);
     eau.current?.setReduit(reducedMotion);
@@ -298,6 +304,18 @@ export function Backdrop() {
     encre.current = new Encre(encreRef.current, HD_FILES.encre);
   };
 
+  // la page de la trace se télécharge au premier moment calme : l'encre ne coule plus sur un script en train
+  // d'arriver (mesuré le 6 novembre : 176 à 200 ms de lecture au milieu de la transition)
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (n: number) => void };
+    if (w.requestIdleCallback) {
+      const n = w.requestIdleCallback(() => void import('../pages/TracePage'), { timeout: 6000 });
+      return () => w.cancelIdleCallback?.(n);
+    }
+    const t = window.setTimeout(() => void import('../pages/TracePage'), 3000);
+    return () => window.clearTimeout(t);
+  }, []);
+
   // ——— événements du moteur → interface (sans re-rendu à chaque image)
   useEffect(() => {
     const c = engine.current;
@@ -392,9 +410,10 @@ export function Backdrop() {
     const ink = encre.current;
     if (pos && ink?.ready) {
       // l'encre de sa couleur s'ouvre depuis sa bulle, puis la mémoire apparaît
-      await Promise.all([engine.current?.enter(selected), ink.play(pos.x, pos.y, pos.r, colorById(trace.couleur).hex, 1500)]);
+      // 1,1 s pour couvrir, 150 ms de page sous l'encre, puis 900 ms de fondu : lisible vers 2,2 s (3,3 s avant)
+      await Promise.all([engine.current?.enter(selected), ink.play(pos.x, pos.y, pos.r, colorById(trace.couleur).hex, 1100)]);
       navigate(`/trace/${selected}`);
-      window.setTimeout(() => ink.fadeOut(), 350);
+      window.setTimeout(() => ink.fadeOut(), 150);
     } else {
       await engine.current?.enter(selected);
       navigate(`/trace/${selected}`);

@@ -29,6 +29,31 @@ import { adresseApi, EN_LIGNE } from '../lib/api';
 import { useMuseumMode } from '../lib/museum';
 import { useTitre } from '../lib/titre';
 
+/** Les intertitres de la page, en une ligne cliquable : les pages longues (Le projet, Juridique) se parcourent d'un coup d'œil. */
+function Sommaire() {
+  const [titres, setTitres] = useState<{ id: string; texte: string }[]>([]);
+  useEffect(() => {
+    setTitres([...document.querySelectorAll<HTMLHeadingElement>('.page-corps h2[id]')].map((h) => ({ id: h.id, texte: h.textContent?.trim() ?? '' })));
+  }, []);
+  if (titres.length < 3) return null;
+  return (
+    <nav className="sommaire" aria-label="Sommaire">
+      {titres.map((t) => (
+        <a
+          key={t.id}
+          href={`#${t.id}`}
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById(t.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+        >
+          {t.texte}
+        </a>
+      ))}
+    </nav>
+  );
+}
+
 export function Page({
   children,
   mode = 'texte',
@@ -67,10 +92,13 @@ export function Projet() {
         Mon objectif : lutter contre l’oubli de nos existences, pour que le monde de demain apprenne à nous connaître à travers nos propres mots. Des mots qui
         deviendront mémoriaux.
       </p>
+      <Sommaire />
 
       <div className={photo ? 'deux-colonnes' : ''}>
         <div className="texte-courant">
-          <h2 className="intertitre">Pourquoi ce musée</h2>
+          <h2 id="h-pourquoi" className="intertitre">
+            Pourquoi ce musée
+          </h2>
           <p>
             J’ai toujours trouvé injuste que la mort des célébrités soit tellement plus documentée que celle des inconnus, comme toi et moi. Nous, nous laissons
             une épitaphe, un testament, quelques souvenirs à nos proches. Nous restons gravés dans le cœur de ceux qui nous ont aimés, mais tôt ou tard, le
@@ -154,9 +182,9 @@ export function Projet() {
           <div className="texte-courant">
             <h3 className="projet-sous-titre">Signaler un contenu</h3>
             <p>
-              Chaque trace peut être signalée avec le bouton « Signaler », sur sa page ou dans Se perdre : quelqu’un en danger, de la haine, du harcèlement,
-              de la violence, ou autre chose. Je lis moi-même chaque signalement. Selon la gravité, je retire la bulle du musée, ou je ferme définitivement
-              l’accès au musée à la personne qui l’a déposée.
+              Chaque trace peut être signalée avec le bouton « Signaler », sur sa page ou dans Se perdre : quelqu’un en danger, de la haine, du harcèlement, de
+              la violence, ou autre chose. Je lis moi-même chaque signalement. Selon la gravité, je retire la bulle du musée, ou je ferme définitivement l’accès
+              au musée à la personne qui l’a déposée.
             </p>
           </div>
         </div>
@@ -336,10 +364,13 @@ export function Juridique() {
     <Page mode="minimal" className="juridique" titre="Juridique & confidentialité">
       <h1 className="page-titre">Juridique & confidentialité</h1>
       <p className="lead">L’essentiel, en clair. Les textes complets sont en cours de rédaction et de relecture.</p>
+      <Sommaire />
       <ol className="juridique-liste">
-        {JURIDIQUE.map(([titre, texte]) => (
+        {JURIDIQUE.map(([titre, texte], i) => (
           <li key={titre}>
-            <h2 className="intertitre">{titre}</h2>
+            <h2 id={`j-${i + 1}`} className="intertitre">
+              {titre}
+            </h2>
             <p>{texte}</p>
           </li>
         ))}

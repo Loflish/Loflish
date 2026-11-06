@@ -342,7 +342,7 @@ export function OeuvreCommune() {
           <Icon name="retour" size={16} /> Revenir au cœur
         </button>
       )}
-      <section className="oeuvre-panneau" aria-live="polite">
+      <section className={`oeuvre-panneau${oeuvre.mien ? ' est-replie' : ''}`} aria-live="polite">
         <h1 className="oeuvre-titre">L’œuvre commune</h1>
         <p className="oeuvre-texte">
           Chaque personne coud un seul trait, de la même longueur que tous les autres. Ensemble, nous brodons une œuvre immense, faite de tout le monde. Un

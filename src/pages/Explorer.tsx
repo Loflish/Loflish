@@ -343,6 +343,14 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
   }, [results]);
   const [combien, setCombien] = useState(30);
   useEffect(() => setCombien(30), [results]);
+  // la bulle trouvée se cadre toujours dans la constellation, même si elle n'y était pas (téléphone : 150 bulles sur 422) ;
+  // sans constellation, la page s'ouvre directement
+  const rencontrer = (t: Trace) => {
+    const c = engine.current;
+    if (!c) return navigate(`/trace/${t.id}`);
+    if (!c.has(t.id)) c.addPresence({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex, matiere: t.matiere });
+    c.focusOn(t.id);
+  };
   const shown = melange.slice(0, combien);
   const mot = q.trim();
 
@@ -360,7 +368,7 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
           e.preventDefault();
           // Entrée avec une seule présence trouvée : on va la voir
           const seule = results.length === 1 ? results[0]! : null;
-          if (seule) engine.current?.has(seule.id) ? engine.current.focusOn(seule.id) : navigate(`/trace/${seule.id}`);
+          if (seule) rencontrer(seule);
         }}
       >
         <label className="field">
@@ -385,7 +393,7 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
               const ex = mot.length >= 2 ? extrait(t, mot) : null;
               return (
                 <li key={t.id}>
-                  <button className="result" onClick={() => (engine.current?.has(t.id) ? engine.current.focusOn(t.id) : navigate(`/trace/${t.id}`))}>
+                  <button className="result" onClick={() => rencontrer(t)}>
                     <span className="result-nom">{t.nom}</span>
                     <span className="result-meta">{t.pays ?? TYPE_LABEL[t.type]}</span>
                     {ex && (
@@ -466,7 +474,6 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
           ))}
         </select>
       </label>
-
     </aside>
   );
 }

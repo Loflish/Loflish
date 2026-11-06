@@ -338,9 +338,19 @@ html:not(.sans-fable) .trace-nav-right .lien-discret {
   html:not(.sans-fable) .trace-nav {
     gap: 0.4rem;
   }
+  /* une seule ligne qui glisse, au lieu de deux ou trois lignes avant le nom (parcours UX du 6 novembre) */
   html:not(.sans-fable) .trace-nav-right {
     width: 100%;
     column-gap: 0.8rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.2rem;
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+  }
+  html:not(.sans-fable) .trace-nav-right::-webkit-scrollbar {
+    display: none;
   }
 }
 

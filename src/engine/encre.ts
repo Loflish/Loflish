@@ -202,6 +202,6 @@ export class Encre {
       cancelAnimationFrame(this.raf);
       this.video.pause();
       c.hidden = true;
-    }, 1400);
+    }, 1000);
   }
 }

@@ -238,6 +238,8 @@ const ECLOSION = 3200;
 const NB_GOUTTES = 20;
 /** sous ce rythme (images par seconde), deux mesures de suite, l'eau s'arrête : mieux vaut la peinture fixe qu'un musée qui rame */
 const RYTHME_MIN = 20;
+/** points de la toile d'eau au plus (≈ 2 300 × 1 300) : au-delà, la carte graphique ne suit plus la caméra */
+const BUDGET_POINTS = 3.0e6;
 /** sous ce rythme, deux mesures de suite, l'eau baisse d'abord sa résolution d'un cran (1,0 au lieu de 1,5 px par point) */
 const RYTHME_BAS = 45;
 /** durée d'une mesure du rythme, en millisecondes */
@@ -328,6 +330,9 @@ export class FondEau {
   private rythme = { debut: 0, images: 0, lentes: 0, basses: 0 };
   /** 1 = pleine résolution ; 0,7 quand l'appareil peine (surveiller) */
   private qualite = 1;
+  /** hors de la constellation, la toile se tait mais garde sa peinture : le retour est immédiat */
+  private actif = true;
+  private reprendA = 0;
   private hdDemandee = false;
   /** prête quand l'image est posée : la peinture fixe reste visible dessous jusque-là */
   pret = false;
@@ -529,11 +534,17 @@ export class FondEau {
     else window.setTimeout(lancer, 4000);
   }
 
-  /** La toile prend la taille de son cadre, sur 1,5 pixel par point au plus ; l'image la couvre. */
+  /**
+   * La toile prend la taille de son cadre, sur 1,5 pixel par point au plus, et dans un budget de points
+   * (BUDGET_POINTS) : sur un écran dense, l'eau à 2 880 × 1 620 faisait perdre une image sur deux à la constellation
+   * dès que la caméra bougeait (mesuré le 6 novembre 2026, DPR 2 ; sans l'eau : aucune image perdue).
+   */
   resize(): void {
     const gl = this.gl;
     if (!gl || !this.image) return;
-    const echelle = Math.min(window.devicePixelRatio || 1, 1.5) * this.qualite;
+    const cw = Math.max(1, this.canvas.clientWidth);
+    const ch = Math.max(1, this.canvas.clientHeight);
+    const echelle = Math.min(window.devicePixelRatio || 1, 1.5, Math.sqrt(BUDGET_POINTS / (cw * ch))) * this.qualite;
     const w = Math.max(1, Math.round(this.canvas.clientWidth * echelle));
     const h = Math.max(1, Math.round(this.canvas.clientHeight * echelle));
     this.canvas.width = w;
@@ -579,6 +590,16 @@ export class FondEau {
     if (this.apparition) this.apparition.vitesse = 5;
   }
 
+  setActif(v: boolean): void {
+    // au retour, l'eau laisse d'abord passer le fondu des couches de la page (1 s) : sinon la carte graphique
+    // cumule le fondu et l'eau, et perd des images (mesuré le 6 novembre 2026)
+    if (v && !this.actif) {
+      this.dernier = 0;
+      this.reprendA = performance.now() + 900;
+    }
+    this.actif = v;
+  }
+
   setPause(v: boolean): void {
     this.enPause = v;
     if (this.pret) this.jouerVideo();
@@ -592,7 +613,7 @@ export class FondEau {
   start(): void {
     const boucle = (now: number) => {
       this.raf = requestAnimationFrame(boucle);
-      if (document.hidden || !this.pret) return;
+      if (document.hidden || !this.pret || !this.actif || now < this.reprendA) return;
       // l'entrée se joue à pleine cadence : les gouttes doivent couler, pas sautiller
       if (this.apparition) {
         // le temps réel (borné après une absence de l'onglet) : les gouttes restent au rythme des phrases
