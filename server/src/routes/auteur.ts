@@ -50,7 +50,8 @@ const schemaCreation = z.discriminatedUnion('type', [
     couleur: z.string().refine(couleurValide, 'couleur inconnue'),
     matiere: z.number().int().min(0).max(999).optional(),
     pays: facultatif(80),
-    memoire: z.object({ deposeePar: texte(80), relation: facultatif(80), origine: facultatif(1200), aperçu: texte(LIMITES.memoire) }),
+    // le lien avec la personne est exigé (il reste privé) : c'est ce que le fondateur lit avant de publier (cahier §43.1)
+    memoire: z.object({ deposeePar: texte(80), relation: texte(80), origine: facultatif(1200), aperçu: texte(LIMITES.memoire) }),
     parametres: z.record(z.string(), z.unknown()).optional(),
   }),
 ]);
@@ -162,8 +163,8 @@ export async function routesAuteur(app: FastifyInstance) {
     try {
       await requete(
         `insert into traces (id, compte_id, type, nom, pseudo, couleur, matiere, pays, q1, q2, q3, q4, q2_destinataire,
-                             memoire_deposee_par, memoire_relation, memoire_origine, memoire_apercu, parametres, ip)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
+                             memoire_deposee_par, memoire_relation, memoire_origine, memoire_apercu, parametres, ip, statut)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
         [
           id,
           c.id,
@@ -181,6 +182,8 @@ export async function routesAuteur(app: FastifyInstance) {
           d.type === 'memoire' ? d.memoire.aperçu : null,
           d.parametres ?? {},
           empreinteIp(req.ip),
+          // une mémoire pour une personne décédée est lue par le fondateur avant d'entrer dans le musée (cahier §43.1)
+          d.type === 'memoire' ? 'en_attente' : 'publiee',
         ],
       );
     } catch (e) {
@@ -188,7 +191,7 @@ export async function routesAuteur(app: FastifyInstance) {
         throw new Refus(409, d.type === 'personnelle' ? 'Tu as déjà ta propre trace.' : 'Tu as déjà déposé une mémoire.', 'deux-bulles');
       throw e;
     }
-    await journaliser(c.id, 'trace.publiee', id, { type: d.type });
+    await journaliser(c.id, d.type === 'memoire' ? 'memoire.envoyee' : 'trace.publiee', id, { type: d.type });
     return { trace: await traceComplete(id) };
   });
 

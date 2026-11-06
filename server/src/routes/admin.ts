@@ -19,6 +19,8 @@ export async function routesAdmin(app: FastifyInstance) {
       (select count(*) from comptes) comptes,
       (select count(*) from traces where statut = 'publiee') traces_publiees,
       (select count(*) from traces where statut = 'retiree') traces_retirees,
+      (select count(*) from traces where statut = 'en_attente') memoires_a_examiner,
+      (select count(*) from demandes_deces where statut in ('recue', 'en_cours')) deces_ouverts,
       (select count(*) from bannissements) bannissements,
       (select count(*) from traces where type = 'memoire' and statut = 'publiee') memoires,
       (select count(*) from fragments) fragments,
@@ -61,7 +63,9 @@ export async function routesAdmin(app: FastifyInstance) {
   // les traces : chercher, retirer une bulle, bannir son auteur
   app.get('/api/admin/traces', async (req) => {
     exigerRole(req, 'moderation', 'admin');
-    const { q, statut } = z.object({ q: z.string().trim().max(80).optional(), statut: z.enum(['publiee', 'retiree']).optional() }).parse(req.query);
+    const { q, statut } = z
+      .object({ q: z.string().trim().max(80).optional(), statut: z.enum(['publiee', 'en_attente', 'retiree']).optional() })
+      .parse(req.query);
     const lignes = await requete<LigneTrace & { email: string | null; n_fragments: string; n_medias: string }>(
       `select t.*, c.email,
               (select count(*) from fragments f where f.trace_id = t.id) n_fragments,
@@ -83,6 +87,8 @@ export async function routesAdmin(app: FastifyInstance) {
         medias: Number(t.n_medias),
         retireeRaison: t.retiree_raison,
         parametres: t.parametres,
+        // ce que le fondateur lit avant de publier une mémoire (privé)
+        memoire: t.type === 'memoire' ? { deposeePar: t.memoire_deposee_par, relation: t.memoire_relation, origine: t.memoire_origine } : undefined,
       })),
     };
   });
@@ -100,7 +106,7 @@ export async function routesAdmin(app: FastifyInstance) {
       [id, d.statut, d.statut === 'retiree' ? d.raison : null],
     );
     if (!r) throw new Refus(404, 'Cette trace n’existe pas.', 'introuvable');
-    await journaliser(c.id, d.statut === 'retiree' ? 'trace.retiree' : 'trace.remise', id, { raison: d.raison });
+    await journaliser(c.id, d.statut === 'retiree' ? 'trace.retiree' : 'trace.publiee', id, { raison: d.raison });
     // l'auteur reçoit les motifs et la voie de réclamation (DSA art. 17) ; sans e-mail (trace sans compte), rien ne part
     if (d.statut === 'retiree' && r.email) void envoyerRetrait({ email: r.email, traceId: id, traceNom: r.nom, raison: d.raison! });
     return { ok: true };
@@ -111,17 +117,20 @@ export async function routesAdmin(app: FastifyInstance) {
   app.post('/api/admin/traces/:id/bannir', async (req) => {
     const c = exigerRole(req, 'admin');
     const { id } = z.object({ id: z.string() }).parse(req.params);
-    const { raison } = z.object({ raison: z.string().trim().min(3).max(500) }).parse(req.body);
+    // les adresses IP ne sont fermées que sur choix explicite : une adresse est partagée (foyer, école, réseau mobile)
+    const { raison, adresses } = z.object({ raison: z.string().trim().min(3).max(500), adresses: z.boolean().default(false) }).parse(req.body);
     const n = await transaction(async (tx) => {
       const t = await une<{ compte_id: string | null }>('select compte_id from traces where id = $1', [id], tx);
       if (!t) throw new Refus(404, 'Cette trace n’existe pas.', 'introuvable');
       if (!t.compte_id) throw new Refus(400, 'Cette trace n’a plus de compte : retire seulement la bulle.', 'sans-compte');
       if (t.compte_id === c.id) throw new Refus(400, 'Tu ne peux pas te bannir toi-même.', 'soi');
-      const ips = await requete<{ ip: string }>(
-        `select distinct ip from (select ip from sessions where compte_id = $1 union all select derniere_ip as ip from comptes where id = $1) x where ip is not null`,
-        [t.compte_id],
-        tx,
-      );
+      const ips = adresses
+        ? await requete<{ ip: string }>(
+            `select distinct ip from (select ip from sessions where compte_id = $1 union all select derniere_ip as ip from comptes where id = $1) x where ip is not null`,
+            [t.compte_id],
+            tx,
+          )
+        : [];
       for (const { ip } of ips)
         await requete(
           'insert into bannissements (ip, raison, compte_id, par) values ($1, $2, $3, $4) on conflict (ip) do nothing',
@@ -136,6 +145,36 @@ export async function routesAdmin(app: FastifyInstance) {
     });
     await relireBannissements();
     return { ok: true, adresses: n };
+  });
+
+  // les demandes liées à un décès (loi Informatique et Libertés, art. 85) : la demande, la trace visée,
+  // et les directives « Après moi » laissées par la personne ; le fondateur répond sous un mois
+  app.get('/api/admin/deces', async (req) => {
+    exigerRole(req, 'admin');
+    const lignes = await requete(
+      `select d.*, t.nom as trace_nom, t.statut as trace_statut, c.email as auteur_email,
+              p.choix as directive_choix, p.tiers_nom as directive_tiers_nom, p.tiers_email as directive_tiers_email, p.message as directive_message
+         from demandes_deces d
+         left join traces t on t.id = d.trace_id
+         left join comptes c on c.id = t.compte_id
+         left join directives_post_mortem p on p.compte_id = t.compte_id
+        order by (d.statut in ('recue', 'en_cours')) desc, d.cree_le desc limit 300`,
+    );
+    return { demandes: lignes };
+  });
+
+  app.post('/api/admin/deces/:id', async (req) => {
+    const c = exigerRole(req, 'admin');
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+    const d = z.object({ statut: z.enum(['en_cours', 'traitee', 'refusee']), reponse: z.string().trim().max(4000).optional() }).parse(req.body);
+    const r = await une(
+      `update demandes_deces set statut = $2, reponse = coalesce($3, reponse),
+              traitee_le = case when $2 in ('traitee', 'refusee') then now() else null end where id = $1 returning id`,
+      [id, d.statut, d.reponse ?? null],
+    );
+    if (!r) throw new Refus(404, 'Cette demande n’existe pas.', 'introuvable');
+    await journaliser(c.id, `deces.${d.statut}`, id, { reponse: d.reponse });
+    return { ok: true };
   });
 
   app.get('/api/admin/bannissements', async (req) => {

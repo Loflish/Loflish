@@ -303,17 +303,20 @@ export function OeuvreCommune() {
   };
 
   const n = traits.length;
+  // au doigt, on touche ; à la souris, on clique
+  const tactile = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+
   const consigne = oeuvre.mien
     ? 'Ton trait est cousu. Il fait partie de l’œuvre. Merci.'
     : oeuvre.connexion
       ? 'Pour coudre ton trait, entre d’abord dans le musée avec ton adresse e-mail : un seul trait par personne.'
-    : !oeuvre.peutCoudre
-      ? 'Ton accès à cette page permet de regarder l’œuvre, pas d’y coudre.'
-      : arrivee
-        ? 'Ce trait sera le tien : un seul par personne, et il ne s’efface pas.'
-        : depart
-          ? 'Clique dans la direction où tu veux mener ton fil.'
-          : 'Clique pour poser le début de ton trait.';
+      : !oeuvre.peutCoudre
+        ? 'Ton accès à cette page permet de regarder l’œuvre, pas d’y coudre.'
+        : arrivee
+          ? 'Ce trait sera le tien : un seul par personne, et il ne s’efface pas.'
+          : depart
+            ? `${tactile ? 'Touche' : 'Clique'} dans la direction où tu veux mener ton fil.`
+            : `${tactile ? 'Touche' : 'Clique'} pour poser le début de ton trait.`;
 
   return (
     <main className="oeuvre">
@@ -342,8 +345,8 @@ export function OeuvreCommune() {
       <section className="oeuvre-panneau" aria-live="polite">
         <h1 className="oeuvre-titre">L’œuvre commune</h1>
         <p className="oeuvre-texte">
-          Chaque personne coud un seul trait, de la même longueur que tous les autres. Ensemble, nous brodons une œuvre immense, faite de tout
-          le monde. Un jour, je reproduirai ce tracé sur de grands tableaux brodés à la main.
+          Chaque personne coud un seul trait, de la même longueur que tous les autres. Ensemble, nous brodons une œuvre immense, faite de tout le monde. Un
+          jour, je reproduirai ce tracé sur de grands tableaux brodés à la main.
         </p>
         <p className="oeuvre-consigne">{consigne}</p>
         {arrivee && (

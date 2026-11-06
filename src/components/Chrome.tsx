@@ -89,7 +89,6 @@ const MENU = [
   { to: '/compte', label: 'Compte', icon: 'compte' },
   { to: '/archives', label: 'Archives', icon: 'archive' },
   { to: '/ressources', label: 'Ressources & aide', icon: 'aide' },
-  { to: '/soutenir', label: 'Soutenir', icon: 'soutenir' },
   { to: '/juridique', label: 'Juridique', icon: 'juridique' },
 ];
 

@@ -12,7 +12,7 @@ export interface LigneTrace {
   id: string;
   compte_id: string | null;
   type: 'personnelle' | 'memoire';
-  statut: 'publiee' | 'retiree';
+  statut: 'publiee' | 'en_attente' | 'retiree';
   nom: string;
   pseudo: string | null;
   couleur: string;
@@ -141,7 +141,13 @@ export function trace(t: LigneTrace, fragments: LigneFragment[], medias: LigneMe
     q2Destinataire: t.q2_destinataire,
     memoire:
       t.type === 'memoire'
-        ? sansVide({ deposeePar: t.memoire_deposee_par ?? '', relation: t.memoire_relation, origine: t.memoire_origine, aperçu: t.memoire_apercu ?? '' })
+        ? // le lien avec la personne reste privé : il sert à l'examen du fondateur, pas à la page publique
+          sansVide({
+            deposeePar: t.memoire_deposee_par ?? '',
+            relation: auteur ? t.memoire_relation : undefined,
+            origine: t.memoire_origine,
+            aperçu: t.memoire_apercu ?? '',
+          })
         : undefined,
     rubriques,
     medias: medias.map((m) => media(m, m.fragment_id ? rubriqueDe.get(m.fragment_id) : undefined)),

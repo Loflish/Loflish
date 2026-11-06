@@ -35,21 +35,24 @@ export function MesTraces() {
                   {t.nom}
                 </h3>
                 <p className="apercu-type">
-                  {TYPE_LABEL[t.type]}, publiée le {premier(t.creeLe)}
+                  {TYPE_LABEL[t.type]}, {t.statut === 'en_attente' ? 'envoyée le' : 'publiée le'} {premier(t.creeLe)}
+                  {t.statut === 'en_attente' ? '. Pas encore dans le musée : je la lis d’abord.' : ''}
                 </p>
                 {estScellee(t) && (
                   <p className="ma-trace-scellee">
-                    <Icon name="cadenas" size={16} /> {t.type === 'memoire' ? 'Ce que tu as écrit sur cette personne est scellé' : 'Tes réponses sont scellées'} jusqu’au{' '}
-                    {dateLongue(reouverture(t)!)}. Chaque fragment est scellé à son dépôt.
+                    <Icon name="cadenas" size={16} /> {t.type === 'memoire' ? 'Ce que tu as écrit sur cette personne est scellé' : 'Tes réponses sont scellées'}{' '}
+                    jusqu’au {dateLongue(reouverture(t)!)}. Chaque fragment est scellé à son dépôt.
                   </p>
                 )}
                 <div className="ma-trace-actions">
                   <Link to={`/trace/${t.id}`} className="lien-entrer">
-                    {t.type === 'memoire' ? 'Voir sa mémoire' : 'Voir mon profil de dernières volontés'} <Icon name="fleche" size={16} />
+                    {t.type === 'memoire' ? 'Voir sa trace' : 'Voir ma trace'} <Icon name="fleche" size={16} />
                   </Link>
-                  <button className="lien-discret" onClick={() => navigate('/', { state: { focus: t.id } })}>
-                    <Icon name="lieu" size={16} /> {t.type === 'memoire' ? 'Retrouver sa bulle dans le musée' : 'Retrouver ma bulle dans le musée'}
-                  </button>
+                  {t.statut !== 'en_attente' && (
+                    <button className="lien-discret" onClick={() => navigate('/', { state: { focus: t.id } })}>
+                      <Icon name="lieu" size={16} /> {t.type === 'memoire' ? 'Retrouver sa bulle dans le musée' : 'Retrouver ma bulle dans le musée'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -75,8 +78,7 @@ export function MesTraces() {
       {mes.length === 1 && (
         <p className="ma-trace-autre">
           <Link to="/creer" className="lien-discret">
-            <Icon name="plus" size={16} />{' '}
-            {mes[0]!.type === 'memoire' ? 'Créer ma propre trace' : 'Créer une mémoire pour une personne décédée'}
+            <Icon name="plus" size={16} /> {mes[0]!.type === 'memoire' ? 'Créer ma propre trace' : 'Créer une mémoire pour une personne décédée'}
           </Link>
         </p>
       )}

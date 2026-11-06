@@ -2,9 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Footer, PageTop } from '../components/Chrome';
 import { Icon } from '../components/Icon';
-import { EDITIONS, tracesDeLEdition } from '../data/archives';
+import { EDITIONS } from '../data/archives';
 import {
-  allTraces,
   changerEmail,
   confirmerEmail,
   demanderCode,
@@ -84,7 +83,7 @@ export function Projet() {
             sienne ou non. Écouter la vie de l’autre, c’est apprendre l’empathie, et sortir un peu de l’individualisme.
           </p>
           <p>
-            Nous cherchons déjà à laisser une trace : sur les réseaux sociaux, auprès de nos proches, parfois auprès d’inconnus. Nos Mots Mémoriaux offre à ce
+            On cherche déjà à laisser une trace : sur les réseaux sociaux, auprès de ses proches, parfois auprès d’inconnus. Nos Mots Mémoriaux offre à ce
             besoin un lieu fait pour durer.
           </p>
         </div>
@@ -123,7 +122,7 @@ export function Projet() {
           </li>
           <li>
             <span className="projet-numero">2</span>
-            <p>Si tu le souhaites, tu complètes ton profil avec des fragments de ton existence : souvenirs, lieux, personnes, œuvres, photos…</p>
+            <p>Si tu le souhaites, tu complètes ta trace avec des fragments de ton existence : souvenirs, lieux, personnes, œuvres, photos…</p>
           </li>
           <li>
             <span className="projet-numero">3</span>
@@ -155,7 +154,7 @@ export function Projet() {
           <div className="texte-courant">
             <h3 className="projet-sous-titre">Signaler un contenu</h3>
             <p>
-              Chaque trace peut être signalée avec le bouton « Signaler », sur son profil ou dans Se perdre : quelqu’un en danger, de la haine, du harcèlement,
+              Chaque trace peut être signalée avec le bouton « Signaler », sur sa page ou dans Se perdre : quelqu’un en danger, de la haine, du harcèlement,
               de la violence, ou autre chose. Je lis moi-même chaque signalement. Selon la gravité, je retire la bulle du musée, ou je ferme définitivement
               l’accès au musée à la personne qui l’a déposée.
             </p>
@@ -177,7 +176,7 @@ export function Projet() {
             <Icon name="projet" size={24} />
             <h3>Un musée</h3>
             <p>
-              Certains mots deviendront des tableaux brodés à la main, exposés dans un vrai lieu, le profil complet présenté au dos de chaque œuvre. Plus nous
+              Certains mots deviendront des tableaux brodés à la main, exposés dans un vrai lieu, la trace complète présentée au dos de chaque œuvre. Plus nous
               serons nombreux, plus je pourrai convaincre des institutions de soutenir ce musée.
             </p>
           </li>
@@ -284,7 +283,7 @@ const JURIDIQUE: [string, string][] = [
   ],
   [
     'Protection des données',
-    'Tes données t’appartiennent, où que tu vives. Ton adresse e-mail sert seulement à retrouver tes bulles : elle n’est jamais montrée, vendue ni partagée. Tu peux à tout moment demander à consulter, modifier ou supprimer tes données, toutes ou en partie, en écrivant au fondateur.',
+    'Tes données t’appartiennent, où que tu vives. Ton adresse e-mail sert seulement à retrouver tes bulles : elle n’est jamais montrée, vendue ni partagée. Tu peux à tout moment demander à consulter, modifier ou supprimer tes données, toutes ou en partie, en m’écrivant.',
   ],
   [
     'Ce que tu autorises',
@@ -292,7 +291,7 @@ const JURIDIQUE: [string, string][] = [
   ],
   [
     'Publication, scellement et signalements',
-    'Publier scelle les quatre réponses pendant cinq ans ; chaque fragment est scellé à son dépôt. Chaque trace peut être signalée. Selon la gravité, le fondateur retire la bulle, ou ferme l’accès au musée : pour cela, une empreinte chiffrée de l’adresse IP de qui écrit est conservée (jamais l’adresse elle-même).',
+    'Publier scelle les quatre réponses pendant cinq ans ; chaque fragment est scellé à son dépôt. Chaque trace peut être signalée. Selon la gravité, je retire la bulle, ou je ferme l’accès au musée : pour cela, une empreinte chiffrée de l’adresse IP de qui écrit est conservée (jamais l’adresse elle-même).',
   ],
   [
     'Mémoires de personnes décédées',
@@ -312,11 +311,11 @@ const JURIDIQUE: [string, string][] = [
   ],
   [
     'Signalements et retraits',
-    'Chaque trace peut être signalée (motif, message). La demande est gardée, le fondateur la reçoit aussitôt et décide : classer, retirer, ou bannir. L’auteur d’un contenu retiré reçoit les motifs et peut répondre à l’adresse de contact. Le point de contact pour les personnes et pour les autorités est cette même adresse.',
+    'Chaque trace peut être signalée (motif, message). La demande est gardée, je la reçois aussitôt et je décide : classer, retirer, ou bannir. L’auteur d’un contenu retiré reçoit les motifs et peut répondre à l’adresse de contact. Le point de contact pour les personnes et pour les autorités est cette même adresse.',
   ],
   [
     'Durées de conservation',
-    'Session : 90 jours. Codes de connexion : 15 minutes. Traces : tant que tu le veux, ou selon ton choix « Après moi » ; scellées cinq ans. Journal et signalements : un an après traitement. Demandes liées à un décès : trois ans. Comptes sans trace et inactifs : effacés après trois ans. Le registre complet est tenu par le fondateur.',
+    'Session : 90 jours. Codes de connexion : 15 minutes. Traces : tant que tu le veux, ou selon ton choix « Après moi » ; scellées cinq ans. Journal et signalements : un an après traitement. Demandes liées à un décès : trois ans. Comptes sans trace et inactifs : effacés après trois ans. Je tiens le registre complet.',
   ],
   [
     'Si le musée devait fermer',
@@ -443,7 +442,7 @@ export function Introuvable() {
     <Page className="introuvable" titre="Page introuvable">
       <h1 className="page-titre">Cette page n’existe pas</h1>
       <p className="lead">
-        L’adresse est peut-être incomplète, ou la trace a été retirée par son auteur. Dans la constellation, la touche « / » ouvre la recherche.
+        L’adresse est peut-être incomplète, ou la trace a été retirée. Dans la constellation, « Rechercher » (ou la touche « / ») ouvre la recherche.
       </p>
       <div className="liens-colonne">
         <Link to="/" className="lien-entrer">
@@ -455,7 +454,6 @@ export function Introuvable() {
 }
 
 export function Archives() {
-  const traces = allTraces();
   const annee = new Date().getFullYear();
   return (
     <Page className="archives" titre="Archives">
@@ -467,8 +465,7 @@ export function Archives() {
             <li key={e.id}>
               <span className="frise-date">{e.titre}</span>
               <span className="frise-texte">
-                {e.note ? `${e.note}, ` : ''}
-                {tracesDeLEdition(traces, e).length.toLocaleString('fr-FR')} présences
+                {e.note}
                 <span className="frise-liens">
                   <Link to={`/archives/${e.id}`} className="frise-ouvrir">
                     Ouvrir la constellation <Icon name="fleche" size={14} />

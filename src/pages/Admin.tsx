@@ -15,11 +15,12 @@ import { Page } from './Pages';
  * ADMIN_EMAILS. Chaque décision est écrite dans le journal par le serveur.
  */
 
-type Onglet = 'etat' | 'signalements' | 'traces' | 'oeuvre' | 'comptes' | 'bannis' | 'archives' | 'journal';
+type Onglet = 'etat' | 'signalements' | 'deces' | 'traces' | 'oeuvre' | 'comptes' | 'bannis' | 'archives' | 'journal';
 
 const ONGLETS: { id: Onglet; titre: string; admin?: boolean }[] = [
   { id: 'etat', titre: 'État du musée' },
   { id: 'signalements', titre: 'Signalements' },
+  { id: 'deces', titre: 'Décès', admin: true },
   { id: 'traces', titre: 'Traces' },
   { id: 'oeuvre', titre: 'Œuvre commune' },
   { id: 'comptes', titre: 'Comptes', admin: true },
@@ -61,7 +62,12 @@ export function Admin() {
       </Page>
     );
   }
-  if (!pret) return <Page className="admin" titre="L’espace du fondateur">{null}</Page>;
+  if (!pret)
+    return (
+      <Page className="admin" titre="L’espace du fondateur">
+        {null}
+      </Page>
+    );
   if (!compte || compte.role === 'membre') {
     return (
       <Page className="admin" titre="L’espace du fondateur">
@@ -90,6 +96,7 @@ export function Admin() {
       <section className="admin-partie">
         {onglet === 'etat' && <Etat />}
         {onglet === 'signalements' && <Signalements />}
+        {onglet === 'deces' && admin && <Deces />}
         {onglet === 'traces' && <Traces admin={admin} />}
         {onglet === 'oeuvre' && <Oeuvre />}
         {onglet === 'comptes' && admin && <Comptes moi={compte.id} />}
@@ -110,9 +117,21 @@ function Erreur({ children }: { children: ReactNode }) {
 }
 
 /** Un bouton qui demande d'abord une raison (l'auteur ou le journal la gardera). */
-function AvecRaison({ libelle, consigne, agir }: { libelle: string; consigne: string; agir: (raison: string) => Promise<unknown> }) {
+function AvecRaison({
+  libelle,
+  consigne,
+  option,
+  agir,
+}: {
+  libelle: string;
+  consigne: string;
+  /** une case à cocher, décochée au départ, dont la valeur accompagne la raison */
+  option?: string;
+  agir: (raison: string, coche: boolean) => Promise<unknown>;
+}) {
   const [ouvert, setOuvert] = useState(false);
   const [raison, setRaison] = useState('');
+  const [coche, setCoche] = useState(false);
   const [erreur, setErreur] = useState('');
   if (!ouvert)
     return (
@@ -123,11 +142,17 @@ function AvecRaison({ libelle, consigne, agir }: { libelle: string; consigne: st
   return (
     <span className="admin-raison">
       <textarea rows={2} value={raison} onChange={(e) => setRaison(e.target.value)} placeholder={consigne} aria-label={consigne} autoFocus />
+      {option && (
+        <label className="check petit">
+          <input type="checkbox" checked={coche} onChange={(e) => setCoche(e.target.checked)} />
+          <span>{option}</span>
+        </label>
+      )}
       <button
         className="bouton bouton-discret"
         disabled={raison.trim().length < 3}
         onClick={() =>
-          void agir(raison.trim())
+          void agir(raison.trim(), coche)
             .then(() => (setOuvert(false), setRaison('')))
             .catch((e) => setErreur(message(e)))
         }
@@ -144,7 +169,11 @@ function AvecRaison({ libelle, consigne, agir }: { libelle: string; consigne: st
 
 // ——— état
 
+/** d'abord ce qui attend une décision, ensuite les volumes */
 const LIBELLES_ETAT: [string, string][] = [
+  ['signalements_ouverts', 'signalements à traiter'],
+  ['memoires_a_examiner', 'mémoires à examiner'],
+  ['deces_ouverts', 'demandes liées à un décès'],
   ['traces_publiees', 'traces publiées'],
   ['memoires', 'dont mémoires'],
   ['traces_7j', 'nouvelles traces (7 jours)'],
@@ -154,7 +183,6 @@ const LIBELLES_ETAT: [string, string][] = [
   ['medias', 'photos, vidéos, sons et documents'],
   ['traits', 'traits dans l’œuvre commune'],
   ['comptes', 'comptes'],
-  ['signalements_ouverts', 'signalements à traiter'],
 ];
 
 function taille(octets: number) {
@@ -284,6 +312,133 @@ function Signalements() {
   );
 }
 
+// ——— demandes liées à un décès (administration)
+
+interface LigneDeces {
+  id: string;
+  email: string;
+  nom_defunt: string;
+  lien: string;
+  trace_id: string | null;
+  trace_nom: string | null;
+  trace_statut: string | null;
+  auteur_email: string | null;
+  demande: 'cloturer' | 'conserver' | 'transmettre' | 'autre';
+  message: string | null;
+  statut: 'recue' | 'en_cours' | 'traitee' | 'refusee';
+  reponse: string | null;
+  cree_le: string;
+  traitee_le: string | null;
+  directive_choix: string | null;
+  directive_tiers_nom: string | null;
+  directive_tiers_email: string | null;
+  directive_message: string | null;
+}
+
+const DEMANDES: Record<LigneDeces['demande'], string> = {
+  cloturer: 'clôturer la trace',
+  conserver: 'la conserver telle quelle',
+  transmettre: 'la transmettre à un proche',
+  autre: 'autre chose',
+};
+const STATUT_TRACE: Record<string, string> = { publiee: 'dans le musée', en_attente: 'en attente d’examen', retiree: 'retirée' };
+const STATUTS_DECES: Record<LigneDeces['statut'], string> = { recue: 'reçue', en_cours: 'en cours', traitee: 'traitée', refusee: 'refusée' };
+
+/** Un mois pour répondre (loi Informatique et Libertés, art. 85) : la date limite, et si elle est passée. */
+function limite(creeLe: string): { texte: string; passee: boolean } {
+  const d = new Date(creeLe);
+  d.setMonth(d.getMonth() + 1);
+  return { texte: d.toLocaleDateString('fr-FR', { dateStyle: 'long' }), passee: d.getTime() < Date.now() };
+}
+
+function Deces() {
+  const { donnees, erreur, recharger } = useDonnees<{ demandes: LigneDeces[] }>('/api/admin/deces');
+  const [reponses, setReponses] = useState<Record<string, string>>({});
+  const [err, setErr] = useState('');
+  const decider = (d: LigneDeces, statut: 'en_cours' | 'traitee' | 'refusee') =>
+    appel('POST', `/api/admin/deces/${d.id}`, { statut, reponse: reponses[d.id] ?? d.reponse ?? undefined })
+      .then(recharger)
+      .catch((e) => setErr(message(e)));
+  return (
+    <>
+      <p className="muted petit">
+        Un proche demande de clôturer, conserver ou transmettre la trace d’une personne décédée. Avant de décider : demander l’acte de décès et une pièce
+        d’identité, relire les directives « Après moi » de la personne (ci-dessous quand elles existent), répondre par écrit sous un mois.
+      </p>
+      <Erreur>{erreur || err}</Erreur>
+      {donnees?.demandes.length === 0 && <p className="muted">Aucune demande.</p>}
+      <ul className="admin-liste">
+        {donnees?.demandes.map((d) => {
+          const l = limite(d.cree_le);
+          const ouverte = d.statut === 'recue' || d.statut === 'en_cours';
+          const texte = reponses[d.id] ?? d.reponse ?? '';
+          const mailto = `mailto:${d.email}?subject=${encodeURIComponent(`Nos Mots Mémoriaux : votre demande pour ${d.nom_defunt}`)}&body=${encodeURIComponent(texte)}`;
+          return (
+            <li key={d.id} className={ouverte && l.passee ? 'est-urgent' : !ouverte ? 'est-masquee' : ''}>
+              <p>
+                <strong>{d.nom_defunt}</strong>, demande de {DEMANDES[d.demande]} par <a href={`mailto:${d.email}`}>{d.email}</a> ({d.lien}),{' '}
+                <span className="muted">{date(d.cree_le)}</span>
+              </p>
+              <p className="petit">
+                {STATUTS_DECES[d.statut]}
+                {ouverte ? `, à répondre avant le ${l.texte}${l.passee ? ' (dépassé)' : ''}` : d.traitee_le ? `, le ${date(d.traitee_le)}` : ''}
+              </p>
+              {d.trace_id ? (
+                <p className="petit">
+                  Trace : <Link to={`/trace/${d.trace_id}`}>{d.trace_nom ?? d.trace_id}</Link>
+                  {d.trace_statut ? ` (${STATUT_TRACE[d.trace_statut] ?? d.trace_statut})` : ' (introuvable)'}
+                  {d.auteur_email ? `, compte ${d.auteur_email}` : ''}
+                </p>
+              ) : (
+                <p className="petit muted">Aucune trace désignée : chercher le nom dans Traces.</p>
+              )}
+              {d.directive_choix ? (
+                <p className="petit">
+                  Après moi, laissé par la personne : <strong>{d.directive_choix}</strong>
+                  {d.directive_tiers_nom ? `, tiers désigné ${d.directive_tiers_nom}${d.directive_tiers_email ? ` (${d.directive_tiers_email})` : ''}` : ''}
+                  {d.directive_message ? ` : « ${d.directive_message} »` : ''}
+                </p>
+              ) : (
+                <p className="petit muted">Aucune directive « Après moi » laissée par la personne.</p>
+              )}
+              {d.message && <blockquote>{d.message}</blockquote>}
+              {ouverte ? (
+                <div className="admin-raison">
+                  <textarea
+                    rows={3}
+                    value={texte}
+                    onChange={(e) => setReponses((r) => ({ ...r, [d.id]: e.target.value }))}
+                    placeholder="Ta réponse écrite (gardée ici, à envoyer par e-mail)"
+                    aria-label="Réponse"
+                  />
+                  <div className="admin-actions">
+                    <a className="lien-discret petit" href={mailto}>
+                      Ouvrir l’e-mail de réponse
+                    </a>
+                    {d.statut === 'recue' && (
+                      <button className="lien-discret petit" onClick={() => void decider(d, 'en_cours')}>
+                        Pièces demandées (en cours)
+                      </button>
+                    )}
+                    <button className="bouton bouton-discret" disabled={texte.trim().length < 3} onClick={() => void decider(d, 'traitee')}>
+                      Traitée
+                    </button>
+                    <button className="lien-discret petit" disabled={texte.trim().length < 3} onClick={() => void decider(d, 'refusee')}>
+                      Refusée
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                d.reponse && <p className="petit">Réponse : {d.reponse}</p>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </>
+  );
+}
+
 // ——— traces
 
 interface LigneTrace {
@@ -292,13 +447,15 @@ interface LigneTrace {
   type: Trace['type'];
   pays?: string;
   creeLe: string;
-  statut: 'publiee' | 'retiree';
+  statut: 'publiee' | 'en_attente' | 'retiree';
   email: string | null;
   compteId: string | null;
   fragments: number;
   medias: number;
   retireeRaison: string | null;
   parametres: Partial<Record<string, unknown>>;
+  /** privé : ce que le fondateur lit avant de publier une mémoire */
+  memoire?: { deposeePar: string | null; relation: string | null; origine: string | null };
 }
 
 const CHOIX_LIBELLES: [string, string][] = [
@@ -324,7 +481,7 @@ function Choix({ p }: { p: LigneTrace['parametres'] }) {
 function Traces({ admin }: { admin: boolean }) {
   const [q, setQ] = useState('');
   const [cherche, setCherche] = useState('');
-  const [statut, setStatut] = useState<'' | 'publiee' | 'retiree'>('');
+  const [statut, setStatut] = useState<'' | 'publiee' | 'en_attente' | 'retiree'>('');
   const p = new URLSearchParams();
   if (cherche) p.set('q', cherche);
   if (statut) p.set('statut', statut);
@@ -343,20 +500,21 @@ function Traces({ admin }: { admin: boolean }) {
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nom, identifiant ou e-mail" aria-label="Chercher une trace" />
         <select value={statut} onChange={(e) => setStatut(e.target.value as typeof statut)} aria-label="Statut">
           <option value="">Toutes</option>
+          <option value="en_attente">À examiner</option>
           <option value="publiee">Dans le musée</option>
           <option value="retiree">Retirées</option>
         </select>
         <button className="bouton bouton-discret">Chercher</button>
       </form>
       <p className="muted petit">
-        Selon la gravité : retirer la bulle (la personne lit la raison), ou bannir (ses bulles sont retirées, son compte suspendu, et son
-        adresse IP ne peut plus ouvrir le musée).
+        Selon la gravité : retirer la bulle (la personne lit la raison), ou bannir (ses bulles sont retirées, son compte suspendu, et son adresse IP ne peut
+        plus ouvrir le musée).
       </p>
       <Erreur>{erreur || err}</Erreur>
       {donnees?.traces.length === 0 && <p className="muted">Aucune trace.</p>}
       <ul className="admin-liste">
         {donnees?.traces.map((t) => (
-          <li key={t.id} className={t.statut === 'retiree' ? 'est-masquee' : ''}>
+          <li key={t.id} className={t.statut === 'retiree' ? 'est-masquee' : t.statut === 'en_attente' ? 'est-urgent' : ''}>
             <p>
               <Link to={`/trace/${t.id}`}>
                 <strong>{t.nom}</strong>
@@ -369,8 +527,16 @@ function Traces({ admin }: { admin: boolean }) {
             <p className="muted petit">
               {t.email ?? 'sans compte'} ({t.id})
             </p>
+            {t.memoire && (
+              <p className="petit">
+                Déposée par {t.memoire.deposeePar ?? '?'}
+                {t.memoire.relation ? ` (${t.memoire.relation})` : ', lien non dit'}
+                {t.memoire.origine ? `. Provenance : ${t.memoire.origine}` : '. Provenance non dite.'}
+              </p>
+            )}
             <Choix p={t.parametres} />
             {t.statut === 'retiree' && <p className="petit">Retirée : {t.retireeRaison}</p>}
+            {t.statut === 'en_attente' && <p className="petit">En attente d’examen : pas encore dans le musée.</p>}
             <div className="admin-actions">
               {t.statut === 'publiee' ? (
                 <AvecRaison
@@ -380,17 +546,29 @@ function Traces({ admin }: { admin: boolean }) {
                 />
               ) : (
                 <button
-                  className="lien-discret petit"
-                  onClick={() => void appel('POST', `/api/admin/traces/${t.id}/statut`, { statut: 'publiee' }).then(recharger).catch((e) => setErr(message(e)))}
+                  className="bouton bouton-discret"
+                  onClick={() =>
+                    void appel('POST', `/api/admin/traces/${t.id}/statut`, { statut: 'publiee' })
+                      .then(recharger)
+                      .catch((e) => setErr(message(e)))
+                  }
                 >
-                  Remettre la bulle
+                  {t.statut === 'en_attente' ? 'Publier dans le musée' : 'Remettre la bulle'}
                 </button>
+              )}
+              {t.statut === 'en_attente' && (
+                <AvecRaison
+                  libelle="Refuser"
+                  consigne="Raison du refus (la personne la lira)"
+                  agir={(raison) => appel('POST', `/api/admin/traces/${t.id}/statut`, { statut: 'retiree', raison }).then(recharger)}
+                />
               )}
               {admin && t.compteId && (
                 <AvecRaison
                   libelle="Bannir"
                   consigne="Raison du bannissement (gardée dans le journal)"
-                  agir={(raison) => appel('POST', `/api/admin/traces/${t.id}/bannir`, { raison }).then(recharger)}
+                  option="Fermer aussi le musée à ses adresses IP (attention : une adresse est souvent partagée, foyer, école, réseau mobile)"
+                  agir={(raison, adresses) => appel('POST', `/api/admin/traces/${t.id}/bannir`, { raison, adresses }).then(recharger)}
                 />
               )}
               <button className="lien-discret petit" aria-expanded={ouverte === t.id} onClick={() => setOuverte(ouverte === t.id ? null : t.id)}>
@@ -420,8 +598,8 @@ function Bannis() {
   return (
     <>
       <p className="muted petit">
-        Chaque adresse IP bannie n’est gardée que sous forme d’empreinte chiffrée. Lever un bannissement rouvre le musée à cette adresse (le
-        compte reste suspendu : lève la suspension dans Comptes si besoin).
+        Chaque adresse IP bannie n’est gardée que sous forme d’empreinte chiffrée. Lever un bannissement rouvre le musée à cette adresse (le compte reste
+        suspendu : lève la suspension dans Comptes si besoin).
       </p>
       <Erreur>{erreur || err}</Erreur>
       {donnees?.bannissements.length === 0 && <p className="muted">Aucune adresse bannie.</p>}
@@ -519,7 +697,10 @@ function Oeuvre() {
       <ul className="admin-liste admin-traits">
         {donnees?.traits.map((t) => (
           <li key={t.id} className={t.masque ? 'est-masquee' : ''}>
-            <svg viewBox={`${Math.min(t.x1, t.x2) - 0.05} ${Math.min(t.y1, t.y2) - 0.05} ${Math.abs(t.x2 - t.x1) + 0.1} ${Math.abs(t.y2 - t.y1) + 0.1}`} aria-hidden="true">
+            <svg
+              viewBox={`${Math.min(t.x1, t.x2) - 0.05} ${Math.min(t.y1, t.y2) - 0.05} ${Math.abs(t.x2 - t.x1) + 0.1} ${Math.abs(t.y2 - t.y1) + 0.1}`}
+              aria-hidden="true"
+            >
               <line x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} />
             </svg>
             <span>
@@ -570,8 +751,8 @@ function Comptes({ moi }: { moi: string }) {
         <button className="bouton bouton-discret">Chercher</button>
       </form>
       <p className="muted petit">
-        Les adresses de la variable ADMIN_EMAILS redeviennent administratrices à chaque connexion. Suspendre un compte ferme ses sessions ;
-        ses bulles restent visibles (retire-les à part, ou bannis depuis Traces).
+        Les adresses de la variable ADMIN_EMAILS redeviennent administratrices à chaque connexion. Suspendre un compte ferme ses sessions ; ses bulles restent
+        visibles (retire-les à part, ou bannis depuis Traces).
       </p>
       <Erreur>{erreur || err}</Erreur>
       <ul className="admin-liste">
@@ -585,7 +766,12 @@ function Comptes({ moi }: { moi: string }) {
               </span>
             </p>
             <div className="admin-actions">
-              <select value={c.role} disabled={c.id === moi} onChange={(e) => void modifier(c.id, { role: e.target.value as LigneCompte['role'] })} aria-label="Rôle">
+              <select
+                value={c.role}
+                disabled={c.id === moi}
+                onChange={(e) => void modifier(c.id, { role: e.target.value as LigneCompte['role'] })}
+                aria-label="Rôle"
+              >
                 <option value="membre">membre</option>
                 <option value="moderation">modération</option>
                 <option value="admin">administration</option>
@@ -623,8 +809,8 @@ function Editions() {
   return (
     <>
       <p className="muted petit">
-        Une édition montre les présences publiées jusqu’à son année. La figer garde pour toujours la liste exacte de ses présences
-        (l’instantané confié aux archives de longue durée).
+        Une édition montre les présences publiées jusqu’à son année. La figer garde pour toujours la liste exacte de ses présences (l’instantané confié aux
+        archives de longue durée).
       </p>
       <Erreur>{erreur || err}</Erreur>
       <ul className="admin-liste">
@@ -648,11 +834,15 @@ function Editions() {
               <button className="lien-discret petit" onClick={() => setF({ id: e.id, titre: e.titre, annee: e.annee, note: e.note })}>
                 Modifier
               </button>
-              <AvecRaison libelle="Supprimer" consigne="Écris SUPPRIMER" agir={async (r) => {
-                if (r !== 'SUPPRIMER') throw new Error('Écris SUPPRIMER pour confirmer.');
-                await appel('DELETE', `/api/admin/editions/${e.id}`);
-                recharger();
-              }} />
+              <AvecRaison
+                libelle="Supprimer"
+                consigne="Écris SUPPRIMER"
+                agir={async (r) => {
+                  if (r !== 'SUPPRIMER') throw new Error('Écris SUPPRIMER pour confirmer.');
+                  await appel('DELETE', `/api/admin/editions/${e.id}`);
+                  recharger();
+                }}
+              />
             </div>
           </li>
         ))}
@@ -708,8 +898,8 @@ function Journal() {
         </a>
       </div>
       <p className="muted petit">
-        L’export contient les traces, les fragments, les fiches des fichiers (pas les fichiers eux-mêmes), les traits, les éditions et les signalements. Les fichiers
-        eux-mêmes se sauvegardent avec le stockage (voir DEPLOIEMENT.md).
+        L’export contient les traces, les fragments, les fiches des fichiers (pas les fichiers eux-mêmes), les traits, les éditions et les signalements. Les
+        fichiers eux-mêmes se sauvegardent avec le stockage (voir DEPLOIEMENT.md).
       </p>
       <Erreur>{erreur}</Erreur>
       <table className="admin-journal">

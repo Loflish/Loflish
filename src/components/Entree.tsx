@@ -226,7 +226,7 @@ export function Entree({ eau, pret }: { eau: React.MutableRefObject<FondEau | nu
           presser();
         }}
       >
-        Entrer dans le musée
+        Entrer dans le musée <span className="entree-passer-note">(ou clique n’importe où)</span>
       </button>
     </div>,
     document.body,

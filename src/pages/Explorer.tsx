@@ -195,7 +195,7 @@ export function Explorer() {
 
   return (
     <div className="explorer" role="main">
-      <h1 className="sr-only">Nos Mots Mémoriaux, {edition ? `archives, édition ${edition.titre}` : 'la constellation des présences'}</h1>
+      <h1 className="sr-only">Nos Mots Mémoriaux, {edition ? `archives, édition ${edition.titre}` : 'la constellation des traces'}</h1>
       <div className="explorer-logo" ref={logoRef}>
         <Logo />
         {edition && (
@@ -203,7 +203,7 @@ export function Explorer() {
             <Link to="/archives" className="lien-discret petit">
               <Icon name="archive" size={14} /> Archives, édition {edition.titre}
             </Link>
-            <span>{traces.length.toLocaleString('fr-FR')} présences</span>
+            <span>{traces.length.toLocaleString('fr-FR')} bulles</span>
           </p>
         )}
       </div>
@@ -245,7 +245,7 @@ export function Explorer() {
 
       {traces.length === 0 && (
         <p className="explorer-vide">
-          {edition ? 'Cette édition ne garde encore aucune présence.' : 'Le musée attend sa première présence.'}{' '}
+          {edition ? 'Cette édition ne garde encore aucune bulle.' : 'Le musée attend sa première bulle.'}{' '}
           {!edition && <Link to="/creer">Déposer la tienne</Link>}
         </p>
       )}
@@ -367,15 +367,15 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
           <span className="sr-only">Un nom, un mot, un lieu</span>
           <input ref={input} type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Un nom, un mot, un lieu…" autoComplete="off" />
         </label>
-        <p className="search-total">Parmi {source.length.toLocaleString('fr-FR')} présences.</p>
+        <p className="search-total">Parmi {source.length.toLocaleString('fr-FR')} traces.</p>
       </form>
 
       {active && (
         <div className="search-results" aria-live="polite">
           <p className="muted">
             {results.length === 0
-              ? 'Aucune présence ne correspond, pour l’instant.'
-              : `${results.length} présence${results.length > 1 ? 's' : ''} correspond${results.length > 1 ? 'ent' : ''}.`}
+              ? 'Aucune trace ne correspond, pour l’instant.'
+              : `${results.length} trace${results.length > 1 ? 's' : ''} correspond${results.length > 1 ? 'ent' : ''}.`}
           </p>
           <button className="lien-discret petit search-vider" onClick={vider}>
             <Icon name="fermer" size={14} /> Effacer la recherche
@@ -402,7 +402,7 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
           </ul>
           {melange.length > combien && (
             <button className="lien-discret search-plus" onClick={() => setCombien((n) => n + 30)}>
-              Voir d’autres présences ({(melange.length - combien).toLocaleString('fr-FR')})
+              Voir d’autres traces ({(melange.length - combien).toLocaleString('fr-FR')})
             </button>
           )}
         </div>

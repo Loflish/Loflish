@@ -413,7 +413,7 @@ export function Backdrop() {
         className="backdrop-constellation"
         tabIndex={interactive ? 0 : -1}
         role="application"
-        aria-label="Constellation des présences. Chaque bulle est une personne."
+        aria-label="Constellation des traces. Chaque bulle est une personne."
         style={{ pointerEvents: interactive ? 'auto' : 'none' }}
       />
       {HD ? (

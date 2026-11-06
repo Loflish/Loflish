@@ -102,7 +102,7 @@ export function SePerdre() {
 
   return (
     <div className="perdre" role="main">
-      <h1 className="sr-only">Se perdre : rencontrer une présence au hasard</h1>
+      <h1 className="sr-only">Se perdre : rencontrer une trace au hasard</h1>
 
       <div className="perdre-scene">
         <article

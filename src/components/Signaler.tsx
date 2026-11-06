@@ -41,12 +41,13 @@ async function garderDansLaPage(d: Record<string, unknown>): Promise<boolean> {
 }
 
 export function Signaler({ trace, onDone }: { trace: Trace; onDone: () => void }) {
-  const [motif, setMotif] = useState<Motif>('autre');
+  // aucun motif coché d'avance : la personne choisit
+  const [motif, setMotif] = useState<Motif | ''>('');
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
   const [etat, setEtat] = useState<'' | 'envoi' | 'ok' | 'courriel' | 'erreur'>('');
   const [erreur, setErreur] = useState('');
-  const libelle = MOTIFS.find(([v]) => v === motif)![1];
+  const libelle = MOTIFS.find(([v]) => v === motif)?.[1] ?? '';
 
   if (etat === 'ok' || etat === 'courriel')
     return (
@@ -64,6 +65,7 @@ export function Signaler({ trace, onDone }: { trace: Trace; onDone: () => void }
     );
 
   const envoyer = async () => {
+    if (!motif) return;
     setEtat('envoi');
     if (motif === 'vie_privee' && !EMAIL_VALIDE.test(email)) {
       setErreur('Laisse une adresse e-mail : la réponse à ton opposition arrive sous un mois.');
@@ -126,7 +128,7 @@ export function Signaler({ trace, onDone }: { trace: Trace; onDone: () => void }
           {erreur}
         </p>
       )}
-      <button className="bouton" onClick={envoyer} disabled={etat === 'envoi'}>
+      <button className="bouton" onClick={envoyer} disabled={etat === 'envoi' || !motif}>
         {etat === 'envoi' ? 'Envoi…' : 'Envoyer le signalement'}
       </button>
     </div>

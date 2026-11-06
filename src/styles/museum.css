@@ -787,6 +787,10 @@ html.entree-douce .backdrop-constellation {
   z-index: 100;
   cursor: pointer;
 }
+.entree-passer-note {
+  font-size: 0.8em;
+  opacity: 0.7;
+}
 .entree-passer {
   position: absolute;
   right: 24px;

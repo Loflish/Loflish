@@ -82,25 +82,10 @@ export function TracePage() {
   const canRepondre = editable && auteur && !scellee;
   const [edition, setEdition] = useState(false);
   const [vue, setVue] = useState<Media | null>(null);
-  // mode lecture : une colonne, les mots seuls, en plus grand (retenu sur l'appareil)
-  const [lecture, setLecture] = useState(() => {
-    if ((location.state as { fraiche?: boolean } | null)?.fraiche) return false;
-    try {
-      return localStorage.getItem('nmm:lecture') === '1';
-    } catch {
-      return false;
-    }
-  });
-  const basculerLecture = () => {
-    setLecture((l) => {
-      try {
-        localStorage.setItem('nmm:lecture', l ? '0' : '1');
-      } catch {
-        /* ignore */
-      }
-      return !l;
-    });
-  };
+  // mode lecture : une colonne, les mots seuls, en plus grand (le temps de cette page : retenu, il tronquait
+  // sans prévenir la trace suivante, et même celle que l'on venait de publier)
+  const [lecture, setLecture] = useState(false);
+  const basculerLecture = () => setLecture((l) => !l);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -148,13 +133,13 @@ export function TracePage() {
   return (
     <OuvrirMedia.Provider value={setVue}>
       <main className={`trace${lecture ? ' lecture' : ''}`} style={{ ['--bulle' as string]: color.hex }}>
-        <nav className="trace-nav" aria-label="Navigation du profil">
+        <nav className="trace-nav" aria-label="Navigation de la trace">
           <Link to="/" className="lien-discret">
             <Icon name="retour" size={16} /> Retour au musée
           </Link>
           <div className="trace-nav-right">
             {mine && (
-              <div className="segmented segmented-petit" role="radiogroup" aria-label="Aperçu du profil">
+              <div className="segmented segmented-petit" role="radiogroup" aria-label="Aperçu de la trace">
                 <button role="radio" aria-checked={!auteur} onClick={() => setAuteur(false)}>
                   Vue visiteur
                 </button>
@@ -185,6 +170,11 @@ export function TracePage() {
           <p className="trace-bandeau trace-bandeau-retiree" role="status">
             {memoire ? 'Cette mémoire a été retirée du musée' : 'Ta bulle a été retirée du musée'}
             {trace.retireeRaison ? ` : ${trace.retireeRaison}` : '.'} Tu peux m’écrire pour en parler : <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.
+          </p>
+        )}
+        {editable && trace.statut === 'en_attente' && (
+          <p className="trace-bandeau" role="status">
+            Cette mémoire n’est pas encore dans le musée : je la lis d’abord. Tu peux déjà y ajouter des fragments.
           </p>
         )}
         {editable && auteur && trace.statut !== 'retiree' && <Bandeau trace={trace} />}
@@ -619,7 +609,7 @@ function ElementView({
       )}
       {auteur && (
         <p className="element-auteur">
-          {rang < MAX_EN_AVANT && <span className="element-montre-note">Montré sur ton profil</span>}
+          {rang < MAX_EN_AVANT && <span className="element-montre-note">Montré sur ta trace</span>}
           {e.scelleLe && scelle && (
             <span className="element-scelle">
               <Icon name="cadenas" size={14} /> Scellé le {dateLongue(e.scelleLe)}
@@ -663,7 +653,7 @@ function RubriqueDetail({ r, trace, canEdit }: { r: Rubrique; trace: Trace; canE
   return (
     <div className="rubrique-detail">
       {question && <p className="salle-q">{question}</p>}
-      {canEdit && items.length > 1 && <p className="bloc-note bloc-note-auteur">Les trois premiers se montrent sur ton profil. Range-les avec les flèches.</p>}
+      {canEdit && items.length > 1 && <p className="bloc-note bloc-note-auteur">Les trois premiers se montrent sur ta trace. Range-les avec les flèches.</p>}
       {items.map((e, i) => (
         <ElementView key={e.id} e={e} trace={trace} rubrique={r.id} auteur={canEdit} rang={i} total={items.length} />
       ))}
@@ -716,14 +706,14 @@ function MediasTout({ trace, auteur }: { trace: Trace; auteur: boolean }) {
   const libres = mediasLibres(trace);
   return (
     <>
-      {auteur && libres.length > 1 && <p className="bloc-note bloc-note-auteur">Les trois premiers se montrent sur ton profil. Range-les avec les flèches.</p>}
+      {auteur && libres.length > 1 && <p className="bloc-note bloc-note-auteur">Les trois premiers se montrent sur ta trace. Range-les avec les flèches.</p>}
       <div className="salle-medias-tout">
         {libres.map((m, i) => (
           <div key={m.id} className="media-case">
             <MediaThumb m={m} size="l" />
             {auteur && (
               <span className="media-case-actions">
-                {i < MAX_EN_AVANT && <span className="element-montre-note">Montré sur ton profil</span>}
+                {i < MAX_EN_AVANT && <span className="element-montre-note">Montré sur ta trace</span>}
                 {libres.length > 1 && <Trier premier={i === 0} dernier={i === libres.length - 1} onDeplacer={(sens) => deplacerMedia(trace.id, m.id, sens)} />}
               </span>
             )}

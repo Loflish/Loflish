@@ -198,17 +198,43 @@ describe('traces', () => {
       (await auteur.post('/api/traces', { type: 'memoire', nom: 'Jeannot', couleur: 'v3', memoire: { deposeePar: 'Léa', aperçu: 'x'.repeat(501) } }))
         .statusCode,
     ).toBe(400);
+    // le lien avec la personne est exigé (il reste privé)
+    expect(
+      (await auteur.post('/api/traces', { type: 'memoire', nom: 'Jeannot', couleur: 'v3', memoire: { deposeePar: 'Léa', aperçu: 'Il semait des radis.' } }))
+        .statusCode,
+    ).toBe(400);
     const m = await auteur.post('/api/traces', {
       type: 'memoire',
       nom: 'Jeannot',
       couleur: 'v3',
-      memoire: { deposeePar: 'Léa', aperçu: 'Il semait des radis. '.repeat(20).trim() },
+      memoire: { deposeePar: 'Léa', relation: 'sa petite-fille', aperçu: 'Il semait des radis. '.repeat(20).trim() },
     });
     expect(m.statusCode).toBe(200);
     expect(m.json().trace.memoire.aperçu.length).toBeGreaterThan(400);
-    expect((await auteur.post('/api/traces', { type: 'memoire', nom: 'Autre', couleur: 'v3', memoire: { deposeePar: 'Léa', aperçu: 'x' } })).statusCode).toBe(
-      409,
-    );
+    expect(
+      (
+        await auteur.post('/api/traces', {
+          type: 'memoire',
+          nom: 'Autre',
+          couleur: 'v3',
+          memoire: { deposeePar: 'Léa', relation: 'son ami', aperçu: 'x' },
+        })
+      ).statusCode,
+    ).toBe(409);
+    // une mémoire attend l'examen du fondateur (cahier §43.1) : l'auteur la voit, le musée pas encore
+    const mid = m.json().trace.id;
+    expect(m.json().trace.statut).toBe('en_attente');
+    expect((await visiteur().get('/api/presences')).json().presences.find((p: any) => p.id === mid)).toBeUndefined();
+    expect((await visiteur().get(`/api/traces/${mid}`)).statusCode).toBe(404);
+    expect((await auteur.get(`/api/traces/${mid}`)).statusCode).toBe(200);
+    const admin = visiteur();
+    await admin.connecter('admin@musee.test');
+    expect((await admin.get('/api/admin/traces?statut=en_attente')).json().traces.map((t: any) => t.id)).toContain(mid);
+    expect((await admin.post(`/api/admin/traces/${mid}/statut`, { statut: 'publiee' })).statusCode).toBe(200);
+    expect((await visiteur().get('/api/presences')).json().presences.find((p: any) => p.id === mid)).toBeDefined();
+    // le lien avec la personne reste privé
+    expect((await visiteur().get(`/api/traces/${mid}`)).json().trace.memoire.relation).toBeUndefined();
+    expect((await auteur.get(`/api/traces/${mid}`)).json().trace.memoire.relation).toBe('sa petite-fille');
   });
 
   it('les réponses restent scellées cinq ans', async () => {
@@ -631,7 +657,8 @@ describe('bannir', () => {
     const admin = visiteur();
     await admin.connecter('admin@musee.test');
     expect((await admin.post(`/api/admin/traces/${t.id}/bannir`, { raison: '' })).statusCode).toBe(400);
-    const r = await admin.post(`/api/admin/traces/${t.id}/bannir`, { raison: 'Harcèlement répété' });
+    // sans « adresses », seul le compte est banni ; avec, ses adresses IP aussi
+    const r = await admin.post(`/api/admin/traces/${t.id}/bannir`, { raison: 'Harcèlement répété', adresses: true });
     expect(r.statusCode).toBe(200);
     expect(r.json().adresses).toBeGreaterThan(0);
     // les tests viennent tous de la même adresse : désormais, plus rien ne passe
