@@ -317,17 +317,23 @@ export async function routesAdmin(app: FastifyInstance) {
   // exporter toutes les données (sauvegarde lisible, ou étude) : JSON
   app.get('/api/admin/export', async (req, rep) => {
     const c = exigerRole(req, 'admin');
-    const [traces, fragments, medias, traits, editions, signalements] = await Promise.all([
+    // tout ce qui fait le musée, pour que les compte_id des traces mènent quelque part et que rien d'attendu par la loi
+    // ne manque (directives Après moi, demandes liées à un décès, journal) ; jamais les empreintes des sessions
+    const [traces, fragments, medias, traits, editions, signalements, comptes, directives, deces, journal] = await Promise.all([
       requete('select * from traces order by cree_le'),
       requete('select * from fragments order by cree_le'),
       requete('select * from medias order by cree_le'),
       requete('select id, x1, y1, x2, y2, masque, cousu_le from traits order by cousu_le'),
       requete('select * from editions order by annee'),
       requete('select * from signalements order by cree_le'),
+      requete('select id, email, role, suspendu, majeur_le, cree_le, derniere_connexion from comptes order by cree_le'),
+      requete('select * from directives_post_mortem order by maj_le'),
+      requete('select * from demandes_deces order by cree_le'),
+      requete('select * from journal order by cree_le'),
     ]);
     await journaliser(c.id, 'export', null);
     rep.header('content-disposition', `attachment; filename="nos-mots-memoriaux-${new Date().toISOString().slice(0, 10)}.json"`);
-    return { exporteLe: new Date().toISOString(), traces, fragments, medias, traits, editions, signalements };
+    return { exporteLe: new Date().toISOString(), traces, fragments, medias, traits, editions, signalements, comptes, directives, deces, journal };
   });
 
   app.get('/api/admin/journal', async (req) => {

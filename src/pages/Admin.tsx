@@ -890,6 +890,15 @@ interface LigneJournal {
 
 function Journal() {
   const { donnees, erreur } = useDonnees<{ journal: LigneJournal[] }>('/api/admin/journal');
+  const [action, setAction] = useState('');
+  const [q, setQ] = useState('');
+  const actions = [...new Set((donnees?.journal ?? []).map((j) => j.action))].sort();
+  const mot = q.trim().toLowerCase();
+  const lignes = (donnees?.journal ?? []).filter(
+    (j) => (!action || j.action === action) && (!mot || `${j.email ?? ''} ${j.cible ?? ''} ${JSON.stringify(j.details ?? {})}`.toLowerCase().includes(mot)),
+  );
+  // une cible qui ressemble à une trace (identifiant court) s'ouvre d'un clic ; un identifiant long est un compte, un fragment…
+  const lien = (cible: string) => (/^t[a-z0-9]{3,12}$/.test(cible) ? <Link to={`/trace/${cible}`}>{cible}</Link> : cible);
   return (
     <>
       <div className="liens-colonne">
@@ -902,6 +911,20 @@ function Journal() {
         fichiers eux-mêmes se sauvegardent avec le stockage (voir DEPLOIEMENT.md).
       </p>
       <Erreur>{erreur}</Erreur>
+      <div className="admin-recherche">
+        <select value={action} onChange={(e) => setAction(e.target.value)} aria-label="Action">
+          <option value="">Toutes les actions</option>
+          {actions.map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+        </select>
+        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="E-mail, identifiant, raison" aria-label="Chercher dans le journal" />
+      </div>
+      <p className="muted petit">
+        {lignes.length} ligne{lignes.length > 1 ? 's' : ''} sur les {donnees?.journal.length ?? 0} dernières.
+      </p>
       <table className="admin-journal">
         <thead>
           <tr>
@@ -912,7 +935,7 @@ function Journal() {
           </tr>
         </thead>
         <tbody>
-          {donnees?.journal.map((j) => (
+          {lignes.map((j) => (
             <tr key={j.id}>
               <td>{date(j.cree_le)}</td>
               <td>{j.email ?? ''}</td>
@@ -920,7 +943,7 @@ function Journal() {
                 {j.action}
                 {typeof j.details?.raison === 'string' && <span className="muted"> : {j.details.raison}</span>}
               </td>
-              <td className="petit">{j.cible ?? ''}</td>
+              <td className="petit">{j.cible ? lien(j.cible) : ''}</td>
             </tr>
           ))}
         </tbody>

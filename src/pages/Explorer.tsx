@@ -171,7 +171,11 @@ export function Explorer() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const dansUnChamp = e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]');
-      if (e.key === 'Escape' && searchOpen) return setSearchOpen(false);
+      if (e.key === 'Escape' && searchOpen) {
+        // la recherche et la fiche ouverte se ferment ensemble : un seul Échap pour revenir à la constellation nue
+        engine.current?.select(null);
+        return setSearchOpen(false);
+      }
       if (dansUnChamp) return;
       if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
         e.preventDefault();

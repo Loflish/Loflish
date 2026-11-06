@@ -656,6 +656,13 @@ describe('bannir', () => {
     const t = (await fautif.post('/api/traces', personnelle('Fautif'))).json().trace;
     const admin = visiteur();
     await admin.connecter('admin@musee.test');
+    // l'export emporte tout ce qui fait le musée, sans les empreintes (ici : cinq codes par quart d'heure, on réutilise ce compte)
+    const ex = await admin.get('/api/admin/export');
+    expect(ex.statusCode).toBe(200);
+    for (const cle of ['traces', 'fragments', 'medias', 'traits', 'editions', 'signalements', 'comptes', 'directives', 'deces', 'journal']) expect(Array.isArray(ex.json()[cle])).toBe(true);
+    expect(ex.json().comptes.length).toBeGreaterThan(0);
+    expect(ex.json().comptes[0]).not.toHaveProperty('derniere_ip');
+    expect((await visiteur().get('/api/admin/export')).statusCode).toBe(401);
     expect((await admin.post(`/api/admin/traces/${t.id}/bannir`, { raison: '' })).statusCode).toBe(400);
     // sans « adresses », seul le compte est banni ; avec, ses adresses IP aussi
     const r = await admin.post(`/api/admin/traces/${t.id}/bannir`, { raison: 'Harcèlement répété', adresses: true });
