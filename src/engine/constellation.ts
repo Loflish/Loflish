@@ -434,7 +434,8 @@ export class Constellation {
       this.enteringId = id;
       this.selectedId = id;
       b.targetScale = 1.5;
-      this.animateCam({ x: b.x, y: b.y, zoom: Math.min(this.maxZoom, this.cam.zoom * 1.6) }, 1300);
+      // un rapprochement doux (1,25 fois) : l'encre fait le reste, la caméra ne se jette plus sur la bulle
+      this.animateCam({ x: b.x, y: b.y, zoom: Math.min(this.maxZoom, this.cam.zoom * 1.25) }, 1300);
       window.setTimeout(resolve, 950);
     });
   }

@@ -32,9 +32,11 @@ void main(){
   // grain de pigment fin, toujours à l'échelle de l'écran
   float g = hash(floor(gl_FragCoord.xy / 1.5));
   a *= 0.82 + 0.18 * g;
-  a *= fondu * 0.92;
-  // plus de pigment = teinte légèrement plus profonde, comme une vraie aquarelle
-  vec3 teinte = couleur * (1.05 - 0.2 * m);
+  a *= fondu * 0.66;
+  // plus de pigment = teinte légèrement plus profonde, comme une vraie aquarelle ; la couleur est voilée de papier
+  // ivoire (28 %) : un lavis, pas un rideau de couleur pleine (Tom, 6 novembre : « trop agressive »)
+  vec3 papier = vec3(0.953, 0.945, 0.925);
+  vec3 teinte = mix(couleur, papier, 0.36) * (1.05 - 0.2 * m);
   gl_FragColor = vec4(teinte * a, a);
 }
 `;
@@ -122,22 +124,29 @@ export class Encre {
     }
     c.style.width = c.style.height = `${cote}px`;
     c.style.transformOrigin = '0 0';
-    c.style.opacity = '1';
-    c.hidden = false;
     gl.uniform3f(this.u.couleur, cr, cg, cb);
     gl.uniform1i(this.u.avant, 0);
     gl.uniform1i(this.u.apres, 1);
     gl.clearColor(0, 0, 0, 0);
+    // la toile est vidée avant d'être montrée : la tache du passage précédent ne réapparaît pas d'un coup
     gl.clear(gl.COLOR_BUFFER_BIT);
+    c.style.transition = 'opacity 260ms var(--doux)';
+    c.style.opacity = '0';
+    c.hidden = false;
+    requestAnimationFrame(() => {
+      if (this.jouant) c.style.opacity = '1';
+    });
 
     // la croissance, de la bulle à tout l'écran, sur le compositeur
     const place = (size: number) => `translate(${x - size / 2}px, ${y - size / 2}px) scale(${size / cote})`;
-    const depart = r * 6;
+    // l'encre part de la bulle elle-même (son diamètre, pas six fois son rayon) et s'étale sans hâte
+    const depart = r * 2.2;
     c.style.transform = place(diag);
     c.getAnimations().forEach((a) => a.cancel());
+    // départ lent (l'encre hésite autour de la bulle un tiers de seconde), puis elle s'épanouit, puis se pose
     c.animate([{ transform: place(depart) }, { transform: place(diag) }], {
-      duration: 2400,
-      easing: 'cubic-bezier(0.25, 0.9, 0.35, 1)',
+      duration: 1600,
+      easing: 'cubic-bezier(0.55, 0, 0.3, 1)',
     });
 
     const v = this.video as HTMLVideoElement & { requestVideoFrameCallback?: (cb: (t: number, m: { mediaTime: number }) => void) => number };
@@ -196,6 +205,7 @@ export class Encre {
   /** L'encre s'efface et laisse apparaître la mémoire. */
   fadeOut(): void {
     const c = this.canvas;
+    c.style.transition = 'opacity 900ms var(--doux)';
     c.style.opacity = '0';
     window.setTimeout(() => {
       this.jouant = false;

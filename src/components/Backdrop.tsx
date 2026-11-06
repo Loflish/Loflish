@@ -308,12 +308,18 @@ export function Backdrop() {
   // d'arriver (mesuré le 6 novembre : 176 à 200 ms de lecture au milieu de la transition)
   useEffect(() => {
     const w = window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (n: number) => void };
+    // l'encre aussi : sa vidéo se télécharge maintenant, pas au premier clic (sinon la première entrée se faisait sans elle)
+    const preparer = () => {
+      void import('../pages/TracePage');
+      preparerEncre();
+    };
     if (w.requestIdleCallback) {
-      const n = w.requestIdleCallback(() => void import('../pages/TracePage'), { timeout: 6000 });
+      const n = w.requestIdleCallback(preparer, { timeout: 6000 });
       return () => w.cancelIdleCallback?.(n);
     }
-    const t = window.setTimeout(() => void import('../pages/TracePage'), 3000);
+    const t = window.setTimeout(preparer, 3000);
     return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ——— événements du moteur → interface (sans re-rendu à chaque image)
@@ -408,10 +414,12 @@ export function Backdrop() {
     setEntering(true);
     const pos = engine.current?.screenPos(selected);
     const ink = encre.current;
+    // si la vidéo de l'encre arrive juste, on lui laisse 400 ms : mieux vaut un court instant qu'une entrée sans encre
+    if (ink && !ink.ready) await new Promise<void>((res) => { const t0 = performance.now(); const voir = () => (ink.ready || performance.now() - t0 > 400 ? res() : requestAnimationFrame(voir)); voir(); });
     if (pos && ink?.ready) {
       // l'encre de sa couleur s'ouvre depuis sa bulle, puis la mémoire apparaît
-      // 1,1 s pour couvrir, 150 ms de page sous l'encre, puis 900 ms de fondu : lisible vers 2,2 s (3,3 s avant)
-      await Promise.all([engine.current?.enter(selected), ink.play(pos.x, pos.y, pos.r, colorById(trace.couleur).hex, 1100)]);
+      // 1,4 s pour couvrir (départ lent depuis la bulle), 150 ms de page sous l'encre, puis 900 ms de fondu
+      await Promise.all([engine.current?.enter(selected), ink.play(pos.x, pos.y, pos.r, colorById(trace.couleur).hex, 1400)]);
       navigate(`/trace/${selected}`);
       window.setTimeout(() => ink.fadeOut(), 150);
     } else {
