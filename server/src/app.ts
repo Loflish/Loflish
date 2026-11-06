@@ -9,7 +9,8 @@ import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import { ZodError } from 'zod';
 import { chargerCompte, Refus, routesAuth } from './auth';
-import { empreinteIp, refuserBannis } from './bannis';
+import { refuserBannis } from './bannis';
+import { empreinteIp } from './securite';
 import { changement } from './cache';
 import { config } from './config';
 import { pool, requete } from './db';
@@ -87,9 +88,9 @@ export async function creerApp(): Promise<FastifyInstance> {
   });
 
   app.decorateRequest('compte', null);
-  // une adresse bannie ne va pas plus loin
+  // une adresse bannie ne va pas plus loin (sauf l'équipe du musée, reconnue par sa session)
+  app.addHook('onRequest', (req) => chargerCompte(req));
   app.addHook('onRequest', refuserBannis);
-  app.addHook('onRequest', chargerCompte);
   await app.register(routesAuth);
   await app.register(routesPubliques);
   await app.register(routesAuteur);

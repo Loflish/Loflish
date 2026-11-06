@@ -4,8 +4,7 @@ import { config } from './config';
 import { randomInt, timingSafeEqual } from 'node:crypto';
 import { envoyerCodeChangement, envoyerCodeConnexion } from './courriel';
 import { journaliser, requete, transaction, une } from './db';
-import { empreinteIp } from './bannis';
-import { empreinte, jeton } from './securite';
+import { empreinte, empreinteIp, jeton } from './securite';
 
 /**
  * Entrer dans le musée : sans mot de passe. La personne donne son e-mail et
@@ -66,12 +65,12 @@ const optionsCookie = () => ({
 });
 
 /** À chaque requête : qui est là ? (branché au niveau du serveur entier, dans app.ts) */
-export async function chargerCompte(req: FastifyRequest) {
+export async function chargerCompte(req: FastifyRequest, meme_hors_api = false) {
   {
     req.compte = null;
     const brut = req.cookies[COOKIE];
     // les images et les fichiers du site n'ont pas besoin de la base
-    if (!brut || !req.url.startsWith('/api/')) return;
+    if (!brut || (!meme_hors_api && !req.url.startsWith('/api/'))) return;
     const c = await une<Compte & { expire_le: Date }>(
       `select c.id, c.email, c.role, c.majeur_le, c.suspendu, s.expire_le
          from sessions s join comptes c on c.id = s.compte_id

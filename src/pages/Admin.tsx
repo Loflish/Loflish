@@ -194,6 +194,8 @@ interface Signalement {
   media_titre: string | null;
   motif: string;
   message: string | null;
+  /** l'adresse laissée pour la réponse (exigée pour une opposition « vie privée ») */
+  email: string | null;
   statut: string;
   decision: string | null;
   cree_le: string;
@@ -204,6 +206,7 @@ const MOTIFS: Record<string, string> = {
   danger: 'Quelqu’un est en danger',
   haine: 'Haine, harcèlement ou violence',
   autre: 'Autre chose',
+  vie_privee: 'Opposition d’une personne concernée (vie privée)',
   intime: 'Vie privée exposée (ancien motif)',
   usurpation: 'Usurpation (ancien motif)',
 };
@@ -248,6 +251,11 @@ function Signalements() {
               </p>
             )}
             {s.message && <blockquote>{s.message}</blockquote>}
+            {s.email && (
+              <p className="petit">
+                Répondre sous un mois à <a href={`mailto:${s.email}`}>{s.email}</a>
+              </p>
+            )}
             {s.statut === 'ouvert' ? (
               <div className="admin-actions">
                 <input
@@ -355,7 +363,7 @@ function Traces({ admin }: { admin: boolean }) {
               </Link>{' '}
               <span className="muted petit">
                 {t.type === 'memoire' ? 'mémoire' : 'trace personnelle'}, {t.creeLe}
-                {t.pays ? `, ${t.pays}` : ''}, {t.fragments} fragments, {t.medias} fichiers
+                {t.pays ? `, ${t.pays}` : ''}, {t.fragments} fragment{t.fragments > 1 ? 's' : ''}, {t.medias} fichier{t.medias > 1 ? 's' : ''}
               </span>
             </p>
             <p className="muted petit">

@@ -84,6 +84,7 @@ export function TracePage() {
   const [vue, setVue] = useState<Media | null>(null);
   // mode lecture : une colonne, les mots seuls, en plus grand (retenu sur l'appareil)
   const [lecture, setLecture] = useState(() => {
+    if ((location.state as { fraiche?: boolean } | null)?.fraiche) return false;
     try {
       return localStorage.getItem('nmm:lecture') === '1';
     } catch {

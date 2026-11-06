@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Trace } from '../data/types';
 import { appel, EN_LIGNE } from '../lib/api';
-import { CONTACT } from '../lib/contact';
+import { CONTACT, EMAIL_VALIDE } from '../lib/contact';
 import { Icon } from './Icon';
 
 /**
@@ -65,7 +65,7 @@ export function Signaler({ trace, onDone }: { trace: Trace; onDone: () => void }
 
   const envoyer = async () => {
     setEtat('envoi');
-    if (motif === 'vie_privee' && !/.+@.+\..+/.test(email)) {
+    if (motif === 'vie_privee' && !EMAIL_VALIDE.test(email)) {
       setErreur('Laisse une adresse e-mail : la réponse à ton opposition arrive sous un mois.');
       return setEtat('erreur');
     }

@@ -22,7 +22,12 @@ const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 
 
 function dateFr(r: () => number, from: number, to: number): string {
   const y = from + Math.floor(r() * (to - from + 1));
-  return `${1 + Math.floor(r() * 28)} ${pick(r, MOIS)} ${y}`;
+  // jamais dans le futur : une trace de démonstration « créée le 3 décembre » trahirait la démonstration
+  const auj = new Date();
+  const mois = y < auj.getFullYear() ? 12 : auj.getMonth() + 1;
+  const m = Math.floor(r() * mois);
+  const jours = y === auj.getFullYear() && m === auj.getMonth() ? auj.getDate() : 28;
+  return `${1 + Math.floor(r() * jours)} ${MOIS[m]} ${y}`;
 }
 
 function nomAffiche(r: () => number): { nom: string; pseudo?: string } {

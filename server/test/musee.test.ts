@@ -639,6 +639,9 @@ describe('bannir', () => {
     expect(ferme.statusCode).toBe(403);
     expect(ferme.json().code).toBe('banni');
     expect((await visiteur().get('/')).statusCode).toBe(403);
+    // l'équipe du musée, elle, n'est jamais fermée dehors : le fondateur partage souvent l'adresse (foyer, réseau mobile)
+    expect((await admin.get('/api/admin/etat')).statusCode).toBe(200);
+    expect((await admin.get('/')).statusCode).not.toBe(403);
     // on lève le bannissement directement dans la base (l'adresse du fondateur est la même ici)
     await pool.query('delete from bannissements');
     const { relireBannissements } = await import('../src/bannis');

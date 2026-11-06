@@ -661,6 +661,13 @@
   margin-top: 3rem;
   padding-top: 1.4rem;
   border-top: 1px solid var(--filet);
+  flex-wrap: wrap;
+}
+/* ce qui manque encore pour continuer : une ligne entière, sous les boutons */
+.etape-actions .etape-manque {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: right;
 }
 
 /* la bulle apparaît en étant de moins en moins fondue dans le décor */
@@ -1421,10 +1428,11 @@
   place-items: center;
   text-align: center;
 }
-.introuvable {
+.introuvable .page-corps {
   display: grid;
   justify-items: center;
   gap: 1.2rem;
+  text-align: center;
 }
 .introuvable-texte {
   font-family: var(--serif);

@@ -46,6 +46,29 @@ function extrait(t: Trace, mot: string): { avant: string; mot: string; apres: st
   return null;
 }
 
+/**
+ * Lance un minuteur une fois l'écran d'entrée terminé (classe `entree-en-cours` sur <html>, posée par Entree) :
+ * sinon les aides de la constellation expirent pendant l'entrée, et le visiteur arrive sans consigne.
+ */
+function apresEntree(fn: () => void, delai: number): () => void {
+  const html = document.documentElement;
+  let t = 0;
+  const lancer = () => {
+    t = window.setTimeout(fn, delai);
+  };
+  const obs = new MutationObserver(() => {
+    if (html.classList.contains('entree-en-cours')) return;
+    obs.disconnect();
+    lancer();
+  });
+  if (html.classList.contains('entree-en-cours')) obs.observe(html, { attributes: true, attributeFilter: ['class'] });
+  else lancer();
+  return () => {
+    obs.disconnect();
+    window.clearTimeout(t);
+  };
+}
+
 export function Explorer() {
   useMuseumMode('explore');
   const { engine, enPause, setEnPause } = useMuseum();
@@ -81,8 +104,7 @@ export function Explorer() {
     } catch {
       /* ignore */
     }
-    const t = window.setTimeout(() => setIntro(false), 9400);
-    return () => window.clearTimeout(t);
+    return apresEntree(() => setIntro(false), 9400);
   }, [intro]);
 
   // le fond autour du logo brodé reste calme et clair
@@ -143,10 +165,7 @@ export function Explorer() {
     return () => window.clearTimeout(t);
   }, [params.bulle, engine, navigate]);
 
-  useEffect(() => {
-    const t = window.setTimeout(() => setHint(false), 9000);
-    return () => window.clearTimeout(t);
-  }, []);
+  useEffect(() => apresEntree(() => setHint(false), 9000), []);
 
   // au clavier : « / » ou Ctrl+K ouvrent la recherche, Échap la ferme
   useEffect(() => {
@@ -351,6 +370,44 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
         <p className="search-total">Parmi {source.length.toLocaleString('fr-FR')} présences.</p>
       </form>
 
+      {active && (
+        <div className="search-results" aria-live="polite">
+          <p className="muted">
+            {results.length === 0
+              ? 'Aucune présence ne correspond, pour l’instant.'
+              : `${results.length} présence${results.length > 1 ? 's' : ''} correspond${results.length > 1 ? 'ent' : ''}.`}
+          </p>
+          <button className="lien-discret petit search-vider" onClick={vider}>
+            <Icon name="fermer" size={14} /> Effacer la recherche
+          </button>
+          <ul>
+            {shown.map((t) => {
+              const ex = mot.length >= 2 ? extrait(t, mot) : null;
+              return (
+                <li key={t.id}>
+                  <button className="result" onClick={() => (engine.current?.has(t.id) ? engine.current.focusOn(t.id) : navigate(`/trace/${t.id}`))}>
+                    <span className="result-nom">{t.nom}</span>
+                    <span className="result-meta">{t.pays ?? TYPE_LABEL[t.type]}</span>
+                    {ex && (
+                      <span className="result-extrait" dir="auto">
+                        {ex.avant}
+                        <mark>{ex.mot}</mark>
+                        {ex.apres}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {melange.length > combien && (
+            <button className="lien-discret search-plus" onClick={() => setCombien((n) => n + 30)}>
+              Voir d’autres présences ({(melange.length - combien).toLocaleString('fr-FR')})
+            </button>
+          )}
+        </div>
+      )}
+
       <fieldset className="filter">
         <legend>Type de trace</legend>
         <div className="chips">
@@ -410,43 +467,6 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
         </select>
       </label>
 
-      {active && (
-        <div className="search-results" aria-live="polite">
-          <p className="muted">
-            {results.length === 0
-              ? 'Aucune présence ne correspond, pour l’instant.'
-              : `${results.length} présence${results.length > 1 ? 's' : ''} correspond${results.length > 1 ? 'ent' : ''}.`}
-          </p>
-          <button className="lien-discret petit search-vider" onClick={vider}>
-            <Icon name="fermer" size={14} /> Effacer la recherche
-          </button>
-          <ul>
-            {shown.map((t) => {
-              const ex = mot.length >= 2 ? extrait(t, mot) : null;
-              return (
-                <li key={t.id}>
-                  <button className="result" onClick={() => (engine.current?.has(t.id) ? engine.current.focusOn(t.id) : navigate(`/trace/${t.id}`))}>
-                    <span className="result-nom">{t.nom}</span>
-                    <span className="result-meta">{t.pays ?? TYPE_LABEL[t.type]}</span>
-                    {ex && (
-                      <span className="result-extrait" dir="auto">
-                        {ex.avant}
-                        <mark>{ex.mot}</mark>
-                        {ex.apres}
-                      </span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          {melange.length > combien && (
-            <button className="lien-discret search-plus" onClick={() => setCombien((n) => n + 30)}>
-              Voir d’autres présences ({(melange.length - combien).toLocaleString('fr-FR')})
-            </button>
-          )}
-        </div>
-      )}
     </aside>
   );
 }

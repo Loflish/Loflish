@@ -20,7 +20,7 @@ export async function routesAdmin(app: FastifyInstance) {
       (select count(*) from traces where statut = 'publiee') traces_publiees,
       (select count(*) from traces where statut = 'retiree') traces_retirees,
       (select count(*) from bannissements) bannissements,
-      (select count(*) from traces where type = 'memoire') memoires,
+      (select count(*) from traces where type = 'memoire' and statut = 'publiee') memoires,
       (select count(*) from fragments) fragments,
       (select count(*) from medias) medias,
       (select coalesce(sum(taille), 0) from medias) octets,

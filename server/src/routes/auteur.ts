@@ -9,7 +9,7 @@ import { fileTypeFromFile } from 'file-type';
 import type pg from 'pg';
 import { z } from 'zod';
 import { exigerCompte, publicCompte, Refus, type Compte } from '../auth';
-import { empreinteIp } from '../bannis';
+import { empreinteIp } from '../securite';
 import { journaliser, pool, requete, transaction, une, type Client } from '../db';
 import { LIMITES, MAX_MEDIAS, TAILLES_MAX, couleurValide, estRubrique, lienValide, limiteDe, natureDe, reouverture, scelleEncore } from '../regles';
 import { trace as serialiserTrace, type LigneFragment, type LigneMedia, type LigneTrace } from '../serialiser';

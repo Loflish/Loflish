@@ -5,7 +5,7 @@ import { TexteBrode } from '../components/TexteBrode';
 import { Icon } from '../components/Icon';
 import { dateLongue, peutCreer, publier, publishLocal, retenirEmailLocal, useCompte, useMesTraces } from '../data/store';
 import { EN_LIGNE } from '../lib/api';
-import { CONTACT } from '../lib/contact';
+import { CONTACT, EMAIL_VALIDE } from '../lib/contact';
 import { FormulaireCode } from './Pages';
 import { LIMITES, QUESTION_MEMOIRE, QUESTIONS, type Trace } from '../data/types';
 import { CATALOGUE_LISTE, MATIERE_COUSUE, loadCatalogue } from '../lib/hd';
@@ -159,12 +159,25 @@ export function Creer() {
   const { compte } = useCompte();
   const canNext = (() => {
     if (step === 0) return !!d.kind;
-    if (step === 1) return (EN_LIGNE ? !!compte : /.+@.+\..+/.test(d.email)) && d.majeur;
+    if (step === 1) return (EN_LIGNE ? !!compte : EMAIL_VALIDE.test(d.email)) && d.majeur;
     if (step === 2) return (d.identite === 'anonyme' || d.nom.trim().length > 0) && !!d.couleur;
     if (step === 3) return d.kind === 'memoire' ? d.souvenir.trim().length > 0 : d.q.every((x) => x.trim().length > 0);
     if (step === last) return d.droits;
     return true;
   })();
+
+  // ce qui retient encore le bouton « Continuer » : dit sous le bouton, au lieu d'un bouton gris muet
+  const manque = (
+    step === 1
+      ? [!(EN_LIGNE ? !!compte : EMAIL_VALIDE.test(d.email)) && (EN_LIGNE ? 'entrer avec ton e-mail' : 'une adresse e-mail complète'), !d.majeur && 'la case « j’ai 18 ans ou plus »']
+      : step === 2
+        ? [d.identite !== 'anonyme' && !d.nom.trim() && (d.kind === 'memoire' ? 'le nom de la personne' : 'ton nom'), !d.couleur && 'la couleur de la bulle']
+        : step === 3
+          ? [d.kind === 'memoire' ? !d.souvenir.trim() && 'un premier souvenir' : d.q.some((x) => !x.trim()) && 'une réponse à chaque question']
+          : step === last
+            ? [!d.droits && 'la case des droits']
+            : []
+  ).filter((x): x is string => typeof x === 'string');
 
   const [attente, setAttente] = useState<'' | 'erreur'>('');
   const [messageServeur, setMessageServeur] = useState('');
@@ -179,7 +192,8 @@ export function Creer() {
     }
     window.setTimeout(() => {
       engine.current?.addPresence({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex, matiere: t.matiere });
-      navigate(`/trace/${t.id}`);
+      // la trace toute neuve s'ouvre entière (vue auteur), même si le mode Lecture était retenu sur l'appareil
+      navigate(`/trace/${t.id}`, { state: { fraiche: true } });
     }, 4200);
   };
 
@@ -582,6 +596,11 @@ export function Creer() {
             <button className="bouton" disabled={!canNext} onClick={() => void publish()}>
               {d.kind === 'memoire' ? 'Sceller et publier sa mémoire' : 'Sceller et publier ma trace'}
             </button>
+          )}
+          {!canNext && manque.length > 0 && (
+            <p className="muted petit etape-manque" aria-live="polite">
+              Il manque : {manque.join(', ')}.
+            </p>
           )}
           {attente === 'erreur' && (
             <p className="editeur-erreur" role="alert">

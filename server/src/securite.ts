@@ -13,3 +13,6 @@ export function idTrace(): string {
   const b = randomBytes(10);
   return 't' + [...b].map((x) => a[x % a.length]).join('');
 }
+
+/** l'empreinte d'une adresse IP : jamais l'adresse en clair */
+export const empreinteIp = (ip: string) => empreinte(`ip:${ip}`);
