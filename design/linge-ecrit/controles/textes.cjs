@@ -5,6 +5,8 @@ const lire = async (ctx, base) => {
   const p = await ctx.newPage(); const o = {};
   for (const r of routes) {
     await p.goto('about:blank'); await p.goto(base + '?entree=0#/' + r); await p.waitForTimeout(r === '' ? 3000 : 1600);
+    // la création enregistre son brouillon après une demi-seconde : attendre l'état stable
+    if (r === 'creer') await p.waitForSelector('.brouillon.is-saved', { timeout: 5000 }).catch(() => {});
     o[r || 'explorer'] = await p.evaluate(() => {
       // tout déplier : les contenus repliés comptent aussi
       document.querySelectorAll('details').forEach((d) => (d.open = true));
@@ -23,7 +25,7 @@ const lire = async (ctx, base) => {
   let total = 0, egaux = 0, car = 0;
   for (const W of [390, 1440]) {
     const mk = () => b.newContext({ viewport: { width: W, height: 900 }, isMobile: W < 900, hasTouch: W < 900 }).then(async (c) => { await c.addInitScript(() => { try { localStorage.setItem('nmm:vu', '1'); localStorage.setItem('nmm:visites', '5'); sessionStorage.setItem('nmm:entree-vue', '1'); } catch {} }); return c; });
-    const [a, n] = [await lire(await mk(), 'http://127.0.0.1:5175/'), await lire(await mk(), 'http://127.0.0.1:5174/')];
+    const [a, n] = [await lire(await mk(), process.argv[2] || 'http://127.0.0.1:4175/'), await lire(await mk(), process.argv[3] || 'http://127.0.0.1:4174/')];
     for (const r of Object.keys(a)) {
       const memeT = a[r].t === n[r].t, memeL = JSON.stringify(a[r].liens) === JSON.stringify(n[r].liens), memeC = a[r].controles === n[r].controles, memeH = JSON.stringify(a[r].titres) === JSON.stringify(n[r].titres), memeA = JSON.stringify(a[r].aria) === JSON.stringify(n[r].aria);
       total++; car += a[r].t.length; if (memeT && memeL && memeC && memeH && memeA) egaux++;

@@ -48,6 +48,12 @@ export const FOND_ESSAI: string | null = ESSAIS_FOND[fondDemande] ?? null;
 export const FOND_FEUTRE = fondDemande === 'feutre';
 const PAGES_MARBRE = parametres?.get('pages') === 'marbre';
 /**
+ * La photo de tissu sous les pages n'est plus téléchargée : recouverte à 94 % par la toile écrue, elle changeait
+ * l'image de moins d'un demi-niveau sur 255 (mesuré le 11 novembre 2026) pour 230 à 450 Ko. La trame visible des
+ * pages vient du lin et des fibres. Seul l'essai `?pages=marbre` montre encore une image sous les pages.
+ */
+export const FOND_DES_PAGES = PAGES_MARBRE;
+/**
  * La constellation sur une toile plus brute (Tom, 21 octobre au soir : « un tissu encore plus brut »,
  * dans l'esprit des tissus de Ruth Rae) : `?toile=1` (mousseline de coton écrue) ou `?toile=2` (mousseline voilée
  * de gaze déchirée, plus brute).
@@ -165,14 +171,37 @@ export function installSurfaces(): void {
   if (!HD || typeof document === 'undefined') return;
   const r = document.documentElement;
   r.classList.add('hd');
-  // adresse absolue : une url() relative dans une variable se résoudrait depuis la feuille de style
-  const abs = (f: string) => `url("${new URL(`${base}${f}`, location.href).href}")`;
-  r.style.setProperty('--papier-chiffon', abs('papier-chiffon.webp'));
-  r.style.setProperty('--papier-washi', abs('papier-washi.webp'));
-  // la trame de la mousseline, pour les morceaux de tissu du linge écrit
-  r.style.setProperty('--lin-tissu', abs('lin.webp'));
   // le lavis des pages : une vraie tache d'aquarelle (fleur d'eau), teintée dans la couleur GRIS de la page
   r.style.setProperty('--tache-lavis', abs('taches/tache-41.webp'));
+}
+// adresse absolue : une url() relative dans une variable se résoudrait depuis la feuille de style
+const abs = (f: string) => `url("${new URL(`${base}${f}`, location.href).href}")`;
+
+/**
+ * La trame de la mousseline et les fibres du papier (0,55 Mo à elles deux) : posées après le premier rendu, une
+ * fois les polices arrivées (2,5 s d'attente au plus), pour ne pas leur disputer la connexion sur un téléphone.
+ * Elles apparaissent en fondu (classe `surfaces`, museum.css), jamais d'un coup.
+ */
+export function poserMatieresDesPages(): void {
+  if (!HD || typeof document === 'undefined') return;
+  const r = document.documentElement;
+  const polices = (document.fonts?.ready ?? Promise.resolve()).catch(() => undefined);
+  const delai = new Promise((fini) => window.setTimeout(fini, 2500));
+  void Promise.race([polices, delai]).then(() => {
+    const charger = (f: string) =>
+      new Promise<void>((fini) => {
+        const image = new Image();
+        image.onload = image.onerror = () => fini();
+        image.src = new URL(`${base}${f}`, location.href).href;
+      });
+    void Promise.all([charger('lin.webp'), charger('papier-chiffon.webp')]).then(() => {
+      r.style.setProperty('--papier-chiffon', abs('papier-chiffon.webp'));
+      r.style.setProperty('--papier-washi', abs('papier-washi.webp'));
+      // la trame de la mousseline, pour la toile des pages et les morceaux de tissu du linge écrit
+      r.style.setProperty('--lin-tissu', abs('lin.webp'));
+      r.classList.add('surfaces');
+    });
+  });
 }
 
 const taches = new Map<number, HTMLImageElement | HTMLCanvasElement>();
@@ -221,6 +250,29 @@ export function loadTaches(): Promise<void> {
 /** Charge des matières précises (celles que des personnes ont choisies). */
 export function loadMatieres(list: (number | undefined)[]): Promise<void> {
   return Promise.all([loadTaches(), ...list.filter((n): n is number => !!n && n > 0).map(charger)]).then(() => undefined);
+}
+
+/**
+ * La tache que la constellation montre pour la matière n : elle-même si elle fait partie de celles que la
+ * constellation charge (les taches de base de cet écran, plus les matières choisies par des personnes),
+ * sinon la plus proche, dans le même ordre que tacheFor. Une bulle en image (profil, Se perdre) peut ainsi
+ * ne charger que cette tache-là et rester identique à sa bulle dans la constellation.
+ */
+export function tacheMontree(n: number, choisies: Iterable<number | undefined>): number {
+  if (n <= 0 || n > NB_TACHES) return n;
+  const chargees = new Set<number>(indices);
+  for (const c of choisies) if (c && c > 0) chargees.add(c);
+  if (chargees.has(n)) return n;
+  for (let d = 1; d < NB_TACHES; d++) {
+    if (chargees.has(n - d)) return n - d;
+    if (chargees.has(n + d)) return n + d;
+  }
+  return n;
+}
+
+/** Charge une seule tache (une bulle en image), sans le reste du catalogue. */
+export function loadUneMatiere(n: number): Promise<void> {
+  return charger(n);
 }
 
 /** Le catalogue complet, pour choisir sa matière. */

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import type { Constellation, Mode } from '../engine/constellation';
 
 /**
@@ -14,6 +15,17 @@ import type { Constellation, Mode } from '../engine/constellation';
 
 const CLE_PAUSE = 'nmm:pause';
 
+/**
+ * Les pages qui ne montrent pas la constellation (les mêmes routes que dans App.tsx).
+ * Toute autre adresse, même inconnue, ouvre la constellation.
+ */
+const SANS_CONSTELLATION = /^\/(se-perdre|trace\/|creer|ma-trace|projet|ressources|soutenir|juridique|archives\/?$|oeuvre-commune|compte|connexion|admin|atelier\/)/;
+
+/** Cette adresse montre-t-elle la constellation ? Sinon, son moteur et ses images ne sont pas chargés. */
+export function estRouteExplorer(pathname: string): boolean {
+  return !SANS_CONSTELLATION.test(pathname);
+}
+
 interface MuseumCtx {
   engine: React.MutableRefObject<Constellation | null>;
   mode: Mode;
@@ -27,7 +39,9 @@ const Ctx = createContext<MuseumCtx | null>(null);
 
 export function MuseumProvider({ children }: { children: ReactNode }) {
   const engine = useRef<Constellation | null>(null);
-  const [mode, setMode] = useState<Mode>('explore');
+  // l'état de départ suit l'adresse : une page de texte ne commence pas par allumer la constellation
+  const depart = useLocation().pathname;
+  const [mode, setMode] = useState<Mode>(() => (estRouteExplorer(depart) ? 'explore' : 'texte'));
   const [reducedMotion, setReducedMotion] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );

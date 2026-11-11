@@ -9,10 +9,25 @@
     <meta property="og:description" content="Un musée vivant où chacun peut laisser sa trace, ses derniers mots et ses souvenirs." />
     <meta property="og:type" content="website" />
     <title>Nos Mots Mémoriaux</title>
+    <!-- la police de lecture arrive en même temps que le code, pas après lui -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/node_modules/@fontsource-variable/newsreader/files/newsreader-latin-opsz-normal.woff2" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="preload" as="image" fetchpriority="high" href="/hd/essais/fond-feutre-16x9.webp" media="(min-aspect-ratio: 3/4)" />
-    <link rel="preload" as="image" fetchpriority="high" href="/hd/essais/fond-feutre-9x16.webp" media="(max-aspect-ratio: 3/4)" />
+    <!-- la peinture de la constellation est demandée d'avance, mais seulement quand l'adresse ouvre la constellation
+         (les mêmes routes que estRouteExplorer, src/lib/museum.tsx) : un profil ou une page de texte ne la télécharge pas -->
+    <script>
+      (function () {
+        var p = (location.hash || '#/').slice(1).split('?')[0] || '/';
+        if (/^\/(se-perdre|trace\/|creer|ma-trace|projet|ressources|soutenir|juridique|archives\/?$|oeuvre-commune|compte|connexion|admin|atelier\/)/.test(p)) return;
+        var haut = matchMedia('(max-aspect-ratio: 3/4)').matches;
+        var l = document.createElement('link');
+        l.rel = 'preload';
+        l.as = 'image';
+        l.setAttribute('fetchpriority', 'high');
+        l.href = haut ? 'hd/essais/fond-feutre-9x16.webp' : 'hd/essais/fond-feutre-16x9.webp';
+        document.head.appendChild(l);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

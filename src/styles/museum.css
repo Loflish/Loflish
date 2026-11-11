@@ -731,6 +731,9 @@
 .perdre-carte .apercu-type {
   margin-top: 0.6rem;
 }
+.perdre-texte:focus-visible {
+  outline-offset: 6px;
+}
 .perdre-texte {
   flex: 1;
   /* sur un écran bas, le texte défile dans le panneau : « Ouvrir la trace » reste toujours visible */
@@ -916,10 +919,17 @@
 .lin-hd {
   position: absolute;
   inset: 0;
+  /* la trame arrive après le premier rendu (src/lib/hd.ts, poserMatieresDesPages) */
+  background-image: var(--lin-tissu, none);
   background-size: 900px 900px;
   mix-blend-mode: multiply;
   opacity: 0.13;
   transition: opacity 1800ms var(--doux);
+}
+/* tant que la trame et les fibres ne sont pas chargées, leurs calques restent transparents : ils viennent en fondu */
+html.hd:not(.surfaces) .backdrop .lin-hd,
+html.hd:not(.surfaces) .backdrop .fibres {
+  opacity: 0;
 }
 /* hors de la constellation, la trame de la mousseline se voit : les pages sont du tissu, pas du papier */
 .backdrop:not(.mode-explore) .lin-hd {

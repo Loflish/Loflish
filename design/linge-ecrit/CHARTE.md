@@ -77,6 +77,25 @@ Les scripts sont dans `design/linge-ecrit/controles/` (Playwright et axe-core ; 
 port 5175 ou 4175, nouvelle sur le 5174) : `parcours.cjs` (32 gestes), `textes.cjs` (parité des contenus),
 `mesurer.cjs` (accessibilité, débordements, cibles), `correctifs.cjs` (les défauts ci-dessus).
 
+### Vitesse (11 novembre, après la refonte)
+
+Une page ne charge plus que ce qu'elle montre : le moteur de la constellation n'est créé que sur les adresses
+qui la montrent, une bulle en image ne charge que sa tache, la photo de tissu invisible sous les pages n'est
+plus téléchargée, la police de lecture arrive avec le code et les textures après elle.
+Lighthouse téléphone (réseau lent simulé, navigateur sans carte graphique), version du 30 octobre → maintenant :
+
+| Page | Performance | Blocage | Plus grand élément affiché | Poids |
+| --- | --- | --- | --- | --- |
+| Profil | 37 → 77 | 4,97 s → 0,19 s | 16,7 s → 5,4 s | 3,85 Mo → 1,66 Mo |
+| Le projet | 65 → 84 | 5,47 s → 0,02 s | 0,9 s → 4,5 s (*) | 3,23 Mo → 1,21 Mo |
+| Créer ma trace | 64 → 83 | 7,91 s → 0,01 s | 0,9 s → 4,7 s (*) | 2,96 Mo → 1,08 Mo |
+| Constellation | 35 → 35 | 25,7 s → 24,7 s | 12,8 s → 11,1 s | 2,87 Mo → 2,88 Mo |
+
+(*) Cette mesure varie d'un passage à l'autre sur la version du 30 octobre (0,9 s ou 12,8 s pour la même page).
+La constellation n'a pas bougé : son coût est celui du moteur, mesuré ici sans carte graphique.
+`controles/demarrage.cjs` vérifie ce que chaque page télécharge ; les bulles des profils restent identiques
+au pixel à celles de la constellation (24 sur 24, vérifié en développement).
+
 Non vérifié : le rendu sur un vrai téléphone, sur Safari et sur Firefox (les contrôles tournent dans Chromium).
 La performance mesurée est celle d'un navigateur sans carte graphique : à refaire sur un téléphone réel.
 

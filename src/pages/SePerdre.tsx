@@ -86,7 +86,8 @@ export function SePerdre() {
             {TYPE_LABEL[t.type]}
             {t.pays ? `, ${t.pays}` : ''}
           </p>
-          <p className="perdre-texte">
+          {/* sur un écran bas, ces mots défilent dans le panneau : le clavier doit pouvoir y entrer */}
+          <p className="perdre-texte" tabIndex={0}>
             <TexteBrode texte={apercu(t)} />
           </p>
           <Link to={`/trace/${t.id}`} className="lien-entrer">

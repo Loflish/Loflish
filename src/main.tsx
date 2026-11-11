@@ -26,13 +26,14 @@ import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import { App } from './App';
 import { Panne } from './components/Panne';
-import { MuseumProvider } from './lib/museum';
-import { installSurfaces, loadTaches } from './lib/hd';
+import { estRouteExplorer, MuseumProvider } from './lib/museum';
+import { installSurfaces, loadTaches, poserMatieresDesPages } from './lib/hd';
 import { chargerMusee } from './data/store';
 
 installSurfaces();
-// les taches d'aquarelle des bulles se chargent avant tout le reste
-void loadTaches();
+// les taches d'aquarelle des bulles se chargent avant tout le reste, quand on arrive sur la constellation ;
+// une page de texte ou un profil ne les télécharge pas (chaque bulle en image charge la sienne)
+if (estRouteExplorer(window.location.hash.replace(/^#/, '').split('?')[0] || '/')) void loadTaches();
 
 // en ligne, les présences du musée arrivent avant la constellation (au plus 4 s d'attente)
 const attente = new Promise((r) => setTimeout(r, 4000));
@@ -50,4 +51,6 @@ createRoot(document.getElementById('root')!).render(
     </HashRouter>
   </StrictMode>,
 );
+  // après le premier rendu : les polices sont demandées, les matières des pages passent après elles
+  requestAnimationFrame(() => poserMatieresDesPages());
 }

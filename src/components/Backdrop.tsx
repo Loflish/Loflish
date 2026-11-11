@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { allTraces, apercu, getTrace, TYPE_LABEL, useMesTraces } from '../data/store';
 import { Atmosphere, paperTexture } from '../engine/atmosphere';
 import { clearSpriteCache } from '../engine/bubbleSprite';
@@ -8,10 +8,10 @@ import { Encre } from '../engine/encre';
 import { Entree } from './Entree';
 import { FondEau, reglagesEau } from '../engine/eau';
 import { Ornements, varianteOrnements } from '../engine/ornements';
-import { FOND_ESSAI, FOND_FEUTRE, FOND_VIDEO, FONDS, HD, HD_FILES, LEGER, loadMatieres, loadTaches, TOILE_BRUTE, TOILE_PLEINE, type Fond } from '../lib/hd';
+import { FOND_DES_PAGES, FOND_ESSAI, FOND_FEUTRE, FOND_VIDEO, FONDS, HD, HD_FILES, LEGER, loadMatieres, loadTaches, TOILE_BRUTE, TOILE_PLEINE, type Fond } from '../lib/hd';
 import { Constellation, MODES } from '../engine/constellation';
 import { colorById } from '../lib/palette';
-import { useMuseum } from '../lib/museum';
+import { estRouteExplorer, useMuseum } from '../lib/museum';
 import { TexteBrode } from './TexteBrode';
 import { Icon } from './Icon';
 
@@ -71,7 +71,10 @@ function FondsPeints({ actif }: { actif: Fond }) {
     else if (!document.hidden) void v.play().catch(() => undefined);
   }, [enPause, pret, actif]);
   useEffect(() => setVus((v) => (v.includes(actif) ? v : [...v, actif])), [actif]);
+  const dansLaConstellation = actif === 'explorer';
   useEffect(() => {
+    // hors de la constellation, ni vidéo ni taches à attendre
+    if (!dansLaConstellation) return;
     let t = 0;
     // la vidéo passe après les taches d'aquarelle des bulles : elle ne leur vole pas la connexion
     const go = () => void loadTaches().then(() => (t = window.setTimeout(() => setPret(true), 1200)));
@@ -90,10 +93,10 @@ function FondsPeints({ actif }: { actif: Fond }) {
       window.removeEventListener('load', go);
       document.removeEventListener('visibilitychange', vis);
     };
-  }, []);
+  }, [dansLaConstellation]);
   return (
     <>
-      {vus.map((f) => (
+      {vus.filter((f) => f === 'explorer' || FOND_DES_PAGES).map((f) => (
         <div key={f} className={`fond-peint fond-${f}${f === actif ? ' is-on' : ''}`} aria-hidden="true">
           {/* la vidéo ne tourne que dans l'espace actif : ailleurs, l'image fixe suffit */}
           {/* la boucle vidéo anime le fond actuel : avec un fond à l'essai, la peinture fixe (le shader la fait respirer) */}
@@ -139,11 +142,19 @@ export function Backdrop() {
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [entering, setEntering] = useState(false);
-  const [paper] = useState(() => paperTexture());
+  // le papier procédural ne sert que sans les matières HD
+  const [paper] = useState(() => (HD ? '' : paperTexture()));
   const navigate = useNavigate();
+  // Le moteur n'est créé que la première fois qu'une adresse montre la constellation : un profil ou une page
+  // de texte ouverts directement (lien partagé, favori) ne paient ni le shader, ni les 420 bulles, ni leurs images.
+  // Il est créé dans le même rendu que la page Explorer, avant ses propres effets : elle le trouve toujours prêt.
+  const besoinRef = useRef(false);
+  if (estRouteExplorer(useLocation().pathname)) besoinRef.current = true;
+  const moteur = besoinRef.current;
 
   // ——— création unique du fond et de la constellation
   useEffect(() => {
+    if (!moteur) return;
     const a = new Atmosphere(atmoRef.current!);
     atmo.current = a;
     const place = () => {
@@ -202,7 +213,7 @@ export function Backdrop() {
       c.destroy();
       engine.current = null;
     };
-  }, [engine]);
+  }, [engine, moteur]);
 
   // ——— événements du moteur → interface (sans re-rendu à chaque image)
   useEffect(() => {
@@ -236,7 +247,7 @@ export function Backdrop() {
         }
       }
     };
-  }, [engine]);
+  }, [engine, moteur]);
 
   // ——— état par page
   useEffect(() => {
@@ -253,24 +264,24 @@ export function Backdrop() {
     // le shader s'efface avec la constellation (fondu CSS), puis s'arrête
     const t = window.setTimeout(() => atmo.current?.pause(mode !== 'explore'), mode === 'explore' ? 0 : 1900);
     return () => window.clearTimeout(t);
-  }, [mode, engine]);
+  }, [mode, engine, moteur]);
 
   useEffect(() => {
     engine.current?.setReducedMotion(reducedMotion);
     orn.current?.setReduit(reducedMotion);
-  }, [reducedMotion, engine]);
+  }, [reducedMotion, engine, moteur]);
 
   // le visiteur a mis le mouvement en pause : les bulles et la peinture s'arrêtent sur l'image
   useEffect(() => {
     engine.current?.setPause(enPause);
     atmo.current?.setStill(enPause);
     orn.current?.setPause(enPause);
-  }, [enPause, engine]);
+  }, [enPause, engine, moteur]);
 
   // ta bulle se distingue, uniquement sur ton appareil
   useEffect(() => {
     engine.current?.setOwn(new Set(mesTraces.map((t) => t.id)));
-  }, [mesTraces, engine]);
+  }, [mesTraces, engine, moteur]);
 
   useEffect(() => {
     if (selected && document.activeElement === cvsRef.current) enterBtn.current?.focus({ preventScroll: true });
@@ -312,7 +323,7 @@ export function Backdrop() {
       />
       {HD ? (
         <>
-          <div className={`lin-hd${TOILE_BRUTE || FOND_FEUTRE ? ' sous-toile-brute' : ''}`} aria-hidden="true" style={{ backgroundImage: `url(${HD_FILES.lin})` }} />
+          <div className={`lin-hd${TOILE_BRUTE || FOND_FEUTRE ? ' sous-toile-brute' : ''}`} aria-hidden="true" />
           {TOILE_BRUTE && (
             <div className={`toile-brute${TOILE_PLEINE ? ' toile-pleine' : ''}`} aria-hidden="true" style={{ backgroundImage: `url(${TOILE_BRUTE})` }} />
           )}

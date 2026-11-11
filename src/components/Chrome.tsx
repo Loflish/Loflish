@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { bubbleDataUrl } from '../engine/bubbleSprite';
 import { colorById } from '../lib/palette';
-import { getTrace } from '../data/store';
-import { loadMatieres } from '../lib/hd';
+import { allTraces, getTrace } from '../data/store';
+import { loadUneMatiere, matiereFor, tacheMontree } from '../lib/hd';
+import { hashString } from '../lib/random';
 import { Icon } from './Icon';
 
 // Logo sur une ligne, recomposé à partir des lettres brodées du tableau (design/logo/logo_ligne.py).
@@ -63,8 +64,11 @@ export function BubbleImage({
   const m = matiere ?? getTrace(id)?.matiere;
   useEffect(() => {
     let alive = true;
-    // attend les taches HD (si elles existent) pour être identique à la constellation
-    loadMatieres([m]).then(() =>
+    // Identique à la constellation, sans charger tout le catalogue : seulement la tache que cette bulle
+    // montre (la sienne, ou la plus proche parmi celles que la constellation charge sur cet écran).
+    const n = m ?? matiereFor(hashString(id));
+    const tache = tacheMontree(n, allTraces().map((t) => t.matiere));
+    (tache > 0 ? loadUneMatiere(tache) : Promise.resolve()).then(() =>
       peindre(() => alive && setSrc(bubbleDataUrl(id, colorById(couleur).hex, Math.round(size * 2.2), m)), size >= 120),
     );
     return () => {
