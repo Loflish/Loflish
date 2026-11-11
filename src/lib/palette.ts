@@ -12,7 +12,7 @@
  * 30 couleurs, 5 familles × 6. Les noirs, blancs, gris neutres et les
  * bordeaux profonds de GRIS sont volontairement écartés :
  *  - les extrêmes disparaissent sur le fond lin ;
- *  - le bordeaux est réservé au logo brodé.
+ *  - le bordeaux est réservé au logo brodé et aux coutures du site (jamais une couleur de bulle).
  */
 
 export type GrisFamily = 'bleus' | 'verts' | 'roses' | 'violets' | 'ocres';

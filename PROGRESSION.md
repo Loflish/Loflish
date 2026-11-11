@@ -1,5 +1,14 @@
 # Nos Mots Mémoriaux : état sauvegardé
 
+## Point de reprise — 11 novembre 2026
+
+Refonte visuelle « Le linge écrit » sur la branche `claude/vibrant-galileo-h4yjfn` : interface de la
+constellation et toutes les pages intérieures, téléphone d'abord. Aucune fonctionnalité ni aucun texte
+modifié ; le moteur (feutre, eau, bulles) est inchangé. Charte, sources et vérifications :
+[design/linge-ecrit/CHARTE.md](design/linge-ecrit/CHARTE.md).
+La version du 30 octobre reste intacte sur `refonte-octobre`.
+Prochaine étape : Tom regarde la refonte sur son téléphone et dit ce qu'il garde.
+
 ## Point de reprise — 30 octobre 2026
 
 La version préférée de Tom (fond feutre, eau, entrée) est devenue la version par défaut du site.

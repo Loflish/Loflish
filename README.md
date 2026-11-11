@@ -47,6 +47,11 @@ docker compose up -d --build   # tout le musée en production (site, API, base, 
 
 ## Direction artistique — où elle vit dans le code
 
+- **Le linge écrit** (11 novembre 2026) : l'interface et toutes les pages intérieures sont une pièce de
+  mousseline écrue, cousue au fil bordeaux et lavée dans la couleur GRIS de chaque personne. La charte, ses
+  sources et les vérifications sont dans [design/linge-ecrit/CHARTE.md](design/linge-ecrit/CHARTE.md).
+  Le moteur de la constellation n'a pas changé.
+
 - **Couleurs des bulles : GRIS uniquement** — `src/lib/palette.ts`, 30 teintes reprises telles
   quelles de [GRIScolors](https://github.com/scpederzani/GRIScolors) (5 familles × 6).
 - **Bulles** (aquarelle + papier + tissu + fil fusionnés) — `src/engine/bubbleSprite.ts`.
@@ -55,7 +60,7 @@ docker compose up -d --build   # tout le musée en production (site, API, base, 
   `src/engine/constellation.ts`.
 - **Fond vivant** (lin + nappes de pigment façon Monet, très lent) — `src/engine/atmosphere.ts`.
 - **Typographie** : une seule police, Newsreader ; la hiérarchie vient de la taille, de la graisse et de
-  l'italique (les mots des personnes en italique). Les écritures qu'elle ne dessine pas prennent IBM Plex
+  l'italique (les mots des personnes en italique ; les étiquettes en petites capitales espacées). Les écritures qu'elle ne dessine pas prennent IBM Plex
   (arabe, hébreu, devanagari, thaï, cyrillique, grec) ou la police du système (japonais, chinois, coréen) :
   `src/styles/tokens.css`.
 - **Alphabet brodé** (les 200 caractères) : les lettres d'IBM Plex Sans cousues en contour au point avant
@@ -67,8 +72,8 @@ docker compose up -d --build   # tout le musée en production (site, API, base, 
   la main, reste reproductible (`alphabet.py … main`). Un mot sans fin se coupe : rien ne sort du cadre.
 - **Icônes brodées** : les symboles des rubriques et des questions (`public/hd/icones`) ; les icônes
   d'interface restent au trait.
-- **Logo brodé** : détouré depuis la photo du tableau, fibres et points conservés, bordeaux
-  réservé au logo. Version sur une ligne recomposée lettre par lettre (`design/logo/logo_ligne.py`),
+- **Logo brodé** : détouré depuis la photo du tableau, fibres et points conservés. Son bordeaux
+  est aussi le fil de toutes les coutures du site (jamais la couleur d'un texte courant). Version sur une ligne recomposée lettre par lettre (`design/logo/logo_ligne.py`),
   version trois lignes d'origine conservée dans `design/logo/`. À refaire depuis le scan définitif.
 
 ## Matières HD (Higgsfield)
