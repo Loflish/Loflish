@@ -671,3 +671,19 @@ details[open] > summary::before {
     scroll-behavior: auto !important;
   }
 }
+
+/* Contraste renforcé demandé par le système (après coutures.css, pour l'emporter sur ses variables) : l'encre secondaire devient l'encre, les coutures pâles deviennent pleines */
+@media (prefers-contrast: more) {
+  :root {
+    --encre-2: #2f2c33;
+    --encre-3: #2f2c33;
+    --filet: rgba(47, 44, 51, 0.45);
+    --filet-fort: rgba(47, 44, 51, 0.7);
+    --fil-rouge-doux: #64303d;
+    --couture-pale: var(--couture);
+    --couture-v-pale: var(--couture-v);
+    --couture-cadre-pale: var(--couture-cadre);
+    --papier: rgba(244, 239, 230, 0.97);
+    --papier-dense: rgba(244, 239, 230, 0.99);
+  }
+}

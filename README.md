@@ -31,6 +31,22 @@ npm run serveur:test     # les tests du serveur, sur une vraie base jetable
 docker compose up -d --build   # tout le musée en production (site, API, base, HTTPS, sauvegardes)
 ```
 
+## Contrôles : le filet de sécurité
+
+À chaque envoi sur GitHub, sur n'importe quelle branche, [les contrôles du musée](.github/workflows/controles.yml)
+tournent seuls : types, compilation des deux modes, tests du serveur, puis la suite du site.
+**Une coche rouge sur GitHub = quelque chose a été cassé ou perdu : ne pas fusionner, ne pas mettre en ligne.**
+
+```bash
+npm run build && npm run controles   # la même suite, ici (Playwright : npx playwright install chromium la première fois)
+npm run controles:textes:ecrire      # après un changement de texte VOULU : enregistre la nouvelle référence
+```
+
+La suite (`design/linge-ecrit/controles/`) : 32 gestes sur téléphone et ordinateur (rechercher, ouvrir une bulle,
+se perdre, créer une trace de bout en bout, déposer un fragment, coudre un trait…), textes, liens et titres
+identiques à la référence, accessibilité (axe-core), ce que chaque page télécharge, défauts déjà corrigés.
+La version validée le 11 novembre 2026 est gardée sur la branche `verrou/linge-ecrit-2026-11-11`.
+
 ## Ce qui est en place
 
 | Surface | Contenu |

@@ -306,7 +306,12 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
               <li key={t.id}>
                 <button
                   className="result"
-                  onClick={() => (engine.current?.has(t.id) ? engine.current.focusOn(t.id) : navigate(`/trace/${t.id}`))}
+                  onClick={() => {
+                    if (!engine.current?.has(t.id)) return navigate(`/trace/${t.id}`);
+                    engine.current.focusOn(t.id);
+                    // sur téléphone la recherche couvre tout l'écran : elle se referme pour laisser voir la bulle trouvée
+                    if (window.matchMedia('(max-width: 699px)').matches) onClose();
+                  }}
                 >
                   <span className="result-nom">{t.nom}</span>
                   <span className="result-meta">{t.pays ?? TYPE_LABEL[t.type]}</span>
