@@ -2,8 +2,8 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const axe = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
-const out = process.argv[2];
-const base = process.argv[3] || 'http://127.0.0.1:5174/';
+const out = process.argv[2] || require('path').join(require('os').tmpdir(), 'nmm-mesures.json');
+const base = process.argv[3] || 'http://127.0.0.1:4174/';
 const routes = ['', 'se-perdre', 'trace/sakinah', 'trace/jeannot', 'creer', 'projet', 'ressources', 'soutenir', 'juridique', 'archives', 'oeuvre-commune', 'compte'];
 const formats = [['320', { width: 320, height: 640 }, true], ['390', { width: 390, height: 844 }, true], ['768', { width: 768, height: 1024 }, true], ['1440', { width: 1440, height: 900 }, false]];
 (async () => {
@@ -67,4 +67,9 @@ const formats = [['320', { width: 320, height: 640 }, true], ['390', { width: 39
   console.log('éléments hors écran :', pages.filter((r) => r.deb.length).map((r) => r.format + ':' + r.route + '→' + r.deb.join('|')).join(' ; ') || 'aucun');
   console.log('cibles < 24 px (WCAG 2.5.8) :', tot((r) => r.nPetits), '| cibles basses (< 32 px de haut ou < 44 des deux côtés) :', tot((r) => r.sous44), 'sur', tot((r) => r.cibles));
   console.log('erreurs de page :', res.filter((r) => r.erreurs).map((r) => r.format + ':' + r.nErreurs).join(' '));
+  // échec : un défaut d'accessibilité, une page qui déborde, un contenu hors de l'écran, ou une cible de moins de 24 px
+  // autre qu'un lien dans une phrase (les adresses e-mail du texte)
+  const horsTexte = pages.reduce((s, r) => s + r.petits.filter((x) => !/^A «/.test(x.c)).length, 0);
+  const mauvais = tot((r) => r.axe.length) + pages.filter((r) => r.debordement || r.deb.length).length + horsTexte;
+  process.exit(mauvais ? 1 : 0);
 })();

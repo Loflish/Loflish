@@ -1,4 +1,8 @@
-// Parité des contenus : le texte de chaque page (textContent, insensible au CSS), ancienne et nouvelle version.
+// Parité des contenus : le texte de chaque page (textContent, insensible au CSS), ses liens, ses contrôles, ses titres.
+//   node textes.cjs                 compare le site servi à la référence enregistrée (textes-reference.json)
+//   node textes.cjs --ecrire        enregistre la référence : à faire après un changement de texte VOULU
+//   node textes.cjs --comparer <ancienne adresse> <nouvelle adresse>   compare deux versions servies
+// Adresse du site : variable NMM_BASE, sinon http://127.0.0.1:4174/
 const { chromium } = require('playwright');
 const routes = ['', 'trace/sakinah', 'trace/jeannot', 'creer', 'projet', 'ressources', 'soutenir', 'juridique', 'archives', 'oeuvre-commune', 'compte', 'trace/inconnue'];
 const lire = async (ctx, base) => {
@@ -20,19 +24,31 @@ const lire = async (ctx, base) => {
   }
   await p.close(); return o;
 };
+const fs = require('fs'); const path = require('path');
+const REF = path.join(__dirname, 'textes-reference.json');
+const BASE = process.env.NMM_BASE || 'http://127.0.0.1:4174/';
 (async () => {
   const b = await chromium.launch();
+  const mk = (W) => b.newContext({ viewport: { width: W, height: 900 }, isMobile: W < 900, hasTouch: W < 900 }).then(async (c) => { await c.addInitScript(() => { try { localStorage.setItem('nmm:vu', '1'); localStorage.setItem('nmm:visites', '5'); sessionStorage.setItem('nmm:entree-vue', '1'); } catch {} }); return c; });
+  const mode = process.argv[2];
+  const tout = async (base) => { const o = {}; for (const W of [390, 1440]) o[W] = await lire(await mk(W), base); return o; };
+  if (mode === '--ecrire') {
+    fs.writeFileSync(REF, JSON.stringify(await tout(BASE), null, 1));
+    console.log('référence enregistrée :', REF); await b.close(); return;
+  }
+  const [a, n] = mode === '--comparer' ? [await tout(process.argv[3]), await tout(process.argv[4])] : [JSON.parse(fs.readFileSync(REF, 'utf8')), await tout(BASE)];
   let total = 0, egaux = 0, car = 0;
-  for (const W of [390, 1440]) {
-    const mk = () => b.newContext({ viewport: { width: W, height: 900 }, isMobile: W < 900, hasTouch: W < 900 }).then(async (c) => { await c.addInitScript(() => { try { localStorage.setItem('nmm:vu', '1'); localStorage.setItem('nmm:visites', '5'); sessionStorage.setItem('nmm:entree-vue', '1'); } catch {} }); return c; });
-    const [a, n] = [await lire(await mk(), process.argv[2] || 'http://127.0.0.1:4175/'), await lire(await mk(), process.argv[3] || 'http://127.0.0.1:4174/')];
-    for (const r of Object.keys(a)) {
-      const memeT = a[r].t === n[r].t, memeL = JSON.stringify(a[r].liens) === JSON.stringify(n[r].liens), memeC = a[r].controles === n[r].controles, memeH = JSON.stringify(a[r].titres) === JSON.stringify(n[r].titres), memeA = JSON.stringify(a[r].aria) === JSON.stringify(n[r].aria);
-      total++; car += a[r].t.length; if (memeT && memeL && memeC && memeH && memeA) egaux++;
-      console.log(`${W} ${r.padEnd(16)} texte ${memeT ? 'identique' : 'DIFFÉRENT'} (${a[r].t.length} car.) | liens ${memeL ? '=' : '≠'} ${a[r].liens.length} | contrôles ${a[r].controles}→${n[r].controles} | titres ${memeH ? '=' : '≠'} ${a[r].titres.length} | aria ${memeA ? '=' : '≠'} ${a[r].aria.length}`);
-      if (!memeT) { let i = 0; while (i < a[r].t.length && a[r].t[i] === n[r].t[i]) i++; console.log('   avant :', JSON.stringify(a[r].t.slice(Math.max(0, i - 40), i + 80))); console.log('   après :', JSON.stringify(n[r].t.slice(Math.max(0, i - 40), i + 80))); }
+  for (const W of Object.keys(a)) for (const r of Object.keys(a[W])) {
+    const x = a[W][r], y = n[W][r];
+    const memeT = x.t === y.t, memeL = JSON.stringify(x.liens) === JSON.stringify(y.liens), memeC = x.controles === y.controles, memeH = JSON.stringify(x.titres) === JSON.stringify(y.titres), memeA = JSON.stringify(x.aria) === JSON.stringify(y.aria);
+    total++; car += x.t.length; const egal = memeT && memeL && memeC && memeH && memeA; if (egal) egaux++;
+    if (!egal) {
+      console.log(`${W} ${r.padEnd(16)} texte ${memeT ? 'identique' : 'DIFFÉRENT'} | liens ${memeL ? '=' : '≠'} | contrôles ${x.controles}→${y.controles} | titres ${memeH ? '=' : '≠'} | aria ${memeA ? '=' : '≠'}`);
+      if (!memeT) { let i = 0; while (i < x.t.length && x.t[i] === y.t[i]) i++; console.log('   attendu :', JSON.stringify(x.t.slice(Math.max(0, i - 40), i + 80))); console.log('   trouvé  :', JSON.stringify(y.t.slice(Math.max(0, i - 40), i + 80))); }
     }
   }
-  console.log(`\nPARITÉ : ${egaux} / ${total} pages identiques (texte, liens, contrôles, titres, attributs d'accessibilité) ; ${car.toLocaleString('fr-FR')} caractères comparés`);
+  console.log(`PARITÉ : ${egaux} / ${total} pages identiques (texte, liens, contrôles, titres, attributs d'accessibilité) ; ${car.toLocaleString('fr-FR')} caractères comparés`);
+  if (egaux !== total && mode !== '--comparer') console.log('Si ce changement de texte est voulu : npm run controles:textes:ecrire, puis enregistrer textes-reference.json.');
   await b.close();
+  process.exit(egaux === total ? 0 : 1);
 })();

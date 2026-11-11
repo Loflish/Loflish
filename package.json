@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "serveur": "npm --prefix server run dev",
-    "serveur:test": "npm --prefix server test"
+    "serveur:test": "npm --prefix server test",
+    "controles": "node design/linge-ecrit/controles/tout.cjs",
+    "controles:textes:ecrire": "node design/linge-ecrit/controles/textes.cjs --ecrire"
   },
   "dependencies": {
     "@fontsource-variable/newsreader": "^5.3.0",
@@ -29,6 +31,8 @@
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",
     "typescript": "^5.9.3",
-    "vite": "^5.4.21"
+    "vite": "^5.4.21",
+    "playwright": "1.63.0",
+    "axe-core": "^4.10.0"
   }
 }

@@ -1,0 +1,58 @@
+# Le filet de sécurité de Nos Mots Mémoriaux.
+# À chaque envoi, sur n'importe quelle branche : le site doit compiler dans ses deux modes, et passer les mêmes
+# contrôles que la refonte du 11 novembre 2026 (design/linge-ecrit/CHARTE.md). Une coche rouge = quelque chose a
+# été cassé ou perdu : ne pas fusionner, ne pas mettre en ligne.
+name: Contrôles du musée
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: controles-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  site:
+    name: Le site (types, compilation, parcours, textes, accessibilité)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Installer
+        run: npm ci
+      - name: Types
+        run: npm run typecheck
+      - name: Compiler le mode en ligne
+        run: npm run build:en-ligne
+      - name: Compiler le prototype (celui que les contrôles parcourent)
+        run: npm run build
+      - name: Installer le navigateur des contrôles
+        run: npx playwright install --with-deps chromium
+      - name: Parcours, textes, accessibilité, démarrage, défauts rejoués
+        run: npm run controles
+
+  serveur:
+    name: Le serveur (types et tests sur une vraie base jetable)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Installer
+        run: npm --prefix server ci
+      - name: Types
+        run: npm --prefix server run typecheck
+      - name: Tests
+        run: npm --prefix server test

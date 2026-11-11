@@ -1,6 +1,9 @@
 // Les constats de la relecture, rejoués sur le vrai site. node correctifs.cjs <base>
 const { chromium } = require('playwright');
-const base = process.argv[2];
+const base = process.argv[2] || 'http://127.0.0.1:4174/';
+let echecs = 0;
+const journal = console.log;
+console.log = (...a) => { if (String(a[0]).startsWith('ÉCHEC')) echecs++; journal(...a); };
 const init = () => { try { localStorage.setItem('nmm:vu', '1'); localStorage.setItem('nmm:visites', '5'); sessionStorage.setItem('nmm:entree-vue', '1'); } catch {} };
 (async () => {
   const b = await chromium.launch();
@@ -34,4 +37,5 @@ const init = () => { try { localStorage.setItem('nmm:vu', '1'); localStorage.set
   const e = await p.evaluate(() => { const l = document.querySelector('.explorer-edition').getBoundingClientRect(); const a = document.querySelector('.explorer-actions').getBoundingClientRect(); return [Math.round(l.right), Math.round(a.left)]; });
   console.log((e[0] <= e[1] ? 'OK    ' : 'ÉCHEC ') + `12. 320 px, édition archivée : la ligne finit à ${e[0]} px, les boutons commencent à ${e[1]} px`);
   await b.close();
+  process.exit(echecs ? 1 : 0);
 })();

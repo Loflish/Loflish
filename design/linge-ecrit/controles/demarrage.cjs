@@ -1,7 +1,7 @@
 // Démarrage : ce que chaque page télécharge, et le moteur créé seulement quand la constellation est montrée.
-// Usage : node demarrage.cjs <base>   (par défaut http://127.0.0.1:5174/)
+// Usage : node demarrage.cjs <base>   (par défaut http://127.0.0.1:4174/)
 const { chromium } = require('playwright');
-const base = process.argv[2] || 'http://127.0.0.1:5174/';
+const base = process.argv[2] || 'http://127.0.0.1:4174/';
 let ok = 0, total = 0;
 const note = (nom, bon, detail = '') => { total++; if (bon) ok++; console.log((bon ? 'OK    ' : 'ÉCHEC ') + nom + (detail ? ' — ' + detail : '')); };
 (async () => {

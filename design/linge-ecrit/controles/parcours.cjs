@@ -1,7 +1,7 @@
 // Parcours de non-régression : les mêmes gestes, sur n'importe quelle version du site.
 // Usage : node parcours.cjs <base> <largeur>   → une ligne par contrôle, puis le total.
 const { chromium } = require('playwright');
-const base = process.argv[2] || 'http://127.0.0.1:5174/';
+const base = process.argv[2] || 'http://127.0.0.1:4174/';
 const W = +(process.argv[3] || 390);
 const res = [];
 const note = (nom, ok, detail = '') => { res.push({ nom, ok: !!ok }); console.log((ok ? 'OK    ' : 'ÉCHEC ') + nom + (detail ? ' — ' + detail : '')); };
@@ -220,4 +220,5 @@ const note = (nom, ok, detail = '') => { res.push({ nom, ok: !!ok }); console.lo
   await b.close();
   const ok = res.filter((r) => r.ok).length;
   console.log(`\nTOTAL ${W} px : ${ok} / ${res.length} contrôles réussis`);
+  process.exit(ok === res.length ? 0 : 1);
 })();
