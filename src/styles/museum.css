@@ -111,7 +111,7 @@
 .name-label[data-visible='true'] {
   opacity: 1;
 }
-/* ——— aperçu d'une présence (après un clic) */
+/* ——— aperçu d'une présence (après un clic) : une étiquette de mousseline, lavée dans sa couleur */
 
 .apercu {
   position: fixed;
@@ -119,13 +119,18 @@
   top: 0;
   z-index: 5;
   pointer-events: auto;
-  width: min(330px, calc(100vw - 2rem));
-  padding: 1.3rem 1.4rem 1.2rem;
-  background: var(--papier-dense);
-  border: 1px solid var(--filet);
-  border-radius: var(--rayon);
-  backdrop-filter: blur(3px);
-  animation: apercu-in 900ms var(--doux) both;
+  width: min(340px, calc(100vw - 2rem));
+  padding: 1.7rem 1.7rem 1.4rem;
+  animation: apercu-in 700ms var(--pose) both;
+}
+.apercu::before,
+.perdre-carte::before {
+  background-image: radial-gradient(130% 90% at 100% 0%, var(--lavis) 0%, var(--lavis-leger) 36%, transparent 64%), var(--lin-tissu, none);
+  background-size: 100% 100%, 620px 620px;
+  background-blend-mode: normal, soft-light;
+}
+.apercu::after {
+  background-image: var(--couture-cadre);
 }
 .apercu.is-leaving {
   animation: apercu-out 600ms var(--doux) forwards;
@@ -139,46 +144,59 @@
 }
 .apercu-close {
   position: absolute;
-  top: 0.6rem;
-  right: 0.6rem;
-  color: var(--encre-3);
-  padding: 0.3rem;
+  top: 0.55rem;
+  right: 0.55rem;
+  display: grid;
+  place-items: center;
+  width: var(--cible);
+  height: var(--cible);
+  color: var(--encre-2);
+  border-radius: 50%;
 }
-.apercu-close:hover { color: var(--encre); }
+.apercu-close:hover { color: var(--encre); background: var(--fil-rouge-voile); }
 .apercu-nom {
   font-family: var(--serif);
-  font-size: 1.5rem;
-  line-height: 1.15;
-  font-weight: 450;
-  padding-right: 1.5rem;
+  font-size: 1.75rem;
+  line-height: 1.1;
+  font-weight: 380;
+  font-variation-settings: 'opsz' 48;
+  letter-spacing: -0.01em;
+  padding-right: 2.2rem;
 }
 .apercu-type {
-  font-size: var(--t-xs);
-  color: var(--encre-2);
-  letter-spacing: 0.03em;
-  margin-top: 0.3rem;
+  margin-top: 0.5rem;
 }
 .apercu-texte {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 1.12rem;
+  font-size: 1.16rem;
   line-height: 1.5;
-  margin: 1rem 0 1.2rem;
+  margin: 1rem 0 0.9rem;
   color: var(--encre);
 }
 
 @media (max-width: 699px) {
   .apercu {
-    left: 1rem;
-    right: 1rem;
+    left: 0.9rem;
+    right: 0.9rem;
     top: auto;
-    bottom: 5.2rem;
+    bottom: calc(var(--dock-h) + 1.1rem);
     width: auto;
     transform: none !important;
+    animation-name: apercu-monte;
+  }
+  @keyframes apercu-monte {
+    from { opacity: 0; translate: 0 14px; }
+    to { opacity: 1; translate: 0 0; }
   }
 }
 
 /* ——— accueil : on entre directement dans l'œuvre */
+
+:root {
+  /* la hauteur du ruban de navigation, marge du téléphone comprise */
+  --dock-h: calc(3.7rem + env(safe-area-inset-bottom, 0px));
+}
 
 .explorer,
 .perdre {
@@ -187,8 +205,8 @@
 }
 .explorer-logo {
   position: fixed;
-  left: clamp(1rem, 2.4vw, 2.2rem);
-  top: clamp(1rem, 2.4vw, 2rem);
+  left: clamp(0.9rem, 2.4vw, 2.2rem);
+  top: max(clamp(0.9rem, 2.4vw, 2rem), env(safe-area-inset-top));
   z-index: 4;
 }
 /* le fil bordeaux accroche la lumière : un liseré clair, serré contre les lettres, le garde lisible sur la
@@ -197,48 +215,107 @@
   filter: drop-shadow(0 0 0.6px rgba(246, 243, 236, 1)) drop-shadow(0 0 1.4px rgba(246, 243, 236, 0.75))
     drop-shadow(0 0 4px rgba(246, 243, 236, 0.22));
 }
+/* le logo est un lien : sa zone de toucher est plus haute que le fil brodé (au moins 44 px) */
 .logo {
   display: block;
-  width: clamp(230px, 26vw, 400px);
+  width: min(60vw, 400px);
+  padding: 0.85rem 0;
+  margin: -0.85rem 0;
 }
 .logo img {
   width: 100%;
   height: auto;
 }
 .logo-petit {
-  width: clamp(190px, 18vw, 260px);
+  width: min(52vw, 250px);
+}
+@media (min-width: 700px) {
+  .logo {
+    width: clamp(260px, 26vw, 400px);
+  }
+  .logo-petit {
+    width: clamp(200px, 18vw, 260px);
+  }
 }
 
+/* les gestes de la constellation : des boutons ronds de tissu, empilés à droite comme sur une carte ;
+   sur grand écran ils portent leur nom */
 .explorer-actions {
   position: fixed;
-  top: clamp(1.1rem, 2.4vw, 2rem);
-  right: clamp(1rem, 2.6vw, 2.2rem);
+  top: max(clamp(0.8rem, 2.4vw, 1.8rem), env(safe-area-inset-top));
+  right: clamp(0.8rem, 2.6vw, 2.2rem);
   z-index: 4;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.2rem;
+  gap: 0.5rem;
 }
+.explorer-actions .lien-discret {
+  justify-content: center;
+  width: var(--cible);
+  height: var(--cible);
+  min-height: 0;
+  padding: 0;
+  color: var(--encre);
+  background: var(--papier-dense);
+  border: 1.5px dashed var(--fil-rouge-doux);
+  border-radius: 999px;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: border-color var(--vif) var(--doux), background-color var(--vif) var(--doux);
+}
+.explorer-actions .lien-discret:hover,
+.explorer-actions .lien-discret:focus-visible {
+  background: var(--lin-clair);
+  border-color: var(--fil-rouge);
+}
+.action-nom {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+@media (min-width: 700px) {
+  .explorer-actions .lien-discret {
+    width: auto;
+    padding: 0 1.1rem 0 0.9rem;
+  }
+  .action-nom {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+}
+
 .explorer-edition {
   display: flex;
-  align-items: baseline;
-  gap: 0.3rem;
-  margin: 0.2rem 0 0 0.3rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 0.6rem;
+  margin: 0.3rem 0 0 0.2rem;
   font-size: var(--t-xs);
   color: var(--encre-2);
   pointer-events: auto;
+  text-shadow: 0 0 6px var(--lin), 0 0 12px var(--lin);
 }
 .explorer-hint {
   position: fixed;
   left: 50%;
-  bottom: 5.4rem;
+  bottom: calc(var(--dock-h) + 1.3rem);
   transform: translateX(-50%);
   z-index: 3;
   font-size: var(--t-xs);
-  color: var(--encre-2);
+  color: var(--encre);
   text-align: center;
   width: max-content;
   max-width: calc(100vw - 2rem);
+  padding: 0.45rem 1rem;
+  background: var(--papier);
+  border-radius: 999px;
   transition: opacity 1600ms var(--doux);
   pointer-events: none !important;
 }
@@ -257,79 +334,119 @@
   font-family: var(--serif);
   font-style: italic;
   font-weight: 380;
-  font-size: clamp(1.4rem, 1.1rem + 1.4vw, 2.2rem);
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.3rem);
   color: var(--encre);
-  line-height: 1.35;
+  line-height: 1.3;
   text-shadow: 0 0 18px var(--lin), 0 0 36px var(--lin);
 }
 .explorer-vide a {
   display: block;
   margin-top: 0.9rem;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-style: normal;
 }
 
-@media (max-width: 899px) {
-  .explorer-hint {
-    bottom: 6.2rem;
-  }
-}
-
-/* ——— menu principal : dock centré en bas, toujours visible */
+/* ——— navigation : un ruban de tissu cousu au bas de l'écran, à portée de pouce */
 
 .dock {
   position: fixed;
-  left: 50%;
-  bottom: max(1.1rem, env(safe-area-inset-bottom));
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 6;
   display: flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0.3rem;
-  background: var(--papier);
-  border: 1px solid var(--filet);
-  border-radius: var(--rayon);
-  backdrop-filter: blur(6px);
+  align-items: stretch;
+  padding: 0.55rem 0.3rem env(safe-area-inset-bottom, 0px);
+  min-height: var(--dock-h);
+  background:
+    var(--couture) left 3px / 236px 8px repeat-x,
+    var(--papier-dense);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 .dock-item {
+  flex: 1 1 0;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
-  font-size: var(--t-s);
-  color: var(--encre-2);
-  text-decoration: none;
-  padding: 0.55rem 0.95rem;
-  border-radius: 2px;
-  white-space: nowrap;
-  transition: color 400ms var(--doux), background 400ms var(--doux);
-}
-.dock-item:hover {
+  min-height: 3rem;
+  min-width: 0;
+  padding: 0.3rem 0.35rem;
+  font-size: 0.88rem;
+  line-height: 1.15;
+  text-align: center;
+  text-wrap: balance;
   color: var(--encre);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background var(--vif) var(--doux);
+}
+.dock-item:hover,
+.dock-item:focus-visible {
+  background: var(--fil-rouge-voile);
 }
 .dock-item.active {
-  color: var(--encre);
-  background: rgba(47, 44, 51, 0.06);
+  background: var(--fil-rouge-voile);
 }
 .dock-menu {
-  border-left: 1px solid var(--filet);
-  border-radius: 0 2px 2px 0;
-  margin-left: 0.2rem;
+  flex: 0 0 3.2rem;
+  color: var(--fil-rouge);
+}
+.dock-menu span {
+  display: none;
 }
 
-@media (max-width: 560px) {
+@media (min-width: 700px) {
+  /* sur grand écran : une bande de mousseline effilochée, posée au centre */
   .dock {
-    left: 0.6rem;
-    right: 0.6rem;
-    transform: none;
-    justify-content: space-between;
+    left: 50%;
+    right: auto;
+    bottom: 1.2rem;
+    transform: translateX(-50%);
+    isolation: isolate;
+    gap: 0.2rem;
+    padding: 0.5rem 0.7rem;
+    min-height: 0;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .dock::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    z-index: -2;
+    background-color: var(--tissu);
+    background-image: var(--lin-tissu, none);
+    background-size: 620px 620px;
+    background-blend-mode: soft-light;
+    -webkit-mask: var(--effiloche) 0 0 / 100% 100% no-repeat;
+    mask: var(--effiloche) 0 0 / 100% 100% no-repeat;
+  }
+  .dock::after {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--couture-cadre) 0 0 / 100% 100% no-repeat;
   }
   .dock-item {
-    padding: 0.6rem 0.55rem;
-    font-size: 0.8rem;
+    flex: none;
+    padding: 0.4rem 1.05rem;
+    font-size: var(--t-s);
+    white-space: nowrap;
+  }
+  .dock-menu {
+    flex: none;
+    color: var(--encre);
   }
   .dock-menu span {
-    display: none;
+    display: inline;
+  }
+  :root {
+    --dock-h: 5rem;
   }
 }
 
@@ -337,56 +454,85 @@
   position: fixed;
   inset: 0;
   z-index: 5;
-  background: rgba(236, 233, 226, 0.45);
-  animation: apercu-in 500ms var(--doux) both;
+  background: rgba(236, 230, 218, 0.6);
+  animation: apercu-in 400ms var(--doux) both;
 }
+/* le menu : un pan de tissu qui se déplie depuis le ruban */
 .menu-panel {
   position: fixed;
-  left: 50%;
-  bottom: 5rem;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  bottom: var(--dock-h);
   z-index: 6;
-  width: min(460px, calc(100vw - 1.2rem));
-  max-height: calc(100dvh - 7rem);
+  max-height: calc(100dvh - var(--dock-h) - 2rem);
   overflow: auto;
-  padding: 1.4rem 1.6rem 1.2rem;
-  background: var(--papier-dense);
-  border: 1px solid var(--filet);
-  border-radius: var(--rayon);
-  backdrop-filter: blur(8px);
-  animation: menu-in 700ms var(--doux) both;
+  overscroll-behavior: contain;
+  padding: 1.7rem 1.3rem 0.9rem;
+  background:
+    var(--couture) left 8px / 236px 8px repeat-x,
+    var(--tissu);
+  animation: menu-in 420ms var(--pose) both;
 }
 @keyframes menu-in {
-  from { opacity: 0; transform: translate(-50%, 8px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
+  from { opacity: 0; translate: 0 18px; }
+  to { opacity: 1; translate: 0 0; }
 }
 .menu-list {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.1rem 1.2rem;
+  grid-template-columns: 1fr;
 }
 .menu-link {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.6rem 0;
+  gap: 0.85rem;
+  min-height: 3.4rem;
+  padding: 0.5rem 0.2rem;
   font-family: var(--serif);
-  font-size: 1.1rem;
+  font-size: 1.3rem;
+  font-weight: 380;
+  font-variation-settings: 'opsz' 36;
   text-decoration: none;
   color: var(--encre);
   border-bottom: 1px solid var(--filet);
 }
+.menu-list li:last-child .menu-link {
+  border-bottom: 0;
+}
 .menu-link .icon {
   color: var(--encre-2);
 }
-.menu-link:hover span {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.2em;
+.menu-link span {
+  background: var(--couture) left 100% / 0 8px repeat-x;
+  padding-bottom: 0.3rem;
 }
-@media (max-width: 420px) {
+.menu-link:hover span,
+.menu-link:focus-visible span {
+  background-size: 236px 8px;
+}
+@media (min-width: 480px) {
   .menu-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1.6rem;
+  }
+  .menu-list li:nth-last-child(2) .menu-link {
+    border-bottom: 0;
+  }
+}
+@media (min-width: 700px) {
+  .menu-panel {
+    left: 50%;
+    right: auto;
+    bottom: 5.2rem;
+    width: min(520px, calc(100vw - 2rem));
+    translate: -50% 0;
+    padding: 1.9rem 1.8rem 1.1rem;
+    border: 1.5px dashed var(--fil-rouge-doux);
+    border-radius: 4px;
+    background: var(--tissu);
+  }
+  @keyframes menu-in {
+    from { opacity: 0; translate: -50% 12px; }
+    to { opacity: 1; translate: -50% 0; }
   }
 }
 
@@ -396,10 +542,10 @@
   margin: 1.3rem 0 0;
 }
 .reglages legend {
-  font-size: var(--t-xs);
-  letter-spacing: 0.06em;
+  font-size: var(--cartel-taille);
+  letter-spacing: var(--cartel-espace);
   text-transform: uppercase;
-  color: var(--encre-3);
+  color: var(--encre-2);
   margin-bottom: 0.6rem;
 }
 .reglage {
@@ -412,27 +558,36 @@
   flex-wrap: wrap;
 }
 
-/* ——— recherche */
+/* ——— recherche : une feuille de tissu qui recouvre l'écran du téléphone, un pan latéral ailleurs */
 
 .search-panel {
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   z-index: 7;
-  width: min(400px, 100vw);
-  padding: 1.6rem 1.6rem 6rem;
+  padding: max(1.2rem, env(safe-area-inset-top)) 1.3rem 5rem;
   overflow: auto;
   overscroll-behavior: contain;
   touch-action: pan-y;
-  background: var(--papier-dense);
-  border-left: 1px solid var(--filet);
-  backdrop-filter: blur(8px);
-  animation: search-in 800ms var(--doux) both;
+  background: var(--tissu);
+  animation: search-in 480ms var(--pose) both;
 }
 @keyframes search-in {
-  from { opacity: 0; transform: translateX(16px); }
+  from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: none; }
+}
+@media (min-width: 700px) {
+  .search-panel {
+    left: auto;
+    width: min(430px, 100vw);
+    padding: 1.8rem 1.8rem 6rem 2.2rem;
+    background:
+      var(--couture-v) 9px top / 8px 236px repeat-y,
+      var(--tissu);
+  }
+  @keyframes search-in {
+    from { opacity: 0; transform: translateX(22px); }
+    to { opacity: 1; transform: none; }
+  }
 }
 .search-head {
   display: flex;
@@ -441,23 +596,32 @@
 }
 .search-head h2 {
   font-family: var(--serif);
-  font-weight: 450;
-  font-size: 1.6rem;
+  font-weight: 360;
+  font-size: 2.1rem;
+  font-variation-settings: 'opsz' 60;
+  letter-spacing: -0.01em;
+}
+.search-panel .field {
+  margin: 0.9rem 0 1.4rem;
+}
+.search-panel input[type='search'] {
+  font-family: var(--serif);
+  font-size: 1.2rem;
 }
 .filter {
   border: 0;
   padding: 0;
-  margin: 1.2rem 0;
+  margin: 1.4rem 0;
+  min-width: 0;
 }
 .filter legend {
-  font-size: var(--t-s);
-  color: var(--encre-2);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
+  padding: 0;
 }
 .search-results {
-  margin-top: 1.4rem;
-  border-top: 1px solid var(--filet);
-  padding-top: 1rem;
+  margin-top: 1.6rem;
+  padding-top: 1.3rem;
+  background: var(--couture) left top / 236px 8px repeat-x;
 }
 .search-plus {
   margin-top: 0.8rem;
@@ -469,88 +633,120 @@
 .result {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   gap: 1rem;
   width: 100%;
+  min-height: 3rem;
   text-align: left;
-  padding: 0.6rem 0;
+  padding: 0.7rem 0;
   border-bottom: 1px solid var(--filet);
 }
 .result-nom {
   font-family: var(--serif);
-  font-size: 1.08rem;
+  font-size: 1.15rem;
 }
 .result-meta {
-  font-size: var(--t-xs);
-  color: var(--encre-3);
+  flex: none;
 }
-.result:hover .result-nom {
+.result:hover .result-nom,
+.result:focus-visible .result-nom {
   text-decoration: underline;
-  text-underline-offset: 0.2em;
+  text-underline-offset: 0.22em;
   text-decoration-thickness: 1px;
+  text-decoration-color: var(--fil-rouge);
 }
 
-/* ——— se perdre */
+/* ——— se perdre : un panneau vertical, comme un kakémono de mousseline */
 
 .perdre-scene {
   position: fixed;
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 6rem 1rem 9rem;
+  padding: 1.2rem 1.1rem calc(var(--dock-h) + 4.4rem);
   pointer-events: none !important;
 }
 .perdre-carte {
   pointer-events: auto;
-  width: min(460px, 100%);
-  padding: 2.4rem 2.4rem 2rem;
-  text-align: center;
-  background: var(--papier);
-  border: 1px solid var(--filet);
-  border-radius: var(--rayon);
-  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: min(410px, 100%);
+  min-height: min(33rem, calc(100dvh - var(--dock-h) - 7rem));
+  max-height: calc(100dvh - var(--dock-h) - 6.2rem);
+  padding: 2.2rem 1.8rem 1.6rem;
+  text-align: left;
   touch-action: pan-y;
   cursor: grab;
   user-select: none;
   transition: transform 500ms var(--doux), opacity 500ms var(--doux);
 }
+.perdre-carte::after {
+  background-image: var(--couture-cadre);
+}
 .perdre-carte .bubble-image {
-  margin: 0 auto 1.2rem;
+  margin: 0.4rem 0 1.5rem 0.3rem;
 }
 .entre-droite {
-  animation: entre-droite 900ms var(--doux) both;
+  animation: entre-droite 700ms var(--pose) both;
 }
 .entre-gauche {
-  animation: entre-gauche 900ms var(--doux) both;
+  animation: entre-gauche 700ms var(--pose) both;
 }
 @keyframes entre-droite {
-  from { opacity: 0; transform: translateX(34px); }
+  from { opacity: 0; transform: translateX(40px) rotate(1.2deg); }
   to { opacity: 1; transform: none; }
 }
 @keyframes entre-gauche {
-  from { opacity: 0; transform: translateX(-34px); }
+  from { opacity: 0; transform: translateX(-40px) rotate(-1.2deg); }
   to { opacity: 1; transform: none; }
 }
 .perdre-nom {
   font-family: var(--serif);
-  font-weight: 450;
-  font-size: var(--t-xl);
-  line-height: 1.15;
+  font-weight: 360;
+  font-size: clamp(2rem, 1.5rem + 2.6vw, 2.7rem);
+  font-variation-settings: 'opsz' 72;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+.perdre-carte .apercu-type {
+  margin-top: 0.6rem;
 }
 .perdre-texte {
+  flex: 1;
   font-family: var(--serif);
   font-style: italic;
-  font-size: 1.2rem;
-  line-height: 1.55;
-  margin: 1.2rem 0 1.6rem;
+  font-size: 1.28rem;
+  line-height: 1.5;
+  margin: 1.3rem 0 1.2rem;
+}
+/* trois fils laissés pendants au bas du panneau */
+.fils-pendants {
+  position: absolute;
+  left: 2.4rem;
+  bottom: -46px;
+  width: 46px;
+  height: 54px;
+  background: var(--fils) center / contain no-repeat;
+  pointer-events: none;
 }
 .perdre-actions {
   position: fixed;
-  left: 50%;
-  bottom: 5.4rem;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  bottom: calc(var(--dock-h) + 0.5rem);
   z-index: 4;
   display: flex;
-  gap: 2.2rem;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1.2rem;
+  max-width: 30rem;
+  margin: 0 auto;
+}
+.perdre-actions .lien-discret {
+  min-height: var(--cible);
+  color: var(--encre);
 }
 
 /* ——— bulle en image */
@@ -583,15 +779,6 @@
   }
 }
 
-@media (max-width: 480px) {
-  .logo {
-    width: 54vw;
-  }
-  .logo-petit {
-    width: 50vw;
-  }
-}
-
 /* ——— phrase de première visite */
 .intro-phrase {
   position: fixed;
@@ -602,8 +789,9 @@
   pointer-events: none !important;
   font-family: var(--serif);
   font-style: italic;
-  font-weight: 380;
-  font-size: clamp(1.6rem, 1.1rem + 2.4vw, 3rem);
+  font-weight: 360;
+  font-size: clamp(1.9rem, 1.2rem + 3vw, 3.4rem);
+  line-height: 1.15;
   color: var(--encre);
   text-align: center;
   width: max-content;
@@ -709,6 +897,11 @@
   background-size: 900px 900px;
   mix-blend-mode: multiply;
   opacity: 0.13;
+  transition: opacity 1800ms var(--doux);
+}
+/* hors de la constellation, la trame de la mousseline se voit : les pages sont du tissu, pas du papier */
+.backdrop:not(.mode-explore) .lin-hd {
+  opacity: 0.5;
 }
 
 /* ——— transition : l'encre de la bulle s'ouvre sur toute la page */

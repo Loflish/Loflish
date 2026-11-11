@@ -7,6 +7,7 @@ import { Explorer } from './pages/Explorer';
 import { OeuvreCommune } from './pages/OeuvreCommune';
 import { SePerdre } from './pages/SePerdre';
 import { TracePage } from './pages/TracePage';
+import { useCoutures } from './lib/couture';
 
 // l'espace de l'équipe n'est téléchargé que par celles et ceux qui l'ouvrent
 const Admin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.Admin })));
@@ -18,6 +19,8 @@ const AtelierComparer = import.meta.env.DEV ? lazy(() => import('./pages/Atelier
 
 export function App() {
   const location = useLocation();
+  // les coutures du linge écrit se cousent quand elles entrent dans l'écran
+  useCoutures();
   return (
     <>
       {/* La constellation vit derrière toutes les pages, elle n'est jamais démontée. */}

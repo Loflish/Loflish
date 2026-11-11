@@ -1,61 +1,103 @@
 /*
- * Nos Mots Mémoriaux : jetons de design
+ * Nos Mots Mémoriaux : jetons de design — « Le linge écrit » (novembre 2026)
  *
- * Fond : entre écru, lin, ivoire et beige très légèrement grisé.
- * Encre : jamais un noir pur, un gris profond légèrement violacé.
- * Le bordeaux n'existe pas ici : il appartient au fil brodé du logo, et à ce même fil
- * dans l'œuvre commune (chaque trait y est cousu avec lui).
- * Les couleurs des bulles viennent exclusivement de GRIS (src/lib/palette.ts).
+ * Tout le site est une seule pièce de mousseline écrue, en trois couches :
+ *  1. la toile  : écru passé au thé, jamais blanc ; les morceaux de tissu ont un bord effiloché ;
+ *  2. le fil    : un seul fil, le bordeaux du logo brodé ; il coud les séparations, les cadres, les
+ *                 soulignés (src/styles/coutures.css, généré par design/linge-ecrit/coutures.cjs) ;
+ *  3. la peinture : un lavis d'aquarelle dans la couleur GRIS de la personne (--bulle), posé derrière
+ *                 les titres ; les ombres sont bleu-violet, jamais grises.
+ * La mise en page vient des Nabis : panneaux verticaux, aplats mats, compositions décentrées.
+ * Le texte reste à l'encre sombre : le fil décore, l'encre se lit.
+ * La charte complète : design/linge-ecrit/CHARTE.md.
  */
 :root {
-  --lin: #ece9e2;
-  --lin-clair: #f3f1ec;
-  --lin-profond: #e3dfd6;
-  --papier: rgba(243, 241, 236, 0.78);
-  --papier-dense: rgba(243, 241, 236, 0.92);
+  /* ——— la toile */
+  --lin: #ece6da;
+  --lin-clair: #f4efe6;
+  --lin-profond: #e2dacb;
+  --papier: rgba(244, 239, 230, 0.82);
+  --papier-dense: rgba(244, 239, 230, 0.94);
+  /* un morceau de mousseline posé sur la toile */
+  --tissu: #f3eee4;
+  --tissu-ombre: rgba(75, 96, 151, 0.13); /* le bleu de l'aube de GRIS : l'ombre d'un tissu n'est jamais grise */
 
+  /* ——— l'encre */
   --encre: #2f2c33;
-  /* le fil des broderies (lettres, icônes) */
-  --fil: #3a3640;
-  --encre-2: #57535c;
-  /* le gris le plus discret : 4,5:1 au moins sur tous les fonds clairs (lin, papier, lin profond) */
-  --encre-3: #65606b;
+  --encre-2: #55505b;
+  /* le gris le plus discret : 4,5:1 au moins sur tous les fonds clairs */
+  --encre-3: #625c67;
   --filet: rgba(47, 44, 51, 0.14);
-  --filet-fort: rgba(47, 44, 51, 0.28);
+  --filet-fort: rgba(47, 44, 51, 0.3);
 
-  --focus: #2f2c33;
+  /* ——— le fil : le bordeaux du logo brodé, pour toutes les coutures du site */
+  --fil-rouge: #64303d;
+  --fil-rouge-doux: rgba(100, 48, 61, 0.42);
+  --fil-rouge-voile: rgba(100, 48, 61, 0.07);
+  /* le fil des broderies dessinées (lettres, icônes) reste sombre */
+  --fil: #3a3640;
+
+  /* ——— la peinture : la couleur GRIS de la page. Un profil pose la couleur de sa bulle. */
+  --bulle: #8892c9;
+
+  --focus: var(--fil-rouge);
+  --alerte: #8a3b2e;
 
   /*
-   * Une seule police : Newsreader, une typographie de lecture dessinée pour l'écran,
-   * proche du papier et du livre. La hiérarchie vient de la taille, de la graisse
-   * et de l'italique, jamais d'une deuxième famille :
-   * - titres : romain, grand, graisse légère ;
-   * - intertitres : romain, graisse moyenne ;
-   * - les mots déposés par les personnes (réponses, citations) : italique ;
-   * - l'interface (boutons, étiquettes, notes) : romain, plus petit.
-   * Les écritures que Newsreader ne dessine pas (arabe, hébreu, devanagari, thaï,
-   * cyrillique, grec, japonais, chinois, coréen) prennent IBM Plex ou la police du système.
+   * Une seule police : Newsreader. La hiérarchie vient de la taille, de la graisse et de l'italique :
+   * - titres : romain, très grand, graisse légère, taille optique 72 ;
+   * - les mots déposés par les personnes : italique ;
+   * - cartels (étiquettes, compteurs) : petites capitales espacées, comme les lettres d'un marquoir ;
+   * - l'interface : romain, plus petit.
+   * Les écritures que Newsreader ne dessine pas prennent IBM Plex ou la police du système.
    */
   --serif: 'Newsreader Variable', 'Newsreader', 'IBM Plex Sans', 'IBM Plex Sans Arabic', 'IBM Plex Sans Hebrew',
     'IBM Plex Sans Devanagari', 'IBM Plex Sans Thai', 'Hiragino Mincho ProN', 'Noto Serif CJK JP', 'Songti SC',
     'Apple SD Gothic Neo', 'Malgun Gothic', Georgia, serif;
   --sans: var(--serif);
 
-  /* échelle typographique — respirante */
+  /* échelle typographique : pensée d'abord pour le téléphone, elle s'ouvre avec l'écran */
   --t-xs: 0.84rem;
-  --t-s: 0.94rem;
-  --t-m: 1rem;
-  --t-l: 1.2rem;
-  --t-xl: clamp(1.45rem, 1.1rem + 1.2vw, 1.9rem);
-  --t-2xl: clamp(2.2rem, 1.4rem + 3vw, 3.6rem);
+  --t-s: 0.95rem;
+  --t-m: 1.05rem;
+  --t-l: 1.22rem;
+  --t-xl: clamp(1.5rem, 1.2rem + 1.4vw, 2.05rem);
+  --t-2xl: clamp(2.5rem, 1.5rem + 5vw, 4.6rem);
+  --t-3xl: clamp(3rem, 1.6rem + 7.4vw, 6.4rem);
+  /* cartel : les petites capitales d'un marquoir */
+  --cartel-taille: 0.74rem;
+  --cartel-espace: 0.13em;
 
-  --gouttiere: clamp(1rem, 0.5rem + 3vw, 3.5rem);
+  --gouttiere: clamp(1.15rem, 0.5rem + 3.4vw, 3.5rem);
   --rayon: 3px;
+  /* une cible tactile confortable (WCAG 2.5.5) */
+  --cible: 2.75rem;
 
-  /* mouvement : lent, jamais élastique */
+  /* mouvement : lent, jamais élastique ; une couture se fait d'un seul geste */
   --lent: 1200ms;
   --moyen: 700ms;
+  --vif: 240ms;
   --doux: cubic-bezier(0.33, 0, 0.2, 1);
+  --pose: cubic-bezier(0.2, 0.7, 0.1, 1);
+  --coud: 1500ms;
+}
+
+/* Les lavis se calculent là où la couleur est posée : une variable calculée à la racine
+   garderait la couleur de la racine. Tout élément qui porte sa propre --bulle est dans cette liste. */
+:root,
+.trace,
+.page,
+.apercu,
+.perdre-carte,
+.apercu-demo,
+.bulle-choix,
+[style*='--bulle'] {
+  --lavis: rgba(136, 146, 201, 0.34);
+  --lavis-leger: rgba(136, 146, 201, 0.15);
+  --lavis-fort: rgba(136, 146, 201, 0.58);
+  --lavis: color-mix(in oklab, var(--bulle) 34%, transparent);
+  --lavis-leger: color-mix(in oklab, var(--bulle) 15%, transparent);
+  --lavis-fort: color-mix(in oklab, var(--bulle) 58%, transparent);
 }
 
 @media (prefers-color-scheme: dark) {

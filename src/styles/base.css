@@ -1,3 +1,9 @@
+/*
+ * Le linge écrit : le socle.
+ * Remise à zéro, typographie, puis les pièces de base : liens cousus, boutons-étiquettes,
+ * pastilles, champs d'écriture, morceaux de tissu au bord effiloché, coutures qui se cousent.
+ */
+
 *,
 *::before,
 *::after {
@@ -7,6 +13,7 @@
 html {
   -webkit-text-size-adjust: 100%;
   background: var(--lin);
+  scroll-padding-top: 1rem;
 }
 
 body {
@@ -20,6 +27,7 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 img {
@@ -40,17 +48,22 @@ button {
   border: 0;
   padding: 0;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 button:disabled {
   cursor: default;
-  opacity: 0.4;
+  opacity: 0.45;
 }
 
 a {
   color: inherit;
   text-decoration-thickness: 1px;
-  text-underline-offset: 0.2em;
+  text-underline-offset: 0.22em;
+  text-decoration-color: var(--fil-rouge-doux);
+}
+a:hover {
+  text-decoration-color: var(--fil-rouge);
 }
 
 h1,
@@ -67,20 +80,30 @@ dd {
   margin: 0;
 }
 
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+
 ol,
 ul {
   padding: 0;
   list-style: none;
 }
 
+/* le focus : un cadre cousu, bien visible sur la toile comme sur la peinture */
 :focus-visible {
-  outline: 1.5px solid var(--focus);
+  outline: 2px dashed var(--focus);
   outline-offset: 4px;
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
 ::selection {
-  background: rgba(132, 186, 227, 0.35);
+  background: var(--lavis);
 }
 
 .sr-only {
@@ -102,41 +125,72 @@ ul {
   font-size: var(--t-s);
 }
 
-/* ——— éléments d'interface silencieux */
+/* ——— cartel : les petites capitales d'un marquoir (étiquettes, compteurs, types) */
 
+.cartel,
+.apercu-type,
+.fragment-compte,
+.bloc-entete .compte,
+.etape-compteur,
+.filter legend,
+.field-label,
+.result-meta,
+.media-kind,
+.ligne-pays,
+.admin-etat dt {
+  font-size: var(--cartel-taille);
+  letter-spacing: var(--cartel-espace);
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--encre-2);
+  line-height: 1.5;
+}
+
+/* ——— liens */
+
+/* discret : le texte seul ; au survol, un point avant se coud dessous */
 .lien-discret {
   display: inline-flex;
   align-items: center;
-  gap: 0.45em;
+  gap: 0.5em;
+  min-height: 2.5rem;
   font-family: var(--sans);
   font-size: var(--t-s);
   letter-spacing: 0.01em;
   color: var(--encre-2);
   text-decoration: none;
   padding: 0.35em 0;
-  border-bottom: 1px solid transparent;
-  transition: color 400ms var(--doux), border-color 400ms var(--doux);
+  transition: color var(--vif) var(--doux);
 }
-.lien-discret:hover:not(:disabled) {
+.lien-discret:hover:not(:disabled),
+.lien-discret:focus-visible {
   color: var(--encre);
-  border-bottom-color: var(--filet-fort);
+  background: var(--couture) left calc(100% - 0.15em) / 236px 8px repeat-x;
 }
 .lien-discret.petit {
   font-size: var(--t-xs);
+  min-height: 2rem;
 }
 
+/* entrer : le lien qui engage, toujours souligné d'une couture ; au survol le fil avance */
 .lien-entrer {
   display: inline-flex;
   align-items: center;
-  gap: 0.55em;
+  gap: 0.6em;
+  min-height: var(--cible);
   font-family: var(--sans);
-  font-size: var(--t-s);
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-size: var(--t-m);
+  font-weight: 560;
+  letter-spacing: 0.005em;
   color: var(--encre);
   text-decoration: none;
-  padding: 0.4em 0 0.3em;
-  border-bottom: 1px solid var(--encre);
+  padding: 0.5em 0 0.65em;
+  background: var(--couture) 0 calc(100% - 0.1em) / 236px 8px repeat-x;
+  transition: background-position 900ms var(--doux);
+}
+.lien-entrer:hover:not(:disabled),
+.lien-entrer:focus-visible {
+  background-position: 15px calc(100% - 0.1em);
 }
 .lien-entrer .icon {
   transition: transform 600ms var(--doux);
@@ -145,151 +199,384 @@ ul {
   transform: translateX(4px);
 }
 
+/* ——— boutons : des étiquettes de tissu cousues */
+
 .bouton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  min-height: var(--cible);
   font-family: var(--sans);
   font-size: var(--t-s);
   font-weight: 600;
-  letter-spacing: 0.01em;
-  padding: 0.8em 1.4em;
+  letter-spacing: 0.02em;
+  padding: 0.75em 1.5em;
   background: var(--encre);
   color: var(--lin-clair);
   border-radius: var(--rayon);
-  transition: background 400ms var(--doux);
+  /* la surpiqûre : un fil clair cousu tout près du bord */
+  outline: 1.5px dashed rgba(244, 239, 230, 0.5);
+  outline-offset: -5px;
+  transition: background var(--vif) var(--doux), transform var(--vif) var(--doux), outline-color var(--vif) var(--doux);
 }
 .bouton:hover:not(:disabled) {
-  background: #45414a;
+  background: #413c46;
+  outline-color: rgba(244, 239, 230, 0.85);
 }
-/* bouton secondaire : un simple fil, pour les choix qui engagent sans presser */
+.bouton:active:not(:disabled) {
+  transform: translateY(1px) scale(0.985);
+}
+.bouton:focus-visible {
+  outline: 2px dashed var(--focus);
+  outline-offset: 4px;
+}
+/* secondaire : la toile nue, cousue de bordeaux, pour les choix qui engagent sans presser */
 .bouton-discret {
-  background: transparent;
+  background: var(--tissu);
   color: var(--encre);
-  box-shadow: inset 0 0 0 1px var(--filet-fort);
+  outline-color: var(--fil-rouge-doux);
 }
 .bouton-discret:hover:not(:disabled) {
-  background: rgba(47, 44, 51, 0.06);
+  background: var(--lin-clair);
+  outline-color: var(--fil-rouge);
 }
 
 .icon-btn {
   display: inline-grid;
   place-items: center;
-  width: 2.4rem;
-  height: 2.4rem;
+  width: var(--cible);
+  height: var(--cible);
   color: var(--encre-2);
   border-radius: 50%;
+  transition: color var(--vif) var(--doux), background var(--vif) var(--doux);
 }
 .icon-btn:hover {
   color: var(--encre);
+  background: var(--fil-rouge-voile);
 }
 
 .icon {
   flex: none;
 }
 
+/* ——— choix groupés : deux étiquettes cousues côte à côte */
+
 .segmented {
   display: inline-flex;
-  border: 1px solid var(--filet);
-  border-radius: var(--rayon);
-  overflow: hidden;
+  border: 1.5px dashed var(--fil-rouge-doux);
+  border-radius: 999px;
+  padding: 2px;
+  background: var(--papier);
 }
 .segmented button {
+  min-height: 2.25rem;
   font-size: var(--t-xs);
-  padding: 0.45em 0.9em;
+  padding: 0.4em 1em;
   color: var(--encre-2);
-}
-.segmented button + button {
-  border-left: 1px solid var(--filet);
+  border-radius: 999px;
+  transition: background var(--vif) var(--doux), color var(--vif) var(--doux);
 }
 .segmented button[aria-checked='true'] {
-  background: rgba(47, 44, 51, 0.07);
-  color: var(--encre);
+  background: var(--encre);
+  color: var(--lin-clair);
   font-weight: 600;
 }
 
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 .chip {
+  min-height: 2.25rem;
   font-size: var(--t-xs);
-  padding: 0.4em 0.8em;
-  border: 1px solid var(--filet);
+  padding: 0.4em 0.95em;
+  border: 1.5px dashed var(--fil-rouge-doux);
   border-radius: 2rem;
   color: var(--encre-2);
-  transition: border-color 300ms, background 300ms;
+  background: var(--papier);
+  transition: border-color var(--vif) var(--doux), background var(--vif) var(--doux), color var(--vif) var(--doux);
 }
 .chip:hover {
-  border-color: var(--filet-fort);
-}
-.chip[aria-pressed='true'] {
-  background: rgba(47, 44, 51, 0.08);
-  border-color: var(--encre-3);
+  border-color: var(--fil-rouge);
   color: var(--encre);
 }
+.chip[aria-pressed='true'] {
+  background: var(--encre);
+  border-color: var(--encre);
+  border-style: solid;
+  color: var(--lin-clair);
+  font-weight: 600;
+}
+
+/* ——— champs : on écrit sur une ligne cousue */
 
 .field {
   display: block;
-  margin: 1.4rem 0;
+  margin: 1.5rem 0;
 }
 .field-label {
   display: block;
-  font-size: var(--t-s);
-  color: var(--encre-2);
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.4rem;
 }
 .field input,
 .field select,
-.field textarea,
-.question-champ textarea {
+.question-qui input,
+.admin-actions input,
+.admin-actions select,
+.admin-recherche input,
+.admin-recherche select,
+.admin-raison input {
   width: 100%;
-  background: rgba(243, 241, 236, 0.7);
+  min-height: var(--cible);
   border: 0;
-  border-bottom: 1px solid var(--filet-fort);
-  border-radius: 0;
-  padding: 0.65rem 0.2rem;
-  transition: border-color 300ms, background 300ms;
+  border-radius: 2px 2px 0 0;
+  padding: 0.6rem 0.5rem 0.85rem;
+  background:
+    var(--couture) left bottom / 236px 8px repeat-x,
+    rgba(255, 252, 245, 0.5);
+  transition: background-color var(--vif) var(--doux);
 }
+.field select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2rem;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%2364303d' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='m1.5 1.5 4.5 4.5 4.5-4.5'/%3E%3C/svg%3E") right 0.6rem center / 12px 8px no-repeat,
+    var(--couture) left bottom / 236px 8px repeat-x,
+    rgba(255, 252, 245, 0.5);
+}
+/* les réponses : un papier ligné, comme les lignes d'écriture cousues sur le linge */
 .field textarea,
-.question-champ textarea {
-  border: 1px solid var(--filet);
-  border-radius: var(--rayon);
-  padding: 0.8rem 0.9rem;
+.question-champ textarea,
+.admin-raison textarea {
+  width: 100%;
+  border: 1.5px dashed var(--fil-rouge-doux);
+  border-radius: 4px;
+  padding: 0.75rem 0.95rem;
   resize: none;
   font-family: var(--serif);
-  font-size: 1.08rem;
-  line-height: 1.6;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  background:
+    linear-gradient(transparent calc(100% - 1px), var(--filet) 0) 0 0.75rem / 100% 1.7em local,
+    rgba(255, 252, 245, 0.55);
+  transition: border-color var(--vif) var(--doux), background-color var(--vif) var(--doux);
 }
-/* les réponses : on fait défiler le texte, sans poignée pour agrandir le cadre */
 textarea {
   resize: none;
 }
 .field input:focus,
 .field select:focus,
-.field textarea:focus,
-.question-champ textarea:focus {
+.question-qui input:focus,
+.admin-actions input:focus,
+.admin-recherche input:focus,
+.admin-raison input:focus {
   outline: none;
-  border-color: var(--encre);
-  background: rgba(243, 241, 236, 0.95);
+  background-color: rgba(255, 252, 245, 0.95);
+  box-shadow: 0 0 0 1.5px var(--fil-rouge);
+}
+.field textarea:focus,
+.question-champ textarea:focus,
+.admin-raison textarea:focus {
+  outline: none;
+  border-color: var(--fil-rouge);
+  border-style: solid;
+  background-color: rgba(255, 252, 245, 0.95);
+}
+::placeholder {
+  color: var(--encre-3);
+  opacity: 1;
+  font-style: italic;
 }
 
 .check {
   display: flex;
-  gap: 0.7rem;
+  gap: 0.8rem;
   align-items: flex-start;
-  margin: 0.9rem 0;
+  min-height: 2.5rem;
+  margin: 0.6rem 0;
+  padding: 0.35rem 0;
   font-size: var(--t-s);
   line-height: 1.5;
   cursor: pointer;
 }
 .check input {
-  margin-top: 0.2em;
-  accent-color: var(--encre);
-  width: 1rem;
-  height: 1rem;
+  margin: 0.1em 0 0;
+  accent-color: var(--fil-rouge);
+  width: 1.3rem;
+  height: 1.3rem;
   flex: none;
 }
 
-/* les pages arrivent posées, sans fondu (choix du créateur) ; seules les bulles apparaissent */
+details > summary {
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  list-style: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+/* le repli : une petite aiguille qui pivote */
+details > summary::before {
+  content: '';
+  flex: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-right: 1.5px solid var(--fil-rouge);
+  border-bottom: 1.5px solid var(--fil-rouge);
+  transform: rotate(-45deg);
+  transition: transform var(--vif) var(--doux);
+}
+details[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+/* ——— un morceau de tissu : mousseline au bord effiloché, cousue d'un cadre au point avant.
+   Le tissu et la couture vivent dans deux calques derrière le contenu : le texte n'est jamais masqué. */
+
+.apercu,
+.perdre-carte,
+.oeuvre-panneau,
+.projet-carte,
+.choix-item,
+.apercu-demo,
+.editeur,
+.aide-urgente,
+.mot-fondateur,
+.partager-manuel,
+.atelier-carte,
+.coupe-bulle,
+.admin-etat > div,
+.question-200,
+.fragment,
+.tissu {
+  isolation: isolate;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+.perdre-carte,
+.projet-carte,
+.choix-item,
+.apercu-demo,
+.editeur,
+.aide-urgente,
+.mot-fondateur,
+.atelier-carte,
+.coupe-bulle,
+.admin-etat > div,
+.question-200,
+.fragment,
+.tissu {
+  position: relative;
+}
+.apercu::before,
+.perdre-carte::before,
+.oeuvre-panneau::before,
+.projet-carte::before,
+.choix-item::before,
+.apercu-demo::before,
+.editeur::before,
+.aide-urgente::before,
+.mot-fondateur::before,
+.partager-manuel::before,
+.atelier-carte::before,
+.coupe-bulle::before,
+.admin-etat > div::before,
+.question-200::before,
+.fragment::before,
+.tissu::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  z-index: -2;
+  pointer-events: none;
+  background-color: var(--tissu);
+  background-image: var(--lin-tissu, none);
+  background-size: 620px 620px;
+  /* la trame en lumière douce : elle donne le relief du tissage sans assombrir la toile */
+  background-blend-mode: soft-light;
+  -webkit-mask: var(--effiloche) 0 0 / 100% 100% no-repeat;
+  mask: var(--effiloche) 0 0 / 100% 100% no-repeat;
+}
+.apercu::after,
+.perdre-carte::after,
+.oeuvre-panneau::after,
+.projet-carte::after,
+.choix-item::after,
+.apercu-demo::after,
+.editeur::after,
+.aide-urgente::after,
+.mot-fondateur::after,
+.partager-manuel::after,
+.atelier-carte::after,
+.coupe-bulle::after,
+.admin-etat > div::after,
+.question-200::after,
+.fragment::after,
+.tissu::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--couture-cadre-pale) 0 0 / 100% 100% no-repeat;
+  transition: opacity var(--moyen) var(--doux);
+}
+
+/* ——— une couture : la séparation entre deux parties. Elle se coud quand elle entre dans l'écran
+   (src/lib/couture.ts pose data-cousu) ; sans animation demandée, elle est simplement là. */
+
+.couture,
+[data-couture]::before {
+  display: block;
+  height: 8px;
+  background: var(--couture) left center / 236px 8px repeat-x;
+}
+[data-couture] {
+  position: relative;
+}
+[data-couture]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .couture[data-couture],
+  [data-couture]::before {
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path var(--coud) var(--doux);
+  }
+  .couture[data-cousu],
+  [data-cousu]::before {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* sans observateur d'intersection (très vieux navigateur) : les coutures sont simplement là */
+.sans-couture-animee .couture[data-couture],
+.sans-couture-animee [data-couture]::before {
+  clip-path: none;
+}
+
+/* le cœur brodé : un seul par page, là où le texte s'arrête */
+.coeur-brode {
+  display: block;
+  width: 22px;
+  height: 20px;
+  background: var(--coeur) center / contain no-repeat;
+}
+
+/* les pages arrivent posées, sans fondu (choix du créateur) ; seuls les ornements prennent vie */
 
 @keyframes emerge {
   from {
@@ -299,6 +586,19 @@ textarea {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+/* un lavis qui s'étale : l'eau gagne le tissu, puis se pose */
+@keyframes lavis-etale {
+  from {
+    opacity: 0;
+    transform: scale(0.82) rotate(-4deg);
+    filter: blur(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
   }
 }
 
@@ -402,23 +702,30 @@ textarea {
 }
 .partager-manuel {
   position: absolute;
-  top: calc(100% + 0.4rem);
+  top: calc(100% + 0.5rem);
   right: 0;
   z-index: 8;
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.6rem 0.7rem;
+  padding: 1rem 1.1rem;
   width: min(26rem, 86vw);
-  background: var(--papier-dense);
-  background-image: var(--papier-chiffon);
-  background-size: 520px 520px;
-  border: 1px solid var(--filet);
-  border-radius: var(--rayon);
   animation: emerge 400ms var(--doux) both;
 }
 .partager-manuel input {
   flex: 1;
   min-width: 0;
+  min-height: 2.5rem;
   font-size: var(--t-xs);
+  border: 0;
+  background: var(--couture) left bottom / 236px 8px repeat-x;
+  padding: 0.3rem 0.2rem 0.7rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
 }

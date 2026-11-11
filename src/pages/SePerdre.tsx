@@ -7,6 +7,7 @@ import { Icon } from '../components/Icon';
 import { Panneau } from '../components/Panneau';
 import { Signaler } from '../components/Signaler';
 import { allTraces, apercu, TYPE_LABEL } from '../data/store';
+import { colorById } from '../lib/palette';
 import { shuffle } from '../lib/random';
 import { useMuseumMode } from '../lib/museum';
 import { useTitre } from '../lib/titre';
@@ -67,7 +68,12 @@ export function SePerdre() {
         <article
           key={t.id}
           className={`perdre-carte entre-${dir > 0 ? 'droite' : 'gauche'}${t.type === 'memoire' ? ' perdre-memoire' : ''}`}
-          style={{ transform: drag ? `translateX(${drag * 0.6}px) rotate(${drag * 0.01}deg)` : undefined, opacity: drag ? 1 - Math.min(0.5, Math.abs(drag) / 500) : undefined }}
+          style={{
+            // le lavis du panneau prend la couleur GRIS de la personne
+            ['--bulle' as string]: colorById(t.couleur).hex,
+            transform: drag ? `translateX(${drag * 0.6}px) rotate(${drag * 0.01}deg)` : undefined,
+            opacity: drag ? 1 - Math.min(0.5, Math.abs(drag) / 500) : undefined,
+          }}
           onPointerDown={onDown}
           onPointerMove={onMove}
           onPointerUp={onUp}
@@ -90,6 +96,7 @@ export function SePerdre() {
           <button className="lien-discret petit perdre-signaler" onClick={() => setSignaler(true)}>
             <Icon name="drapeau" size={14} /> Signaler
           </button>
+          <span className="fils-pendants" aria-hidden="true" />
         </article>
       </div>
 

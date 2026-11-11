@@ -169,6 +169,10 @@ export function installSurfaces(): void {
   const abs = (f: string) => `url("${new URL(`${base}${f}`, location.href).href}")`;
   r.style.setProperty('--papier-chiffon', abs('papier-chiffon.webp'));
   r.style.setProperty('--papier-washi', abs('papier-washi.webp'));
+  // la trame de la mousseline, pour les morceaux de tissu du linge écrit
+  r.style.setProperty('--lin-tissu', abs('lin.webp'));
+  // le lavis des pages : une vraie tache d'aquarelle (fleur d'eau), teintée dans la couleur GRIS de la page
+  r.style.setProperty('--tache-lavis', abs('taches/tache-41.webp'));
 }
 
 const taches = new Map<number, HTMLImageElement | HTMLCanvasElement>();

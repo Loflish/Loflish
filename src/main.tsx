@@ -15,6 +15,7 @@ import '@fontsource/ibm-plex-sans-devanagari/600.css';
 import '@fontsource/ibm-plex-sans-thai/400.css';
 import '@fontsource/ibm-plex-sans-thai/600.css';
 import './styles/tokens.css';
+import './styles/coutures.css';
 import './styles/base.css';
 import './styles/museum.css';
 import './styles/trace.css';

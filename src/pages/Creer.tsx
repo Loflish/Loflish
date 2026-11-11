@@ -252,6 +252,10 @@ export function Creer() {
           Étape {step + 1} sur {steps.length}
           <span className={`brouillon${saved ? ' is-saved' : ''}`}>{saved ? 'Brouillon privé enregistré' : 'Enregistrement…'}</span>
         </p>
+        {/* le chemin parcouru : le fil avance d'une étape à l'autre */}
+        <div className="etape-fil" aria-hidden="true" style={{ ['--fait' as string]: step + 1, ['--total' as string]: steps.length }}>
+          <span />
+        </div>
 
         {step === 0 && (
           <section className="etape">

@@ -340,6 +340,8 @@ export function Backdrop() {
           ref={cardRef}
           className={`apercu${entering ? ' is-leaving' : ''}${trace.type === 'memoire' ? ' apercu-memoire' : ''}`}
           role="dialog"
+          // le lavis de l'étiquette prend la couleur GRIS de la personne
+          style={{ ['--bulle' as string]: colorById(trace.couleur).hex }}
           aria-label={`Aperçu de ${trace.nom}`}
           onKeyDown={(e) => e.key === 'Escape' && engine.current?.select(null)}
         >

@@ -131,14 +131,14 @@ export function Explorer() {
 
       <div className="explorer-actions">
         <button className="lien-discret" onClick={() => setSearchOpen(true)} aria-expanded={searchOpen}>
-          <Icon name="recherche" size={18} /> Rechercher
+          <Icon name="recherche" size={18} /> <span className="action-nom">Rechercher</span>
         </button>
         <button className="lien-discret" onClick={() => setEnPause(!enPause)}>
-          <Icon name={enPause ? 'play' : 'pause'} size={18} /> {enPause ? 'Reprendre le mouvement' : 'Mettre en pause'}
+          <Icon name={enPause ? 'play' : 'pause'} size={18} /> <span className="action-nom">{enPause ? 'Reprendre le mouvement' : 'Mettre en pause'}</span>
         </button>
         {maTrace && (
           <button className="lien-discret" onClick={() => engine.current?.focusOn(maTrace.id)}>
-            <Icon name="lieu" size={18} /> Retrouver ma bulle
+            <Icon name="lieu" size={18} /> <span className="action-nom">Retrouver ma bulle</span>
           </button>
         )}
       </div>
