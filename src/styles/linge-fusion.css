@@ -558,37 +558,6 @@
     animation: none !important;
   }
 }
-/* avec les fils, le logo se pose sur une étiquette de toile au cadre brodé, comme la barre du bas (Tom, 11 novembre) */
-.avec-fils .explorer-logo {
-  isolation: isolate;
-  padding: 0.55rem 1rem 0.5rem;
-  margin: -0.35rem 0 0 -0.5rem;
-}
-.avec-fils .explorer-logo::before {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  z-index: -2;
-  pointer-events: none;
-  background-color: var(--tissu);
-  background-image: var(--lin-tissu, none);
-  background-size: 620px 620px;
-  background-blend-mode: soft-light;
-  -webkit-mask: var(--effiloche) 0 0 / 100% 100% no-repeat;
-  mask: var(--effiloche) 0 0 / 100% 100% no-repeat;
-}
-.avec-fils .explorer-logo::after {
-  content: '';
-  position: absolute;
-  inset: 5px;
-  z-index: -1;
-  pointer-events: none;
-  background: var(--couture-cadre) 0 0 / 100% 100% no-repeat;
-}
-.avec-fils .explorer-logo .logo img {
-  filter: none;
-}
-
 /* ——— les surfaces du navigateur aux couleurs du linge (passe de finition) : le curseur d'écriture est une
    aiguille de fil bordeaux, la barre de défilement un fil sur la toile */
 

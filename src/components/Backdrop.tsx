@@ -109,12 +109,20 @@ function FondsPeints({ actif }: { actif: Fond }) {
     const ids = allTraces().map((t) => t.id);
     const vues = () => {
       const c = engine.current;
-      const l: { x: number; y: number; r: number }[] = [];
+      const l: { x: number; y: number; r: number; bord?: number }[] = [];
       if (!c) return l;
       const W = window.innerWidth, H = window.innerHeight;
       for (const id of ids) {
         const p = c.screenPos(id);
         if (p && p.x > -p.r && p.x < W + p.r && p.y > -p.r && p.y < H + p.r) l.push(p);
+      }
+      // autour du logo brodé, les fils s'écartent en douceur, sans cadre : ses traits rouges restent lisibles
+      // (Tom, 11 novembre : « sans encadré, mais visible avec ses traits rouges »)
+      const logo = document.querySelector('.explorer-logo .logo img')?.getBoundingClientRect();
+      if (logo && logo.width > 0) {
+        const r = logo.height * 1.15;
+        const n = Math.max(2, Math.ceil(logo.width / (r * 0.7)));
+        for (let i = 0; i <= n; i++) l.push({ x: logo.left + (logo.width * i) / n, y: logo.top + logo.height / 2, r, bord: 0.3 });
       }
       return l;
     };

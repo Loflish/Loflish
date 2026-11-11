@@ -115,7 +115,7 @@ La performance mesurée est celle d'un navigateur sans carte graphique : à refa
   du déplacement que l'eau donne au pigment à cet endroit (même calcul que `eau.ts`, même phase, lu par
   `FondEau.mouvement()`). 26 000 fils sur ordinateur, 12 000 sur téléphone, d'un pixel d'écran, allégés pour
   laisser voir la couleur ; ils prennent la teinte du pigment qu'ils portent et s'effacent sous les bulles.
-  Avec l'essai, le logo se pose sur une étiquette de toile au cadre brodé. Sans le drapeau, rien n'est créé.
+  Autour du logo, les fils s’écartent en douceur, sans cadre. Sans le drapeau, rien n’est créé.
 - **Passe de finition** d'après trois guides de design lus à la source (Impeccable, Taste Skill,
   awesome-design-md) : aucune étiquette sous 12 px (`--cartel-taille` 0,78rem), curseur d'écriture et barres de
   défilement aux couleurs du linge. Non repris, par choix : la règle « pas de sur-titre en petites capitales »

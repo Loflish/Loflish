@@ -46,6 +46,8 @@ export interface BulleVue {
   x: number;
   y: number;
   r: number;
+  /** bord du disque : 0,8 par défaut (net, pour une bulle) ; plus bas, les fils reviennent peu à peu (autour du logo) */
+  bord?: number;
 }
 
 /** Longueur d'un pas le long d'un fil, en pixels d'écran. */
@@ -148,17 +150,20 @@ void main() {
 }`;
 
 const SOMMET_BULLE = `#version 300 es
-layout(location = 0) in vec3 aBulle;  // centre (0..1 dans la toile, depuis le haut) et diamètre en pixels du masque
+layout(location = 0) in vec4 aBulle;  // centre (0..1 dans la toile, depuis le haut), diamètre en pixels du masque, bord
+out float vBord;
 void main() {
   gl_Position = vec4(aBulle.x * 2. - 1., 1. - aBulle.y * 2., 0., 1.);
   gl_PointSize = aBulle.z;
+  vBord = aBulle.w;
 }`;
 const FRAGMENT_BULLE = `#version 300 es
 precision mediump float;
+in float vBord;
 out vec4 couleur;
 void main() {
   float d = length(gl_PointCoord - .5) * 2.;
-  couleur = vec4(1. - smoothstep(.8, 1., d));
+  couleur = vec4(1. - smoothstep(vBord, 1., d));
 }`;
 
 export class Filaments {
@@ -172,7 +177,7 @@ export class Filaments {
   private cadreBulles: WebGLFramebuffer | null = null;
   private textureBulles: WebGLTexture | null = null;
   private texturePeinture: WebGLTexture | null = null;
-  private donneesBulles = new Float32Array(3 * 512);
+  private donneesBulles = new Float32Array(4 * 512);
   private sommets = 0;
   private points = 24;
   private part = 1;
@@ -242,7 +247,7 @@ export class Filaments {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.tamponBulles);
     gl.bufferData(gl.ARRAY_BUFFER, this.donneesBulles.byteLength, gl.DYNAMIC_DRAW);
     gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 12, 0);
+    gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 16, 0);
     gl.bindVertexArray(null);
     gl.enable(gl.BLEND);
     return true;
@@ -402,12 +407,13 @@ export class Filaments {
     const r = this.canvas.getBoundingClientRect();
     const mw = Math.ceil(this.canvas.width / REDUCTION);
     const d = this.donneesBulles;
-    const n = Math.min(bulles.length, d.length / 3);
+    const n = Math.min(bulles.length, d.length / 4);
     for (let i = 0; i < n; i++) {
       const b = bulles[i]!;
-      d[i * 3] = (b.x - r.left) / r.width;
-      d[i * 3 + 1] = (b.y - r.top) / r.height;
-      d[i * 3 + 2] = ((b.r * 2 * 1.16) / r.width) * mw;
+      d[i * 4] = (b.x - r.left) / r.width;
+      d[i * 4 + 1] = (b.y - r.top) / r.height;
+      d[i * 4 + 2] = ((b.r * 2 * 1.16) / r.width) * mw;
+      d[i * 4 + 3] = b.bord ?? 0.8;
     }
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.cadreBulles);
     gl.viewport(0, 0, mw, Math.ceil(this.canvas.height / REDUCTION));
@@ -417,7 +423,7 @@ export class Filaments {
       gl.useProgram(this.bulle);
       gl.bindVertexArray(this.tableauBulles);
       gl.bindBuffer(gl.ARRAY_BUFFER, this.tamponBulles);
-      gl.bufferSubData(gl.ARRAY_BUFFER, 0, d, 0, n * 3);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, d, 0, n * 4);
       gl.blendFunc(gl.ONE, gl.ONE);
       gl.drawArrays(gl.POINTS, 0, n);
     }
@@ -478,8 +484,8 @@ export class Filaments {
       if (this.image++ % 90 === 0) this.accorder();
       const bulles = this.bulles();
       // rien n'a bougé (pause, mouvement réduit) : inutile de redessiner
-      const b0 = bulles[0];
-      const etat = `${m.phase.toFixed(5)}|${m.derive[0].toFixed(5)}|${m.derive[1].toFixed(5)}|${m.cadre[0].toFixed(5)}|${m.force.toFixed(3)}|${bulles.length}|${b0 ? b0.x.toFixed(1) + ',' + b0.y.toFixed(1) : ''}`;
+      const b0 = bulles[0], bn = bulles[bulles.length - 1];
+      const etat = `${m.phase.toFixed(5)}|${m.derive[0].toFixed(5)}|${m.derive[1].toFixed(5)}|${m.cadre[0].toFixed(5)}|${m.force.toFixed(3)}|${bulles.length}|${b0 ? b0.x.toFixed(1) + ',' + b0.y.toFixed(1) : ''}|${bn ? bn.x.toFixed(1) + ',' + bn.r.toFixed(1) : ''}`;
       const ecoule = this.dernierInstant ? instant - this.dernierInstant : 16.7;
       this.dernierInstant = instant;
       if (etat === this.dernier) return;
