@@ -18,6 +18,7 @@
  * pigment s'étire un peu plus puis se pose (l'éclosion).
  *
  * Réglages par l'adresse, le temps de juger : ?eau=1 (&ampleur=0.034 &periode=30 &lumiere=1 &flotte=1.3).
+ * Essai du 30 octobre, `?laine=0.9` : la laine reste, le pigment passe (une laine ne coule pas).
  */
 
 const VERT = `attribute vec2 position; varying vec2 vUv;
@@ -37,6 +38,9 @@ uniform float eclosion;
 uniform float melange;
 uniform float vivacite;
 uniform float colore;
+uniform float laine;
+uniform float fluide;
+uniform float fibres;
 // l'entrée : des gouttes tombent sur le papier vierge et y déposent exactement la peinture du fond
 uniform vec4 gouttes[20];
 uniform float tApparition;
@@ -52,7 +56,9 @@ float bruit(vec2 p){
 vec2 cercle(float k, float r){ return r * vec2(cos(phase * k), sin(phase * k)); }
 float fbm(vec2 p, float d){
   float s = 0., a = .5;
-  for (int i = 0; i < 4; i++) { s += a * bruit(p + cercle(float(i + 1), d)); p *= 2.03; a *= .5; }
+  // fluide : trois octaves au lieu de quatre ; la quatrième étirait la peinture jusqu'à 135 % entre deux pixels voisins
+  // (mesuré par design/hd/champ_eau.py), ce qui se lisait comme une friction sous les bulles
+  for (int i = 0; i < 4; i++) { if (fluide > 0. && i == 3) break; s += a * bruit(p + cercle(float(i + 1), d)); p *= 2.03; a *= .5; }
   return s;
 }
 vec3 couleur(vec2 p){ return texture2D(peinture, clamp(p, texel, 1. - texel)).rgb; }
@@ -60,13 +66,20 @@ vec3 doux(vec2 p){
   vec2 d = texel * 2.5;
   return (couleur(p) * 4. + couleur(p + d) + couleur(p - d) + couleur(p + vec2(d.x, -d.y)) + couleur(p + vec2(-d.x, d.y))) / 8.;
 }
+vec3 anneau(vec2 p, float r){
+  vec2 d = texel * r;
+  return (couleur(p + vec2(d.x, 0.)) + couleur(p - vec2(d.x, 0.)) + couleur(p + vec2(0., d.y)) + couleur(p - vec2(0., d.y))
+    + couleur(p + d * .7) + couleur(p - d * .7) + couleur(p + vec2(d.x, -d.y) * .7) + couleur(p + vec2(-d.x, d.y) * .7)) * .125;
+}
 void main(){
   vec2 p = (vec2(vUv.x, 1. - vUv.y) - .5) * cadre + .5 + derive;
   vec2 q = vec2(fbm(p * 2.2, .9), fbm(p * 2.2 + vec2(5.2, 1.3), .9));
   vec2 r = vec2(fbm(p * 1.6 + 2.2 * q + vec2(1.7, 9.2), 1.3), fbm(p * 1.6 + 2.2 * q + vec2(8.3, 2.8), 1.3));
   vec3 bas = doux(p);
   float chroma = max(max(bas.r, bas.g), bas.b) - min(min(bas.r, bas.g), bas.b);
-  float encre = .3 + .7 * smoothstep(.02, .10, chroma);
+  // le papier bouge moins que le pigment, mais sans cassure au bord des taches (5 novembre, Tom : « une légère friction ») :
+  // la transition s'élargit et le papier suit davantage
+  float encre = mix(.3 + .7 * smoothstep(.02, .10, chroma), .55 + .45 * smoothstep(0., .25, chroma), fluide);
   // les grandes taches flottent d'elles-mêmes, lentement, comme les bulles : un courant très large
   vec2 g = vec2(bruit(p * 1.15 + cercle(1., 1.1)), bruit(p * 1.15 + vec2(7.3, 2.1) + cercle(1., 1.1))) - .5;
   // un second courant, plus large et deux fois plus rapide : chaque tache suit son propre chemin
@@ -74,15 +87,31 @@ void main(){
   // des tourbillons lents (le rotationnel d'un bruit) : le pigment tourne sur lui-même, dans tous les sens, sans
   // jamais se tasser ni se vider (Tom, 26 octobre : « plus autonome, plus mélangeant, plus vibrant, organique »)
   vec2 pc = p * 1.8 + vec2(5.7, 3.1) + cercle(1., .7);
-  float hc = .04;
-  vec2 tourbillon = vec2(bruit(pc + vec2(0., hc)) - bruit(pc - vec2(0., hc)), bruit(pc - vec2(hc, 0.)) - bruit(pc + vec2(hc, 0.))) / (2. * hc) * .18;
+  // fluide : des dérivées plus larges (le tourbillon et le souffle deviennent plus amples et plus doux)
+  float hc = mix(.04, .10, fluide);
+  vec2 tourbillon = vec2(bruit(pc + vec2(0., hc)) - bruit(pc - vec2(0., hc)), bruit(pc - vec2(hc, 0.)) - bruit(pc + vec2(hc, 0.))) / (2. * hc) * mix(.18, .12, fluide);
   // et une respiration (la pente d'un autre bruit) : par endroits les taches gonflent, ailleurs elles se resserrent,
   // chacune à son rythme
   vec2 ps = p * 1.35 + vec2(2.2, 7.4) + cercle(2., .6);
-  vec2 souffle = vec2(bruit(ps + vec2(hc, 0.)) - bruit(ps - vec2(hc, 0.)), bruit(ps + vec2(0., hc)) - bruit(ps - vec2(0., hc))) / (2. * hc) * .12;
+  vec2 souffle = vec2(bruit(ps + vec2(hc, 0.)) - bruit(ps - vec2(hc, 0.)), bruit(ps + vec2(0., hc)) - bruit(ps - vec2(0., hc))) / (2. * hc) * mix(.12, .08, fluide);
   vec2 dep = ((r - .5) + (g + g2 * .7 + tourbillon + souffle) * flotte) * ampleur * encre * eclosion * vie;
-  vec3 grain = couleur(p) - bas;
+  // le grain (fibres du feutre) suit en partie le courant : fixe, il frottait contre le pigment qui glisse dessous
+  vec2 pg = p + dep * fluide;
+  vec3 grain = couleur(pg) - doux(pg);
+  // les poils clairs du feutre (traits blancs fins) sont retenus : étirés par le courant, ils cassaient la fluidité (Tom, 5 novembre) ;
+  // les fibres sombres et la couleur restent entières
+  grain = min(grain, 0.) + max(grain, 0.) * fibres;
   vec3 res = doux(p + dep) + grain;
+  // les poils plus larges (quelques pixels) : ce qui dépasse en clair d'un flou moyen est retenu de même
+  if (fibres < 1.) {
+    vec3 moyen = (anneau(p + dep, 6.) + anneau(p + dep, 14.)) * .5;
+    res -= max(doux(p + dep) - moyen, 0.) * (1. - fibres);
+  }
+  // la laine reste, le pigment passe : tout ce qui est plus fin qu'un flou large (fibres, points cousus) ne suit pas le courant
+  if (laine > 0.) {
+    grain = vec3(dot(couleur(p) - (anneau(p, 4.) + anneau(p, 9.)) * .5, vec3(.3, .59, .11))) * laine;
+    res = (anneau(p + dep, 4.) + anneau(p + dep, 9.)) * .5 + grain;
+  }
   // les taches se mêlent : par endroits, le pigment encore humide se fond avec ses voisines, puis se reprend
   float humide = smoothstep(.34, .7, fbm(p * 1.3 + vec2(2.7, 4.1), .8)) * melange * vie;
   vec2 e = texel * 14.;
@@ -152,6 +181,12 @@ export interface ReglagesEau {
   vivacite: number;
   /** combien les couleurs voisines se glissent dans les blancs (0 = jamais ; à 1, il reste toujours du blanc) */
   colore: number;
+  /** force de la laine qui ne coule pas (0 = la peinture bouge d'un seul bloc, comme aujourd'hui) */
+  laine: number;
+  /** 5 novembre : part du courant que suivent les fibres, et douceur du bord des taches (0 = la version d'avant, « friction ») */
+  fluide: number;
+  /** part gardée des poils clairs du feutre (1 = tous, comme avant ; 0 = aucun trait blanc) */
+  fibres: number;
   /**
    * avec une peinture vivante (vidéo) : la part du courant du code qui la porte en plus (1 = tout le courant de la
    * version de base). Mesuré le 26 octobre (écart moyen d'une seconde à l'autre) : base 13,6 ; premier essai
@@ -179,6 +214,9 @@ export function reglagesEau(): ReglagesEau | null {
     flotte: nombre('flotte', 2, 0, 3.5),
     melange: nombre('melange', 1.05, 0, 1.5),
     colore: nombre('colore', 0.75, 0, 1),
+    laine: nombre('laine', 0, 0, 1.5),
+    fluide: nombre('fluide', 1, 0, 1),
+    fibres: nombre('fibres', 0.3, 0, 1),
     // la peinture est déjà plus vive (repeinte « imbibée dans la toile ») : une pointe suffit
     vivacite: nombre('vivacite', 1.1, 0.6, 1.6),
     fluxVideo: nombre('fluxvideo', 0.5, 0, 1.5),
@@ -200,6 +238,10 @@ const ECLOSION = 3200;
 const NB_GOUTTES = 20;
 /** sous ce rythme (images par seconde), deux mesures de suite, l'eau s'arrête : mieux vaut la peinture fixe qu'un musée qui rame */
 const RYTHME_MIN = 20;
+/** points de la toile d'eau au plus (≈ 2 300 × 1 300) : au-delà, la carte graphique ne suit plus la caméra */
+const BUDGET_POINTS = 3.0e6;
+/** sous ce rythme, deux mesures de suite, l'eau baisse d'abord sa résolution d'un cran (1,0 au lieu de 1,5 px par point) */
+const RYTHME_BAS = 45;
 /** durée d'une mesure du rythme, en millisecondes */
 const MESURE = 3000;
 
@@ -211,7 +253,8 @@ type Goutte = { x: number; y: number; t: number; r: number };
  * colorées d'abord) et de quelle couleur est le papier vierge (la médiane des pixels les plus clairs).
  */
 function lirePeinture(img: CanvasImageSource, largeur: number, hauteur: number): { gouttes: Goutte[]; papier: [number, number, number] } {
-  const W = 96, H = Math.max(1, Math.round((96 * hauteur) / largeur));
+  const W = 96,
+    H = Math.max(1, Math.round((96 * hauteur) / largeur));
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
@@ -221,7 +264,9 @@ function lirePeinture(img: CanvasImageSource, largeur: number, hauteur: number):
   const d = x.getImageData(0, 0, W, H).data;
   const cases: { i: number; chroma: number; lum: number }[] = [];
   for (let i = 0; i < W * H; i++) {
-    const r = d[i * 4]!, g = d[i * 4 + 1]!, b = d[i * 4 + 2]!;
+    const r = d[i * 4]!,
+      g = d[i * 4 + 1]!,
+      b = d[i * 4 + 2]!;
     cases.push({ i, chroma: (Math.max(r, g, b) - Math.min(r, g, b)) / 255, lum: (r * 0.3 + g * 0.59 + b * 0.11) / 255 });
   }
   const clairs = [...cases].sort((a, b) => b.lum - a.lum).slice(0, Math.round(cases.length * 0.1));
@@ -233,14 +278,16 @@ function lirePeinture(img: CanvasImageSource, largeur: number, hauteur: number):
   // d'abord au cœur des grandes taches, les plus colorées en premier…
   for (const o of [...cases].sort((a, b) => b.chroma - a.chroma)) {
     if (choisies.length >= 12 || o.chroma < 0.05) break;
-    const px = ((o.i % W) + 0.5) / W, py = (Math.floor(o.i / W) + 0.5) / H;
+    const px = ((o.i % W) + 0.5) / W,
+      py = (Math.floor(o.i / W) + 0.5) / H;
     if (loin(px, py) > 0.2) choisies.push({ x: px, y: py, chroma: o.chroma });
   }
   // …puis là où il reste le plus de papier vide, pour que les taches finissent par tout couvrir
   while (choisies.length < NB_GOUTTES) {
     let mieux = { x: 0.5, y: 0.5, d: 0 };
     for (let i = 0; i < W * H; i += 3) {
-      const px = ((i % W) + 0.5) / W, py = (Math.floor(i / W) + 0.5) / H;
+      const px = ((i % W) + 0.5) / W,
+        py = (Math.floor(i / W) + 0.5) / H;
       const d = loin(px, py);
       if (d > mieux.d) mieux = { x: px, y: py, d };
     }
@@ -280,7 +327,13 @@ export class FondEau {
   /** l'entrée : son temps écoulé (s), sa durée, sa vitesse (accélérée si on la passe), et ce qu'on fait à la fin */
   private apparition: { t: number; duree: number; vitesse: number; fin?: () => void } | null = null;
   /** la mesure du rythme : son début, ses images, et combien de mesures de suite ont été trop lentes */
-  private rythme = { debut: 0, images: 0, lentes: 0 };
+  private rythme = { debut: 0, images: 0, lentes: 0, basses: 0 };
+  /** 1 = pleine résolution ; 0,7 quand l'appareil peine (surveiller) */
+  private qualite = 1;
+  /** hors de la constellation, la toile se tait mais garde sa peinture : le retour est immédiat */
+  private actif = true;
+  private reprendA = 0;
+  private hdDemandee = false;
   /** prête quand l'image est posée : la peinture fixe reste visible dessous jusque-là */
   pret = false;
 
@@ -292,11 +345,14 @@ export class FondEau {
     private camera?: () => Camera | undefined,
     /** une vidéo (Seedance) qui devient la peinture vivante ; l'image fixe reste le secours */
     sourceVideo?: string,
+    /** chantier 1 : la même peinture en 5 120 px, chargée après coup sur grand écran pour un zoom sans flou */
+    private sourceHD?: string,
   ) {
     this.gl = canvas.getContext('webgl', { alpha: false, antialias: false, premultipliedAlpha: false });
     if (!this.gl) return;
     const gl = this.gl;
     const prog = (this.programme = gl.createProgram()!);
+    const shaders: WebGLShader[] = [];
     for (const [type, code] of [
       [gl.VERTEX_SHADER, VERT],
       [gl.FRAGMENT_SHADER, FRAG],
@@ -304,30 +360,66 @@ export class FondEau {
       const s = gl.createShader(type)!;
       gl.shaderSource(s, code);
       gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-        console.warn(gl.getShaderInfoLog(s));
-        this.gl = null;
-        return;
-      }
       gl.attachShader(prog, s);
+      shaders.push(s);
     }
     gl.linkProgram(prog);
-    gl.useProgram(prog);
-    const tampon = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, tampon);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
-    const pos = gl.getAttribLocation(prog, 'position');
-    gl.enableVertexAttribArray(pos);
-    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
-    for (const n of ['texel', 'cadre', 'derive', 'phase', 'ampleur', 'lumiere', 'flotte', 'eclosion', 'melange', 'vivacite', 'colore', 'gouttes', 'tApparition', 'apparition', 'vie', 'aspectImage', 'papier'])
-      this.u[n] = gl.getUniformLocation(prog, n);
+    /**
+     * La compilation du shader (390 ms mesurés sur une carte AMD, bien plus sur un téléphone) se fait en parallèle, hors du
+     * fil principal, quand le navigateur le permet (KHR_parallel_shader_compile) : la page reste réactive, la peinture fixe
+     * est visible, et l'eau arrive en fondu dès qu'elle est prête. Sans l'extension, l'attente est la même qu'avant.
+     */
+    const parallele = gl.getExtension('KHR_parallel_shader_compile') as { COMPLETION_STATUS_KHR: number } | null;
+    const programmePret = new Promise<boolean>((fini) => {
+      const verifier = () => {
+        if (!this.gl) return fini(false);
+        if (parallele && !gl.getProgramParameter(prog, parallele.COMPLETION_STATUS_KHR)) return void requestAnimationFrame(verifier);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+          for (const s of shaders) if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s));
+          this.gl = null;
+          return fini(false);
+        }
+        gl.useProgram(prog);
+        const tampon = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, tampon);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+        const pos = gl.getAttribLocation(prog, 'position');
+        gl.enableVertexAttribArray(pos);
+        gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+        for (const n of [
+          'texel',
+          'cadre',
+          'derive',
+          'phase',
+          'ampleur',
+          'lumiere',
+          'flotte',
+          'eclosion',
+          'melange',
+          'vivacite',
+          'colore',
+          'laine',
+          'fluide',
+          'fibres',
+          'gouttes',
+          'tApparition',
+          'apparition',
+          'vie',
+          'aspectImage',
+          'papier',
+        ])
+          this.u[n] = gl.getUniformLocation(prog, n);
+        fini(true);
+      };
+      verifier();
+    });
     canvas.addEventListener('webglcontextlost', () => {
       this.pret = false;
       this.canvas.hidden = true;
     });
 
-    const poser = (img: TexImageSource & CanvasImageSource, largeur: number, hauteur: number) => {
-      if (!this.gl) return;
+    const poser = async (img: TexImageSource & CanvasImageSource, largeur: number, hauteur: number) => {
+      if (!(await programmePret) || !this.gl) return;
       const g = this.gl;
       this.texture = g.createTexture();
       g.bindTexture(g.TEXTURE_2D, this.texture);
@@ -346,6 +438,9 @@ export class FondEau {
       g.uniform1f(this.u.melange!, this.reglages.melange);
       g.uniform1f(this.u.vivacite!, this.reglages.vivacite);
       g.uniform1f(this.u.colore!, this.reglages.colore);
+      g.uniform1f(this.u.laine!, this.reglages.laine);
+      g.uniform1f(this.u.fluide!, this.reglages.fluide);
+      g.uniform1f(this.u.fibres!, this.reglages.fibres);
       g.uniform1f(this.u.apparition!, 1);
       g.uniform1f(this.u.vie!, 1);
       g.uniform2f(this.u.aspectImage!, largeur / hauteur, 1);
@@ -355,13 +450,16 @@ export class FondEau {
       g.uniform4fv(this.u.gouttes!, v);
       // le papier vierge de l'entrée prend la couleur de la page : autour du logo, où la peinture s'efface
       // (museum.css), on voit la page ; sinon cette zone paraîtrait grise tant que la peinture n'est pas posée
-      const page = getComputedStyle(document.body).backgroundColor.match(/\d+(\.\d+)?/g)?.map(Number);
+      const page = getComputedStyle(document.body)
+        .backgroundColor.match(/\d+(\.\d+)?/g)
+        ?.map(Number);
       g.uniform3f(this.u.papier!, ...(page && page.length >= 3 ? ([page[0]! / 255, page[1]! / 255, page[2]! / 255] as const) : papier));
       this.image = { naturalWidth: largeur, naturalHeight: hauteur };
       this.resize();
       this.dessiner();
       this.pret = true;
       this.surPret?.();
+      this.chargerHD();
       // l'entrée a pu être demandée avant que l'image soit là : elle remplace alors l'éclosion
       if (!this.apparition) {
         this.eclore();
@@ -370,7 +468,7 @@ export class FondEau {
     };
     const fixe = () => {
       const img = new Image();
-      img.onload = () => poser(img, img.naturalWidth, img.naturalHeight);
+      img.onload = () => void poser(img, img.naturalWidth, img.naturalHeight);
       img.src = source;
     };
     if (!sourceVideo) {
@@ -383,12 +481,16 @@ export class FondEau {
     v.playsInline = true;
     v.preload = 'auto';
     this.video = v;
-    v.addEventListener('loadeddata', () => poser(v, v.videoWidth, v.videoHeight), { once: true });
+    v.addEventListener('loadeddata', () => void poser(v, v.videoWidth, v.videoHeight), { once: true });
     // si la vidéo ne vient pas, la peinture fixe prend sa place
-    v.addEventListener('error', () => {
-      this.video = null;
-      fixe();
-    }, { once: true });
+    v.addEventListener(
+      'error',
+      () => {
+        this.video = null;
+        fixe();
+      },
+      { once: true },
+    );
     v.src = sourceVideo;
   }
 
@@ -401,11 +503,48 @@ export class FondEau {
     else void v.play().catch(() => undefined);
   }
 
-  /** La toile prend la taille de son cadre, sur 1,5 pixel par point au plus ; l'image la couvre. */
+  /**
+   * Chantier 1 : sur un grand écran (ordinateur, pas d'économie de données), la peinture en 5 120 px remplace la 2 560 une
+   * fois la page posée : au zoom, plus de flou. Même mélange que la version servie (design/hd/essais/melanger.cjs),
+   * refait à pleine taille depuis l'original 5 504 px. La carte graphique doit accepter une texture de cette taille.
+   */
+  private chargerHD(): void {
+    const gl = this.gl;
+    if (!gl || !this.sourceHD || this.hdDemandee || this.video) return;
+    if (window.innerWidth < 1400 || (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+    if ((gl.getParameter(gl.MAX_TEXTURE_SIZE) as number) < 5120) return;
+    this.hdDemandee = true;
+    const src = this.sourceHD;
+    const lancer = () => {
+      const img = new Image();
+      img.decoding = 'async';
+      img.onload = () => {
+        const g = this.gl;
+        if (!g || !this.texture) return;
+        g.bindTexture(g.TEXTURE_2D, this.texture);
+        g.texImage2D(g.TEXTURE_2D, 0, g.RGB, g.RGB, g.UNSIGNED_BYTE, img);
+        g.uniform2f(this.u.texel!, 1 / img.naturalWidth, 1 / img.naturalHeight);
+        this.image = { naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight };
+        this.resize();
+      };
+      img.src = src;
+    };
+    const ric = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    if (ric) ric(lancer, { timeout: 8000 });
+    else window.setTimeout(lancer, 4000);
+  }
+
+  /**
+   * La toile prend la taille de son cadre, sur 1,5 pixel par point au plus, et dans un budget de points
+   * (BUDGET_POINTS) : sur un écran dense, l'eau à 2 880 × 1 620 faisait perdre une image sur deux à la constellation
+   * dès que la caméra bougeait (mesuré le 6 novembre 2026, DPR 2 ; sans l'eau : aucune image perdue).
+   */
   resize(): void {
     const gl = this.gl;
     if (!gl || !this.image) return;
-    const echelle = Math.min(window.devicePixelRatio || 1, 1.5);
+    const cw = Math.max(1, this.canvas.clientWidth);
+    const ch = Math.max(1, this.canvas.clientHeight);
+    const echelle = Math.min(window.devicePixelRatio || 1, 1.5, Math.sqrt(BUDGET_POINTS / (cw * ch))) * this.qualite;
     const w = Math.max(1, Math.round(this.canvas.clientWidth * echelle));
     const h = Math.max(1, Math.round(this.canvas.clientHeight * echelle));
     this.canvas.width = w;
@@ -451,6 +590,16 @@ export class FondEau {
     if (this.apparition) this.apparition.vitesse = 5;
   }
 
+  setActif(v: boolean): void {
+    // au retour, l'eau laisse d'abord passer le fondu des couches de la page (1 s) : sinon la carte graphique
+    // cumule le fondu et l'eau, et perd des images (mesuré le 6 novembre 2026)
+    if (v && !this.actif) {
+      this.dernier = 0;
+      this.reprendA = performance.now() + 900;
+    }
+    this.actif = v;
+  }
+
   setPause(v: boolean): void {
     this.enPause = v;
     if (this.pret) this.jouerVideo();
@@ -464,7 +613,7 @@ export class FondEau {
   start(): void {
     const boucle = (now: number) => {
       this.raf = requestAnimationFrame(boucle);
-      if (document.hidden || !this.pret) return;
+      if (document.hidden || !this.pret || !this.actif || now < this.reprendA) return;
       // l'entrée se joue à pleine cadence : les gouttes doivent couler, pas sautiller
       if (this.apparition) {
         // le temps réel (borné après une absence de l'onglet) : les gouttes restent au rythme des phrases
@@ -523,7 +672,17 @@ export class FondEau {
     }
     r.images++;
     if (now - r.debut < MESURE) return;
-    r.lentes = (r.images * 1000) / (now - r.debut) < RYTHME_MIN ? r.lentes + 1 : 0;
+    const rythme = (r.images * 1000) / (now - r.debut);
+    if (rythme < RYTHME_BAS && this.qualite > 0.7) {
+      r.basses++;
+      if (r.basses >= 2) {
+        // résolution adaptative : d'abord moins de points, avant de renoncer à l'eau
+        this.qualite = 0.7;
+        r.basses = 0;
+        this.resize();
+      }
+    } else r.basses = 0;
+    r.lentes = rythme < RYTHME_MIN ? r.lentes + 1 : 0;
     r.debut = now;
     r.images = 0;
     if (r.lentes >= 2) {

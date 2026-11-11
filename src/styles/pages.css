@@ -920,8 +920,6 @@
   background:
     var(--couture) left 2px / 236px 8px repeat-x,
     var(--papier-dense);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
 }
 @media (min-width: 760px) {
   .etape-actions {

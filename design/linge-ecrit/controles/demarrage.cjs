@@ -18,8 +18,8 @@ const note = (nom, bon, detail = '') => { total++; if (bon) ok++; console.log((b
   for (const r of ['projet', 'trace/sakinah', 'creer', 'compte']) {
     const { p, req, err } = await ouvrir(r);
     const moteur = await p.evaluate(() => !!(window.__nmmDebug && window.__nmmDebug.engine));
-    const t = compte(req, /hd\/taches\//), f = compte(req, /fond-feutre|fond-(16x9|9x16)\.webp/), e = compte(req, /hd\/encre\./);
-    note(`${r} : ni moteur, ni peinture de la constellation, ni encre`, !moteur && f === 0 && e === 0 && t <= 2 && err.length === 0, `taches ${t}, peinture ${f}, encre ${e}, moteur ${moteur}`);
+    const t = compte(req, /hd\/taches(-catalogue)?\//), f = compte(req, /fond-feutre|fond-(16x9|9x16)\.webp/), e = compte(req, /hd\/encre\./);
+    note(`${r} : ni moteur, ni peinture de la constellation, ni encre`, !moteur && f === 0 && e === 0 && t <= 3 && err.length === 0, `taches ${t}, peinture ${f}, encre ${e}, moteur ${moteur}`);
     await p.context().close();
   }
   // arriver par un profil, puis aller à la constellation : le moteur se crée et tout répond
@@ -32,14 +32,14 @@ const note = (nom, bon, detail = '') => { total++; if (bon) ok++; console.log((b
     const apercu = await p.locator('.apercu').count();
     await p.getByRole('button', { name: 'Rechercher' }).click(); await p.locator('.search-panel input[type=search]').fill('mer'); await p.waitForTimeout(600);
     const res = await p.locator('.search-results .result').count();
-    note('profil → constellation : moteur créé, bulles cliquables, recherche', etat.moteur && /mode-explore/.test(etat.mode) && apercu === 1 && res > 0 && compte(req, /hd\/taches\//) >= 20 && err.length === 0, `aperçu ${apercu}, ${res} résultats, ${compte(req, /hd\/taches\//)} taches chargées alors`);
+    note('profil → constellation : moteur créé, bulles cliquables, recherche', etat.moteur && /mode-explore/.test(etat.mode) && apercu === 1 && res > 0 && compte(req, /hd\/taches(-catalogue)?\//) >= 20 && err.length === 0, `aperçu ${apercu}, ${res} résultats, ${compte(req, /hd\/taches(-catalogue)?\//)} taches chargées alors`);
     await p.context().close();
   }
   // arriver par la constellation : rien ne change
   {
     const { p, req, err } = await ouvrir('');
     const moteur = await p.evaluate(() => !!(window.__nmmDebug && window.__nmmDebug.engine));
-    note('constellation : moteur, peinture préchargée, taches', moteur && compte(req, /fond-feutre/) >= 1 && compte(req, /hd\/taches\//) >= 20 && err.length === 0, `peinture ${compte(req, /fond-feutre/)}, taches ${compte(req, /hd\/taches\//)}`);
+    note('constellation : moteur, peinture préchargée, taches', moteur && compte(req, /fond-feutre/) >= 1 && compte(req, /hd\/taches(-catalogue)?\//) >= 20 && err.length === 0, `peinture ${compte(req, /fond-feutre/)}, taches ${compte(req, /hd\/taches(-catalogue)?\//)}`);
     // puis un profil, puis retour : la constellation revient au même endroit, sans se recréer
     await p.evaluate(() => (window.__nmmDebug.engine.__temoin = 1));
     await p.locator('.dock a', { hasText: 'Se perdre' }).click(); await p.waitForTimeout(900);

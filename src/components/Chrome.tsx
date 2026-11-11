@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { bubbleDataUrl } from '../engine/bubbleSprite';
 import { colorById } from '../lib/palette';
-import { allTraces, getTrace } from '../data/store';
-import { loadUneMatiere, matiereFor, tacheMontree } from '../lib/hd';
+import { getTrace } from '../data/store';
+import { loadMatieres, matiereFor } from '../lib/hd';
 import { hashString } from '../lib/random';
 import { Icon } from './Icon';
 
@@ -61,15 +61,15 @@ export function BubbleImage({
   className?: string;
 }) {
   const [src, setSrc] = useState('');
-  const m = matiere ?? getTrace(id)?.matiere;
+  // la matière de cette bulle, choisie ou tirée de son identifiant : la seule image à attendre
+  const m = matiere ?? getTrace(id)?.matiere ?? matiereFor(hashString(id));
   useEffect(() => {
     let alive = true;
-    // Identique à la constellation, sans charger tout le catalogue : seulement la tache que cette bulle
-    // montre (la sienne, ou la plus proche parmi celles que la constellation charge sur cet écran).
-    const n = m ?? matiereFor(hashString(id));
-    const tache = tacheMontree(n, allTraces().map((t) => t.matiere));
-    (tache > 0 ? loadUneMatiere(tache) : Promise.resolve()).then(() =>
-      peindre(() => alive && setSrc(bubbleDataUrl(id, colorById(couleur).hex, Math.round(size * 2.2), m)), size >= 120),
+    // attend sa tache HD (si elle existe) pour être identique à la constellation
+    // à partir de 150 px, la matière en grand : la page d'une trace et Créer ; l'atelier (120 px) reste en 512
+    const grande = size >= 150;
+    loadMatieres([m], grande).then(() =>
+      peindre(() => alive && setSrc(bubbleDataUrl(id, colorById(couleur).hex, Math.round(size * 2.2), m, grande)), size >= 120),
     );
     return () => {
       alive = false;

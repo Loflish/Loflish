@@ -18,6 +18,16 @@ import { Icon } from './Icon';
 // le fond qui coule comme une eau calme (?eau=0 le retire, pour comparer)
 const EAU = reglagesEau();
 
+/**
+ * La peinture de la constellation est arrivée (ou 2,5 s ont passé) : les taches des bulles ne partent qu'après, pour ne
+ * pas lui disputer le réseau d'un téléphone (3 Mo de taches contre 480 Ko de peinture : la peinture arrivait en dernier).
+ */
+let fondArrive: () => void = () => undefined;
+const fondPeint = new Promise<void>((r) => {
+  fondArrive = r;
+  window.setTimeout(r, 2500);
+});
+
 // la constellation garde sa peinture vivante ; partout ailleurs, le tissu
 const FOND_BY_MODE: Record<keyof typeof MODES, Fond> = {
   explore: 'explorer',
@@ -43,22 +53,46 @@ function FondsPeints({ actif }: { actif: Fond }) {
   // l'eau : la peinture fixe reste dessous jusqu'à ce que la toile qui coule soit prête
   const eauRef = useRef<HTMLCanvasElement>(null);
   const eau = useRef<FondEau | null>(null);
+  const finEau = useRef<(() => void) | null>(null);
   const [eauPrete, setEauPrete] = useState(false);
+  // l'eau naît à la première constellation et vit ensuite derrière toutes les pages, muette : la détruire et la
+  // recréer à chaque retour rechargeait sa peinture (mesuré le 6 novembre : 306 ms de main + 188 ms de décodage)
   useEffect(() => {
-    if (!EAU || actif !== 'explorer' || !eauRef.current) return;
+    eau.current?.setActif(actif === 'explorer');
+    if (!EAU || actif !== 'explorer' || !eauRef.current || eau.current) return;
+    const toile = eauRef.current;
     const source = window.matchMedia('(max-aspect-ratio: 3/4)').matches ? FONDS.explorer.haut : FONDS.explorer.large;
-    const e = new FondEau(eauRef.current, source, EAU, () => setEauPrete(true), () => engine.current?.cam, FOND_VIDEO ?? undefined);
-    eau.current = e;
-    e.start();
-    const onResize = () => e.resize();
-    window.addEventListener('resize', onResize);
-    ((window as unknown as { __nmmDebug?: Record<string, unknown> }).__nmmDebug ??= {}).eau = e;
-    return () => {
+    let e: FondEau | null = null;
+    const onResize = () => e?.resize();
+    // l'eau se prépare après les deux premières images : la peinture fixe et le logo sont déjà à l'écran
+    let raf = requestAnimationFrame(() => {
+      raf = requestAnimationFrame(() => {
+        performance.mark('nmm:eau:debut');
+        e = new FondEau(
+          toile,
+          source,
+          EAU,
+          () => setEauPrete(true),
+          () => engine.current?.cam,
+          FOND_VIDEO ?? undefined,
+          FONDS.explorer.largeHD,
+        );
+        performance.measure('nmm:eau', 'nmm:eau:debut');
+        eau.current = e;
+        e.start();
+        window.addEventListener('resize', onResize);
+        ((window as unknown as { __nmmDebug?: Record<string, unknown> }).__nmmDebug ??= {}).eau = e;
+      });
+    });
+    finEau.current = () => {
       window.removeEventListener('resize', onResize);
-      e.stop();
+      e?.stop();
       eau.current = null;
     };
-  }, [actif]);
+    return () => cancelAnimationFrame(raf);
+  }, [actif, engine]);
+  // l'eau ne s'arrête qu'avec le fond lui-même (jamais démonté en pratique)
+  useEffect(() => () => finEau.current?.(), []);
   useEffect(() => {
     eau.current?.setPause(enPause);
     eau.current?.setReduit(reducedMotion);
@@ -71,13 +105,18 @@ function FondsPeints({ actif }: { actif: Fond }) {
     else if (!document.hidden) void v.play().catch(() => undefined);
   }, [enPause, pret, actif]);
   useEffect(() => setVus((v) => (v.includes(actif) ? v : [...v, actif])), [actif]);
-  const dansLaConstellation = actif === 'explorer';
+  // la toute première peinture se montre sans fondu : c'est la plus grande image de la page, le navigateur la compte
+  // comme « contenu principal » dès qu'elle est visible ; les fondus reprennent ensuite, d'un espace à l'autre
+  const [premier, setPremier] = useState(true);
   useEffect(() => {
-    // hors de la constellation, ni vidéo ni taches à attendre
-    if (!dansLaConstellation) return;
+    const t = window.setTimeout(() => setPremier(false), 2500);
+    return () => window.clearTimeout(t);
+  }, []);
+  useEffect(() => {
     let t = 0;
-    // la vidéo passe après les taches d'aquarelle des bulles : elle ne leur vole pas la connexion
-    const go = () => void loadTaches().then(() => (t = window.setTimeout(() => setPret(true), 1200)));
+    // la vidéo (sans l'eau seulement) passe après les taches d'aquarelle des bulles : elle ne leur vole pas la connexion ;
+    // avec l'eau, rien à attendre, et surtout pas les taches : hors de la constellation, elles ne se téléchargent pas
+    const go = () => void (EAU ? Promise.resolve() : loadTaches()).then(() => (t = window.setTimeout(() => setPret(true), 1200)));
     if (document.readyState === 'complete') go();
     else window.addEventListener('load', go, { once: true });
     // onglet caché : la vidéo se repose
@@ -93,11 +132,11 @@ function FondsPeints({ actif }: { actif: Fond }) {
       window.removeEventListener('load', go);
       document.removeEventListener('visibilitychange', vis);
     };
-  }, [dansLaConstellation]);
+  }, []);
   return (
     <>
       {vus.filter((f) => f === 'explorer' || FOND_DES_PAGES).map((f) => (
-        <div key={f} className={`fond-peint fond-${f}${f === actif ? ' is-on' : ''}`} aria-hidden="true">
+        <div key={f} className={`fond-peint fond-${f}${f === actif ? ' is-on' : ''}${premier ? ' sans-fondu' : ''}`} aria-hidden="true">
           {/* la vidéo ne tourne que dans l'espace actif : ailleurs, l'image fixe suffit */}
           {/* la boucle vidéo anime le fond actuel : avec un fond à l'essai, la peinture fixe (le shader la fait respirer) */}
           {f === 'explorer' && f === actif && !LEGER && video && pret && !FOND_ESSAI && !EAU ? (
@@ -109,7 +148,12 @@ function FondsPeints({ actif }: { actif: Fond }) {
           ) : (
             <picture>
               <source media="(max-aspect-ratio: 3/4)" srcSet={FONDS[f].haut} />
-              <img src={FONDS[f].large} alt="" onError={(e) => ((e.currentTarget.closest('.fond-peint') as HTMLElement).hidden = true)} />
+              <img
+                src={FONDS[f].large}
+                alt=""
+                onLoad={f === 'explorer' ? () => fondArrive() : undefined}
+                onError={(e) => ((e.currentTarget.closest('.fond-peint') as HTMLElement).hidden = true)}
+              />
             </picture>
           )}
           {f === 'explorer' && EAU && <canvas ref={eauRef} className={`fond-eau${eauPrete ? ' est-prete' : ''}`} />}
@@ -125,6 +169,15 @@ function FondsPeints({ actif }: { actif: Fond }) {
 const VARIANTE_ORNEMENTS = varianteOrnements();
 
 const ATMOSPHERE_BY_MODE = { explore: 1, perdre: 0.9, trace: 0.7, creer: 0.55, texte: 0.85, minimal: 0.3 } as const;
+/**
+ * Chantier 5 (cahier §53.6, trois intensités) : derrière les pages éditoriales (B, accompagnement) et les profils, les nappes
+ * continuent de respirer, aux aplats des Nabis ; formulaires et juridique (C, retrait) restent sur le papier seul.
+ * `?nappes=0` rend les pages d'avant.
+ */
+// 5 novembre : Tom n'aime pas le drap coloré derrière les pages ; il reste derrière ?nappes=1 pour comparer
+const NAPPES = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('nappes') === '1';
+const AVEC_NAPPES = new Set<keyof typeof MODES>(NAPPES ? (Object.keys(MODES) as (keyof typeof MODES)[]) : ['explore']);
+if (!NAPPES && typeof document !== 'undefined') document.documentElement.classList.add('sans-nappes');
 
 export function Backdrop() {
   const { engine, mode, reducedMotion, enPause } = useMuseum();
@@ -145,17 +198,41 @@ export function Backdrop() {
   // le papier procédural ne sert que sans les matières HD
   const [paper] = useState(() => (HD ? '' : paperTexture()));
   const navigate = useNavigate();
+  // la page où l'on est vraiment (le mode, lui, vaut « explore » un instant au premier rendu de toute page)
+  const { pathname } = useLocation();
+  const enConstellation = pathname === '/' || pathname.startsWith('/bulle/') || /^\/archives\/./.test(pathname);
+  const chargerTaches = useRef<() => void>(() => undefined);
+  const tachesDemandees = useRef(false);
   // Le moteur n'est créé que la première fois qu'une adresse montre la constellation : un profil ou une page
-  // de texte ouverts directement (lien partagé, favori) ne paient ni le shader, ni les 420 bulles, ni leurs images.
-  // Il est créé dans le même rendu que la page Explorer, avant ses propres effets : elle le trouve toujours prêt.
+  // de texte ouverts directement (lien partagé, favori) ne paient ni le shader, ni les bulles. Il est créé dans
+  // le même rendu que la page Explorer, avant ses propres effets : elle le trouve toujours prêt.
+  // (Avec ?nappes=1, les nappes vivent derrière toutes les pages : le moteur est alors créé d'emblée.)
   const besoinRef = useRef(false);
-  if (estRouteExplorer(useLocation().pathname)) besoinRef.current = true;
+  if (estRouteExplorer(pathname) || NAPPES) besoinRef.current = true;
   const moteur = besoinRef.current;
+  // le lin (410 Ko) ne sert qu'aux pages : il arrive quand la page est chargée et le navigateur libre, jamais devant la peinture
+  const [lin, setLin] = useState(false);
+  useEffect(() => {
+    let id = 0;
+    const plusTard = () => {
+      const ric = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+      id = ric ? ric(() => setLin(true)) : window.setTimeout(() => setLin(true), 1500);
+    };
+    if (document.readyState === 'complete') plusTard();
+    else window.addEventListener('load', plusTard, { once: true });
+    return () => {
+      window.removeEventListener('load', plusTard);
+      window.clearTimeout(id);
+    };
+  }, []);
 
   // ——— création unique du fond et de la constellation
   useEffect(() => {
     if (!moteur) return;
+    // marques de performance (onglet Performance, ou performance.getEntriesByType('measure')) : où part le temps au démarrage
+    performance.mark('nmm:atmosphere:debut');
     const a = new Atmosphere(atmoRef.current!);
+    performance.measure('nmm:atmosphere', 'nmm:atmosphere:debut');
     atmo.current = a;
     const place = () => {
       // zone calme autour du logo brodé (en haut à gauche, sur une ligne)
@@ -170,24 +247,35 @@ export function Backdrop() {
 
     const traces = allTraces();
     const presences = traces.map((t) => ({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex, matiere: t.matiere }));
+    performance.mark('nmm:constellation:debut');
     const c = new Constellation(cvsRef.current!, presences);
+    performance.measure('nmm:constellation', 'nmm:constellation:debut');
     engine.current = c;
-    if (HD && encreRef.current) encre.current = new Encre(encreRef.current, HD_FILES.encre);
     if (HD) {
       // les bulles s'affichent tout de suite en lavis provisoire, puis prennent leur vraie
-      // matière d'aquarelle dès que les taches HD sont là (8 s au plus, sinon rendu procédural)
+      // matière d'aquarelle dès que les taches HD sont là (8 s au plus après leur départ, sinon rendu procédural)
       c.spritesAllowed = false;
+      tachesDemandees.current = false;
       const go = () => {
         clearSpriteCache();
-        c.resetSprites();
-        c.spritesAllowed = true;
+        // les matières partent vers le travailleur (s'il y en a un), puis les bulles se repeignent, les visibles d'abord
+        void c.peintre.envoyerMatieres().then(() => {
+          c.resetSprites();
+          c.spritesAllowed = true;
+        });
       };
-      const fallback = window.setTimeout(go, 8000);
-      // les taches de base, plus les matières choisies par chacun
-      loadMatieres(traces.map((t) => t.matiere)).then(() => {
-        window.clearTimeout(fallback);
-        go();
-      });
+      chargerTaches.current = () => {
+        if (tachesDemandees.current) return;
+        tachesDemandees.current = true;
+        const fallback = window.setTimeout(go, 8000);
+        // après la peinture du fond : les taches de base, plus les matières choisies par chacun
+        void fondPeint
+          .then(() => Promise.all([loadTaches(), loadMatieres(traces.map((t) => t.matiere))]))
+          .then(() => {
+            window.clearTimeout(fallback);
+            go();
+          });
+      };
     }
     // accès pour les tests automatisés (captures, mesures de fluidité)
     Object.assign(((window as unknown as { __nmmDebug?: Record<string, unknown> }).__nmmDebug ??= {}), { atmo: a, engine: c });
@@ -215,12 +303,49 @@ export function Backdrop() {
     };
   }, [engine, moteur]);
 
+  /**
+   * La vidéo d'encre (170 Ko) ne se charge qu'au premier geste vers une bulle (survol ou touche), jamais avec la
+   * page ; et pas du tout si la personne a demandé d'économiser les données. D'ici le clic sur « Entrer », elle est prête.
+   */
+  const preparerEncre = () => {
+    if (encre.current || !HD || !encreRef.current) return;
+    if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+    encre.current = new Encre(encreRef.current, HD_FILES.encre);
+  };
+
+  // la page de la trace se télécharge au premier moment calme : l'encre ne coule plus sur un script en train
+  // d'arriver (mesuré le 6 novembre : 176 à 200 ms de lecture au milieu de la transition)
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (n: number) => void };
+    // l'encre aussi : sa vidéo se télécharge maintenant, pas au premier clic (sinon la première entrée se faisait sans elle)
+    const preparer = () => {
+      void import('../pages/TracePage');
+      // l'encre ne sert qu'à qui est dans la constellation : une page ouverte directement ne la télécharge pas
+      if (engine.current) preparerEncre();
+    };
+    if (w.requestIdleCallback) {
+      const n = w.requestIdleCallback(preparer, { timeout: 6000 });
+      return () => w.cancelIdleCallback?.(n);
+    }
+    const t = window.setTimeout(preparer, 3000);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ——— événements du moteur → interface (sans re-rendu à chaque image)
   useEffect(() => {
     const c = engine.current;
     if (!c) return;
-    c.events.onHover = (id) => setHovered(id);
-    c.events.onSelect = (id) => setSelected(id);
+    c.events.onHover = (id) => {
+      if (id) preparerEncre();
+      setHovered(id);
+    };
+    c.events.onSelect = (id) => {
+      if (id) preparerEncre();
+      setSelected(id);
+    };
+    // un second clic sur la bulle ouverte vaut « Entrer dans sa mémoire »
+    c.events.onEnter = () => enterBtn.current?.click();
     c.events.onFrame = () => {
       const hl = hoverLabel.current;
       const show = c.hoverId && c.hoverId !== c.selectedId ? c.hoverId : null;
@@ -253,6 +378,9 @@ export function Backdrop() {
   useEffect(() => {
     const c = engine.current;
     if (!c) return;
+    // les taches des bulles (jusqu'à 3 Mo) ne se téléchargent qu'à la première entrée dans la constellation :
+    // qui arrive par un lien sur une trace ne les paie pas (Lighthouse mobile, 3 novembre : 14 s de retard sur la bulle)
+    if (mode === 'explore' && enConstellation) chargerTaches.current();
     c.setMode(mode);
     if (mode === 'explore') c.restore();
     else {
@@ -260,11 +388,12 @@ export function Backdrop() {
       setEntering(false);
     }
     atmo.current?.setIntensity(ATMOSPHERE_BY_MODE[mode]);
+    atmo.current?.setPage(mode === 'explore' ? 0 : 1);
     orn.current?.setActif(mode === 'explore');
     // le shader s'efface avec la constellation (fondu CSS), puis s'arrête
-    const t = window.setTimeout(() => atmo.current?.pause(mode !== 'explore'), mode === 'explore' ? 0 : 1900);
+    const t = window.setTimeout(() => atmo.current?.pause(!AVEC_NAPPES.has(mode)), AVEC_NAPPES.has(mode) ? 0 : 1900);
     return () => window.clearTimeout(t);
-  }, [mode, engine, moteur]);
+  }, [mode, engine, enConstellation, moteur]);
 
   useEffect(() => {
     engine.current?.setReducedMotion(reducedMotion);
@@ -295,11 +424,14 @@ export function Backdrop() {
     setEntering(true);
     const pos = engine.current?.screenPos(selected);
     const ink = encre.current;
+    // si la vidéo de l'encre arrive juste, on lui laisse 400 ms : mieux vaut un court instant qu'une entrée sans encre
+    if (ink && !ink.ready) await new Promise<void>((res) => { const t0 = performance.now(); const voir = () => (ink.ready || performance.now() - t0 > 400 ? res() : requestAnimationFrame(voir)); voir(); });
     if (pos && ink?.ready) {
       // l'encre de sa couleur s'ouvre depuis sa bulle, puis la mémoire apparaît
-      await Promise.all([engine.current?.enter(selected), ink.play(pos.x, pos.y, pos.r, colorById(trace.couleur).hex, 1500)]);
+      // 1,4 s pour couvrir (départ lent depuis la bulle), 150 ms de page sous l'encre, puis 900 ms de fondu
+      await Promise.all([engine.current?.enter(selected), ink.play(pos.x, pos.y, pos.r, colorById(trace.couleur).hex, 1400)]);
       navigate(`/trace/${selected}`);
-      window.setTimeout(() => ink.fadeOut(), 350);
+      window.setTimeout(() => ink.fadeOut(), 150);
     } else {
       await engine.current?.enter(selected);
       navigate(`/trace/${selected}`);
@@ -323,7 +455,11 @@ export function Backdrop() {
       />
       {HD ? (
         <>
-          <div className={`lin-hd${TOILE_BRUTE || FOND_FEUTRE ? ' sous-toile-brute' : ''}`} aria-hidden="true" />
+          <div
+            className={`lin-hd${TOILE_BRUTE || FOND_FEUTRE ? ' sous-toile-brute' : ''}`}
+            aria-hidden="true"
+            style={lin || mode !== 'explore' ? { backgroundImage: `url(${HD_FILES.lin})` } : undefined}
+          />
           {TOILE_BRUTE && (
             <div className={`toile-brute${TOILE_PLEINE ? ' toile-pleine' : ''}`} aria-hidden="true" style={{ backgroundImage: `url(${TOILE_BRUTE})` }} />
           )}
@@ -347,30 +483,30 @@ export function Backdrop() {
       {interactive &&
         trace &&
         createPortal(
-        <div
-          ref={cardRef}
-          className={`apercu${entering ? ' is-leaving' : ''}${trace.type === 'memoire' ? ' apercu-memoire' : ''}`}
-          role="dialog"
-          // le lavis de l'étiquette prend la couleur GRIS de la personne
-          style={{ ['--bulle' as string]: colorById(trace.couleur).hex }}
-          aria-label={`Aperçu de ${trace.nom}`}
-          onKeyDown={(e) => e.key === 'Escape' && engine.current?.select(null)}
-        >
-          <button className="apercu-close" onClick={() => engine.current?.select(null)} aria-label="Fermer l’aperçu">
-            <Icon name="fermer" size={16} />
-          </button>
-          <p className="apercu-nom">{trace.nom}</p>
-          <p className="apercu-type">
-            {TYPE_LABEL[trace.type]}
-            {trace.pays ? `, ${trace.pays}` : ''}
-          </p>
-          <p className="apercu-texte">
-            <TexteBrode texte={apercu(trace)} />
-          </p>
-          <button ref={enterBtn} className="lien-entrer" onClick={enter}>
-            Entrer dans sa mémoire <Icon name="fleche" size={16} />
-          </button>
-        </div>,
+          <div
+            ref={cardRef}
+            className={`apercu${entering ? ' is-leaving' : ''}${trace.type === 'memoire' ? ' apercu-memoire' : ''}`}
+            role="dialog"
+            // le lavis de l'étiquette prend la couleur GRIS de la personne
+            style={{ ['--bulle' as string]: colorById(trace.couleur).hex }}
+            aria-label={`Aperçu de ${trace.nom}`}
+            onKeyDown={(e) => e.key === 'Escape' && engine.current?.select(null)}
+          >
+            <button className="apercu-close" onClick={() => engine.current?.select(null)} aria-label="Fermer l’aperçu">
+              <Icon name="fermer" size={16} />
+            </button>
+            <p className="apercu-nom">{trace.nom}</p>
+            <p className="apercu-type">
+              {TYPE_LABEL[trace.type]}
+              {trace.pays ? `, ${trace.pays}` : ''}
+            </p>
+            <p className="apercu-texte">
+              <TexteBrode texte={apercu(trace)} />
+            </p>
+            <button ref={enterBtn} className="lien-entrer" onClick={enter}>
+              Entrer dans sa mémoire <Icon name="fleche" size={16} />
+            </button>
+          </div>,
           document.body,
         )}
     </div>

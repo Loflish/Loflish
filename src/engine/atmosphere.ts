@@ -23,6 +23,8 @@ uniform float uTime;
 uniform float uIntensity;
 uniform vec3 uCalm; // zone calme autour du logo : x, y, rayon (px)
 uniform float uScale;
+// chantier 5 : sur les pages, les nappes prennent les aplats des Nabis (sauge, rose ancien, miel, lilas, tilleul)
+uniform float uPage;
 
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float noise(vec2 p){
@@ -42,6 +44,8 @@ vec3 wash(vec3 col, vec2 uv, vec2 off, float sc, float t, vec3 pig, float amount
   vec2 q = uv * sc + off;
   vec2 w = vec2(fbm(q + vec2(0.0, t)), fbm(q + vec2(5.2, -t * 0.8) + 1.3));
   float f = fbm(q + 1.7 * w + vec2(t * 0.35, -t * 0.2));
+  // sur une page (uPage = 1), les nappes s'élargissent : le drap coloré doit se voir sous le papier
+  th -= 0.09 * uPage;
   float m = smoothstep(th, th + 0.2, f);
   float rim = smoothstep(th, th + 0.035, f) - smoothstep(th + 0.035, th + 0.14, f);
   float gran = 0.75 + 0.5 * noise(gl_FragCoord.xy * uScale * 0.9);
@@ -62,14 +66,14 @@ void main(){
   // zone calme : le logo brodé doit se détacher immédiatement
   vec2 calmP = vec2(uCalm.x, uRes.y - uCalm.y);
   float calm = smoothstep(uCalm.z * 0.6, uCalm.z * 1.6, distance(frag, calmP));
-  float k = uIntensity * mix(0.25, 1.0, calm);
+  float k = uIntensity * mix(0.25, 1.0, calm) * mix(1.0, 2.6, uPage);
 
   // atmosphère : lavande, eau, pêche, rose, lumière jaune
-  col = wash(col, uv, vec2(0.0, 0.0), 0.9, t * 0.011, vec3(0.84, 0.86, 0.96), 0.48 * k, 0.53);
-  col = wash(col, uv, vec2(7.3, 2.1), 0.75, t * 0.009, vec3(0.84, 0.93, 0.88), 0.42 * k, 0.55);
-  col = wash(col, uv, vec2(3.1, 9.4), 1.1, t * 0.013, vec3(0.99, 0.88, 0.82), 0.42 * k, 0.56);
-  col = wash(col, uv, vec2(11.7, 5.5), 0.85, t * 0.010, vec3(0.97, 0.86, 0.90), 0.38 * k, 0.57);
-  col = wash(col, uv, vec2(2.4, 13.3), 1.3, t * 0.012, vec3(0.99, 0.95, 0.80), 0.40 * k, 0.55);
+  col = wash(col, uv, vec2(0.0, 0.0), 0.9, t * 0.011, mix(vec3(0.84, 0.86, 0.96), vec3(0.68, 0.60, 0.88), uPage), 0.48 * k, 0.53);
+  col = wash(col, uv, vec2(7.3, 2.1), 0.75, t * 0.009, mix(vec3(0.84, 0.93, 0.88), vec3(0.50, 0.74, 0.66), uPage), 0.42 * k, 0.55);
+  col = wash(col, uv, vec2(3.1, 9.4), 1.1, t * 0.013, mix(vec3(0.99, 0.88, 0.82), vec3(0.92, 0.60, 0.58), uPage), 0.42 * k, 0.56);
+  col = wash(col, uv, vec2(11.7, 5.5), 0.85, t * 0.010, mix(vec3(0.97, 0.86, 0.90), vec3(0.94, 0.74, 0.40), uPage), 0.38 * k, 0.57);
+  col = wash(col, uv, vec2(2.4, 13.3), 1.3, t * 0.012, mix(vec3(0.99, 0.95, 0.80), vec3(0.80, 0.86, 0.46), uPage), 0.40 * k, 0.55);
 
   // lumière de Monet : une clarté chaude qui se déplace lentement
   vec2 lp = vec2(0.5 + 0.35 * sin(t * 0.004), 0.55 + 0.25 * cos(t * 0.0031)) * vec2(uRes.x / uRes.y, 1.0);
@@ -99,26 +103,43 @@ export class Atmosphere {
     this.gl = canvas.getContext('webgl', { antialias: false, premultipliedAlpha: false, preserveDrawingBuffer: true });
     if (!this.gl) return;
     const gl = this.gl;
-    const sh = (type: number, src: string) => {
-      const s = gl.createShader(type)!;
-      gl.shaderSource(s, src);
+    const shaders = [
+      [gl.VERTEX_SHADER, VERT],
+      [gl.FRAGMENT_SHADER, FRAG],
+    ].map(([type, src]) => {
+      const s = gl.createShader(type as number)!;
+      gl.shaderSource(s, src as string);
       gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s));
       return s;
-    };
+    });
     const prog = gl.createProgram()!;
-    gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
-    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
+    for (const s of shaders) gl.attachShader(prog, s);
     gl.linkProgram(prog);
-    gl.useProgram(prog);
-    this.prog = prog;
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    const loc = gl.getAttribLocation(prog, 'p');
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    for (const n of ['uRes', 'uTime', 'uIntensity', 'uCalm', 'uScale']) this.u[n] = gl.getUniformLocation(prog, n);
+    /**
+     * Mesuré le 3 novembre sur une carte AMD : 2,5 s de compilation au tout premier lancement, qui bloquaient la page.
+     * Avec KHR_parallel_shader_compile, le pilote compile à côté ; la peinture fixe est visible pendant ce temps, et
+     * les nappes arrivent dès que le programme est prêt (le canvas reste couleur de lin d'ici là).
+     */
+    const parallele = gl.getExtension('KHR_parallel_shader_compile') as { COMPLETION_STATUS_KHR: number } | null;
+    const verifier = () => {
+      if (this.arretee || !this.gl) return;
+      if (parallele && !gl.getProgramParameter(prog, parallele.COMPLETION_STATUS_KHR)) return void requestAnimationFrame(verifier);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        for (const s of shaders) if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s));
+        return;
+      }
+      gl.useProgram(prog);
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(prog, 'p');
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      for (const n of ['uRes', 'uTime', 'uIntensity', 'uCalm', 'uScale', 'uPage']) this.u[n] = gl.getUniformLocation(prog, n);
+      this.prog = prog;
+      this.draw(performance.now());
+    };
+    verifier();
     // démarre à un instant différent à chaque visite : le tableau n'est jamais deux fois le même
     this.start -= Math.random() * 600000;
   }
@@ -134,6 +155,12 @@ export class Atmosphere {
     this.canvas.height = h;
     this.gl?.viewport(0, 0, w, h);
     this.draw(performance.now());
+  }
+
+  /** 1 sur une page (nappes des Nabis), 0 dans la constellation (la peinture vivante). */
+  private page = 0;
+  setPage(v: number): void {
+    this.page = v;
   }
 
   setIntensity(v: number): void {
@@ -159,12 +186,13 @@ export class Atmosphere {
 
   private draw(now: number): void {
     const gl = this.gl;
-    if (!gl || !this.prog) return;
+    if (!gl || !this.prog || this.arretee) return;
     gl.uniform2f(this.u.uRes, this.canvas.width, this.canvas.height);
     gl.uniform1f(this.u.uTime, (now - this.start) / 1000);
     gl.uniform1f(this.u.uIntensity, this.intensity);
     gl.uniform3f(this.u.uCalm, this.calm[0], this.calm[1], this.calm[2]);
     gl.uniform1f(this.u.uScale, this.scale);
+    gl.uniform1f(this.u.uPage, this.page);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
@@ -183,8 +211,11 @@ export class Atmosphere {
     this.raf = requestAnimationFrame(loop);
   }
 
+  /** Arrêtée pour de bon : plus aucun dessin, même par un minuteur en retard (le canvas peut déjà servir à une autre instance). */
+  private arretee = false;
   stop(): void {
     cancelAnimationFrame(this.raf);
+    this.arretee = true;
   }
 }
 

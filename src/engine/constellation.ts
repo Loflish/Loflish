@@ -1,5 +1,7 @@
 import { drift, gaussian, hashString, rng } from '../lib/random';
-import { bubbleSprite, provisionalSprite, SPRITE_DIAMETER } from './bubbleSprite';
+import { matiereFor } from '../lib/hd';
+import { bubbleSprite, provisionalSprite, SPRITE_DIAMETER, type Toile } from './bubbleSprite';
+import { Peintre } from './peintre';
 
 /**
  * Constellation de présences.
@@ -58,7 +60,12 @@ interface Bubble {
   breath: number;
   breathSpeed: number;
   alpha: number;
-  sprite: HTMLCanvasElement | null;
+  sprite: Toile | ImageBitmap | null;
+  /** le banc de la bulle (essai `?bancs=1`) */
+  foyer?: number;
+  /** la compression au contact (essai `?toucher=1`) : force 0 à 1, et l'angle de la rencontre */
+  sq?: number;
+  sqA?: number;
 }
 
 interface Cam {
@@ -72,6 +79,8 @@ export interface EngineEvents {
   onSelect?: (id: string | null) => void;
   onFrame?: () => void;
   onMoved?: () => void;
+  /** un second clic (ou une seconde touche) sur la bulle déjà ouverte : on entre dans sa mémoire */
+  onEnter?: (id: string) => void;
 }
 
 const TAU = Math.PI * 2;
@@ -89,7 +98,14 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
  * peinte. Le dessin de la bulle ne change pas. `?eclat=0` les montre telles quelles, pour comparer.
  */
 const ECLAT = typeof window === 'undefined' || new URLSearchParams(window.location.search).get('eclat') !== '0';
-function embellir(sprite: HTMLCanvasElement): HTMLCanvasElement {
+/** Essai du 30 octobre, `?bancs=1` : des bancs lâches portés par un courant commun, pour que le feutre respire entre eux. */
+const BANCS = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('bancs') === '1';
+/**
+ * Essai du 3 novembre, `?toucher=1` (cahier §54.4 et §54.6) : au contact, une bulle se comprime à peine dans le sens
+ * de la rencontre puis reprend sa forme ; et les bulles proches du curseur s'écartent d'un rien, « presque douteux ».
+ */
+const TOUCHER = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('toucher') === '1';
+function embellir(sprite: Toile): Toile {
   if (!ECLAT) return sprite;
   const c = document.createElement('canvas');
   c.width = sprite.width;
@@ -151,13 +167,27 @@ export class Constellation {
   private cols = 1;
   private rows = 1;
   private spriteQueue: Bubble[] = [];
+  /** chantier 6 : les sprites se peignent dans un travailleur quand c'est possible ; la constellation les reçoit prêts */
+  readonly peintre = new Peintre((s) => {
+    const b = this.byId.get(s.id);
+    // une réponse d'avant un changement de taille ou de matière ne compte plus
+    if (!b || s.size !== this.spriteSize || s.matiere !== (b.p.matiere ?? matiereFor(hashString(b.p.id)))) return void s.image.close();
+    b.sprite = s.image;
+  });
   events: EngineEvents = {};
   /** Attend les matières HD avant de peindre les bulles (repli procédural sinon). */
   spritesAllowed = true;
   /** Zones calmes à l'écran (logo…) : les bulles s'y effacent doucement. */
   private calmZones: { x: number; y: number; w: number; h: number }[] = [];
+  private foyers: { x: number; y: number; ph: number }[] = [];
+  private rayonBanc = 0;
+  /** le dernier clic sur une bulle : deux clics rapprochés sur la même ouvrent sa mémoire */
+  private dernierClic: { id: string; t: number } | null = null;
 
-  constructor(private canvas: HTMLCanvasElement, presences: Presence[]) {
+  constructor(
+    private canvas: HTMLCanvasElement,
+    presences: Presence[],
+  ) {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D indisponible');
     this.ctx = ctx;
@@ -168,7 +198,16 @@ export class Constellation {
 
   // ————————————————————————————————— population
 
+  /** la liste et la classe d'écran (téléphone, moyen, grand) avec lesquelles le monde a été dimensionné */
+  private liste: Presence[] = [];
+  private classe = -1;
+  private static classeEcran(): number {
+    return window.innerWidth < 700 ? 0 : window.innerWidth < 1100 ? 1 : 2;
+  }
+
   setPresences(list: Presence[]): void {
+    this.liste = list;
+    this.classe = Constellation.classeEcran();
     const small = window.innerWidth < 700;
     const medium = window.innerWidth < 1100;
     // Sur mobile, moins de bulles simultanées : espace, lisibilité, performances.
@@ -215,11 +254,28 @@ export class Constellation {
       };
       return b;
     });
+    if (BANCS) this.formerBancs(r, keep);
     this.byId = new Map(this.bubbles.map((b) => [b.p.id, b]));
     this.spriteQueue = this.visiblesDabord(this.bubbles);
     this.cell = this.D * 2.8;
     this.cols = Math.max(1, Math.floor(this.worldW / this.cell));
     this.rows = Math.max(1, Math.floor(this.worldH / this.cell));
+  }
+
+  /** Neuf foyers semés au nombre d'or ; chaque nouvelle bulle naît autour du sien, en nuage lâche. */
+  private formerBancs(r: () => number, keep: Map<string, Bubble>): void {
+    const nb = 9;
+    this.foyers = Array.from({ length: nb }, (_, i) => ({ x: ((i * 0.618034) % 1) * this.worldW, y: ((i * 0.381966 + 0.13) % 1) * this.worldH, ph: i * 2.4 }));
+    this.rayonBanc = Math.min(this.worldW, this.worldH) * 0.2;
+    for (const b of this.bubbles) {
+      if (keep.has(b.p.id)) continue;
+      b.foyer = hashString(b.p.id) % nb;
+      const f = this.foyers[b.foyer]!;
+      const a = r() * TAU;
+      const d = Math.sqrt(-2 * Math.log(Math.max(1e-4, r()))) * this.rayonBanc;
+      b.x = (f.x + Math.cos(a) * d + this.worldW) % this.worldW;
+      b.y = (f.y + Math.sin(a) * d + this.worldH) % this.worldH;
+    }
   }
 
   /**
@@ -318,8 +374,15 @@ export class Constellation {
     this.match = ids;
   }
 
+  /** Le visiteur s'est éloigné du point de départ (zoom ou promenade) : « Revenir au centre » a un sens. */
   get isMoved(): boolean {
-    return Math.abs(this.cam.zoom - this.defaultZoom) > 0.05;
+    return Math.abs(this.cam.zoom - this.defaultZoom) > 0.05 || Math.hypot(this.wrapD(this.cam.x, this.worldW), this.wrapD(this.cam.y, this.worldH)) > 160;
+  }
+
+  /** Une présence au hasard parmi celles qui sont dans la constellation (pour « Une bulle au hasard »). */
+  auHasard(sauf: string | null = null): string | null {
+    const choix = this.bubbles.filter((b) => b.p.id !== sauf);
+    return choix.length ? choix[Math.floor(Math.random() * choix.length)]!.p.id : null;
   }
 
   // ————————————————————————————————— caméra
@@ -332,10 +395,15 @@ export class Constellation {
     this.canvas.height = Math.round(this.h * this.dpr);
     this.canvas.style.width = `${this.w}px`;
     this.canvas.style.height = `${this.h}px`;
-    if (this.bubbles.length) {
-      this.minZoom = Math.max(this.w / (this.worldW * 0.92), this.h / (this.worldH * 0.92));
-      this.cam.zoom = Math.max(this.cam.zoom, this.minZoom);
+    if (!this.bubbles.length) return;
+    // l'écran change de classe (fenêtre agrandie, téléphone tourné, écran partagé) : le monde est redimensionné,
+    // chaque bulle garde sa place ; sinon, dans un monde taillé pour un téléphone, un grand écran forcerait un zoom énorme
+    if (this.classe !== Constellation.classeEcran()) {
+      this.setPresences(this.liste);
+      return;
     }
+    this.minZoom = Math.max(this.w / (this.worldW * 0.92), this.h / (this.worldH * 0.92));
+    this.cam.zoom = Math.max(this.cam.zoom, this.minZoom);
   }
 
   private animateCam(to: Partial<Cam>, dur: number, done?: () => void): void {
@@ -352,8 +420,9 @@ export class Constellation {
     this.camAnim = { from, to: target, t0: performance.now(), dur, done };
   }
 
+  /** Revenir au point de départ : le centre de la constellation, au zoom d'origine. */
   resetView(): void {
-    this.animateCam({ zoom: this.defaultZoom }, 1400);
+    this.animateCam({ x: 0, y: 0, zoom: this.defaultZoom }, 1400);
   }
 
   /** Entrer dans la mémoire d'une personne : la bulle devient le point de départ de la transition. */
@@ -365,7 +434,8 @@ export class Constellation {
       this.enteringId = id;
       this.selectedId = id;
       b.targetScale = 1.5;
-      this.animateCam({ x: b.x, y: b.y, zoom: Math.min(this.maxZoom, this.cam.zoom * 1.6) }, 1300);
+      // un rapprochement doux (1,25 fois) : l'encre fait le reste, la caméra ne se jette plus sur la bulle
+      this.animateCam({ x: b.x, y: b.y, zoom: Math.min(this.maxZoom, this.cam.zoom * 1.25) }, 1300);
       window.setTimeout(resolve, 950);
     });
   }
@@ -441,12 +511,17 @@ export class Constellation {
     return this.byId.get(id)?.p;
   }
 
+  /** La bulle sous le pointeur : on ne regarde que les cases de la grille autour de lui, pas les 380 bulles. */
   private hit(sx: number, sy: number): Bubble | null {
     let best: Bubble | null = null;
     let bestD = Infinity;
     const rad = (this.D * this.cam.zoom) / 2 + 6;
-    for (const b of this.bubbles) {
-      if (b.alpha < 0.3) continue;
+    const wx = this.cam.x + (sx - this.w / 2) / this.cam.zoom;
+    const wy = this.cam.y + (sy - this.h / 2) / this.cam.zoom;
+    const gx = Math.floor((((wx % this.worldW) + this.worldW) % this.worldW) / this.cell);
+    const gy = Math.floor((((wy % this.worldH) + this.worldH) % this.worldH) / this.cell);
+    const voir = (b: Bubble) => {
+      if (b.alpha < 0.3) return;
       const x = this.wrapD(b.x - this.cam.x, this.worldW) * this.cam.zoom + this.w / 2;
       const y = this.wrapD(b.y - this.cam.y, this.worldH) * this.cam.zoom + this.h / 2;
       const d = Math.hypot(x - sx, y - sy);
@@ -454,7 +529,13 @@ export class Constellation {
         best = b;
         bestD = d;
       }
+    };
+    if (!this.grid.size) {
+      this.bubbles.forEach(voir);
+      return best;
     }
+    for (let oy = -1; oy <= 1; oy++)
+      for (let ox = -1; ox <= 1; ox++) this.grid.get(((gy + oy + this.rows) % this.rows) * this.cols + ((gx + ox + this.cols) % this.cols))?.forEach(voir);
     return best;
   }
 
@@ -552,6 +633,14 @@ export class Constellation {
       const rect = this.canvas.getBoundingClientRect();
       const b = this.hit(e.clientX - rect.left, e.clientY - rect.top);
       this.camVel = { x: 0, y: 0 };
+      const maintenant = performance.now();
+      // deux clics rapprochés sur la bulle déjà ouverte : on entre, sans chercher le bouton de la fiche
+      if (b && this.dernierClic?.id === b.p.id && maintenant - this.dernierClic.t < 450 && this.selectedId === b.p.id) {
+        this.dernierClic = null;
+        this.events.onEnter?.(b.p.id);
+        return;
+      }
+      this.dernierClic = b ? { id: b.p.id, t: maintenant } : null;
       this.select(b ? b.p.id : null);
     }
   };
@@ -586,6 +675,9 @@ export class Constellation {
       this.zoomAt(this.w / 2, this.h / 2, this.cam.zoom * 1.15);
     } else if (k === '-') {
       this.zoomAt(this.w / 2, this.h / 2, this.cam.zoom / 1.15);
+    } else if (k === 'home' || k === '0') {
+      e.preventDefault();
+      this.resetView();
     } else if (k === 'escape') {
       this.select(null);
     }
@@ -664,6 +756,14 @@ export class Constellation {
 
       // 1. errance : une courbure qui change sans cesse, jamais périodique
       let turn = drift(t * 0.11 + b.sa) * 0.95;
+      if (b.foyer !== undefined) {
+        // le banc rappelle doucement ses bulles égarées ; son centre dérive, lui aussi
+        const f = this.foyers[b.foyer]!;
+        const ddx = this.wrapD(f.x + Math.sin(t * 0.021 + f.ph) * this.worldW * 0.09 - b.x, this.worldW);
+        const ddy = this.wrapD(f.y + Math.cos(t * 0.017 + f.ph * 1.3) * this.worldH * 0.09 - b.y, this.worldH);
+        const rappel = Math.min(1, Math.max(0, (Math.hypot(ddx, ddy) - this.rayonBanc * 0.9) / (this.rayonBanc * 1.2)));
+        turn += angleDiff(Math.atan2(ddy, ddx), b.th) * 0.55 * rappel;
+      }
       // 2. intentions : régulièrement, la bulle « décide » d'aller ailleurs
       b.prefTimer -= dt;
       if (b.prefTimer < 0) {
@@ -697,9 +797,19 @@ export class Constellation {
             ax += (dx / d) * wgt;
             ay += (dy / d) * wgt;
             crowd += wgt;
+            // au contact, la bulle se comprime à peine dans le sens de la rencontre (essai `?toucher=1`)
+            if (TOUCHER && d < this.D * 1.02) {
+              const force = (1 - d / (this.D * 1.02)) * 0.6;
+              if (force > (b.sq ?? 0)) {
+                b.sq = force;
+                b.sqA = Math.atan2(dy, dx);
+              }
+            }
             // superposés presque exactement : on se sépare, très lentement
-            if (d < this.D * 0.3) {
-              const push = (this.D * 0.3 - d) * 0.3 * dt;
+            // (dans un banc, plus tôt et plus franchement : serrées, elles se chevaucheraient plus qu'aujourd'hui)
+            const ecart = this.D * (BANCS ? 1.25 : 0.3);
+            if (d < ecart) {
+              const push = (ecart - d) * (BANCS ? 1.3 : 0.3) * dt;
               b.x += (dx / d) * push;
               b.y += (dy / d) * push;
             }
@@ -719,6 +829,32 @@ export class Constellation {
       b.v += (target - b.v) * Math.min(1, dt * 0.6);
 
       const sp = b.v * b.slow * this.modeSpeed;
+      if (TOUCHER) {
+        // la compression se relâche d'elle-même
+        if (b.sq) b.sq *= Math.exp(-dt * 3.5);
+        // les bulles proches du curseur s'écartent d'un rien, comme une nappe qu'on effleure
+        if (this.pointer.inside && !this.drag) {
+          const px = this.cam.x + (this.pointer.x - this.w / 2) / this.cam.zoom;
+          const py = this.cam.y + (this.pointer.y - this.h / 2) / this.cam.zoom;
+          const dx = this.wrapD(b.x - px, this.worldW);
+          const dy = this.wrapD(b.y - py, this.worldH);
+          const d = Math.hypot(dx, dy);
+          const R = this.D * 2.6;
+          if (d > 1 && d < R) {
+            const k = (1 - d / R) ** 2 * 14 * dt;
+            b.x += (dx / d) * k;
+            b.y += (dy / d) * k;
+          }
+        }
+      }
+      if (BANCS) {
+        // un courant commun, large et lent, emporte les bancs
+        const cx = b.x * 0.0016;
+        const cy = b.y * 0.0016;
+        const ct = t * 0.018;
+        b.x += (Math.sin(cy * 1.7 + ct) + 0.5 * Math.sin(cy * 3.1 - ct * 0.6 + 1.3)) * 7 * b.slow * this.modeSpeed * dt;
+        b.y += (Math.sin(cx * 1.5 - ct * 0.8 + 2.1) + 0.5 * Math.sin(cx * 2.9 + ct * 0.5)) * 7 * b.slow * this.modeSpeed * dt;
+      }
       b.x += Math.cos(b.th) * sp * dt;
       b.y += Math.sin(b.th) * sp * dt;
       b.x = ((b.x % this.worldW) + this.worldW) % this.worldW;
@@ -746,9 +882,18 @@ export class Constellation {
 
     // génération progressive des sprites : budget de temps par image, jamais de saccade
     const t0 = performance.now();
-    while (this.spritesAllowed && this.spriteQueue.length && performance.now() - t0 < 7) {
-      const b = this.spriteQueue.shift()!;
-      b.sprite = embellir(bubbleSprite(b.p.id, b.p.hex, { matiere: b.p.matiere, size: this.spriteSize }));
+    if (this.peintre.actif && this.peintre.pret) {
+      // à côté : une vingtaine de bulles en route à la fois, les plus proches d'abord ; la page ne s'arrête jamais
+      while (this.spritesAllowed && this.spriteQueue.length && this.peintre.enAttente < 24) {
+        const b = this.spriteQueue.shift()!;
+        // le travailleur ne lit pas l'adresse (?gothique, ?melange) : la matière se décide ici
+        this.peintre.peindre(b.p.id, b.p.hex, this.spriteSize, b.p.matiere ?? matiereFor(hashString(b.p.id)), ECLAT);
+      }
+    } else if (!this.peintre.actif) {
+      while (this.spritesAllowed && this.spriteQueue.length && performance.now() - t0 < 7) {
+        const b = this.spriteQueue.shift()!;
+        b.sprite = embellir(bubbleSprite(b.p.id, b.p.hex, { matiere: b.p.matiere, size: this.spriteSize }));
+      }
     }
 
     let focusDraw: { x: number; y: number; r: number } | null = null;
@@ -770,7 +915,15 @@ export class Constellation {
         ctx.drawImage(b.sprite, x - size * 0.68, y - size * 0.68, size * 1.36, size * 1.36);
         ctx.globalAlpha = Math.min(1, a);
       }
-      ctx.drawImage(b.sprite, x - size / 2, y - size / 2, size, size);
+      if (TOUCHER && b.sq && b.sq > 0.01) {
+        // comprimée dans le sens de la rencontre, un peu plus large en travers : le volume se garde
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(b.sqA ?? 0);
+        ctx.scale(1 - b.sq * 0.14, 1 + b.sq * 0.09);
+        ctx.drawImage(b.sprite, -size / 2, -size / 2, size, size);
+        ctx.restore();
+      } else ctx.drawImage(b.sprite, x - size / 2, y - size / 2, size, size);
       if (b.p.id === this.focusId) focusDraw = { x, y, r: (this.D * z * b.scale) / 2 + 7 };
       if (this.own.has(b.p.id)) ownDraw.push({ x, y, r: (this.D * z * b.scale) / 2, a });
     }
@@ -813,6 +966,8 @@ export class Constellation {
       this.raf = requestAnimationFrame(loop);
       const dt = Math.min(0.05, (now - (this.last || now)) / 1000);
       this.last = now;
+      // onglet caché : rien à montrer, la batterie se repose (le temps de la promenade s'arrête aussi)
+      if (document.hidden) return;
       // hors de la constellation, plus rien à calculer ni à dessiner : la toile s'efface
       // par un fondu CSS (sur la carte graphique) ; les sprites continuent de se préparer,
       // pour un retour immédiat
@@ -829,6 +984,7 @@ export class Constellation {
 
   destroy(): void {
     cancelAnimationFrame(this.raf);
+    this.peintre.destroy();
     const c = this.canvas;
     c.removeEventListener('pointerdown', this.onDown);
     c.removeEventListener('pointerleave', this.onLeave);

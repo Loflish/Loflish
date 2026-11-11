@@ -8,7 +8,7 @@ import { EN_LIGNE } from '../lib/api';
 import { CONTACT } from '../lib/contact';
 import { FormulaireCode } from './Pages';
 import { LIMITES, QUESTION_MEMOIRE, QUESTIONS, type Trace } from '../data/types';
-import { MATIERE_COUSUE, NB_MATIERES, loadCatalogue } from '../lib/hd';
+import { CATALOGUE_LISTE, MATIERE_COUSUE, loadCatalogue } from '../lib/hd';
 import { GRIS_PALETTE, colorById } from '../lib/palette';
 import { listePays, PAYS_AUTRE } from '../lib/pays';
 import { useMuseum, useMuseumMode } from '../lib/museum';
@@ -64,9 +64,12 @@ const EMPTY: Draft = {
 
 const KEY = 'nmm:brouillon';
 
+/** le catalogue proposé : l'aquarelle cousue (0) en tête, puis les bulles choisies par Tom (hd.ts, CATALOGUE) */
+const CHOIX_MATIERES = [MATIERE_COUSUE, ...CATALOGUE_LISTE];
+
 /** Une matière au hasard dans tout le catalogue : l'aquarelle cousue (0) ou l'une des 100 taches. */
 function matiereAuHasard(): number {
-  return Math.floor(Math.random() * (NB_MATIERES + 1));
+  return CHOIX_MATIERES[Math.floor(Math.random() * CHOIX_MATIERES.length)]!;
 }
 
 export function Creer() {
@@ -559,7 +562,8 @@ function BulleChoix({
     void loadCatalogue();
   }, []);
   // les flèches font défiler les matières une à une (en boucle)
-  const tourner = (sens: -1 | 1) => onChange({ matiere: (((matiere < 0 ? 0 : matiere) + sens) % (NB_MATIERES + 1) + NB_MATIERES + 1) % (NB_MATIERES + 1) });
+  const rang = Math.max(0, CHOIX_MATIERES.indexOf(matiere));
+  const tourner = (sens: -1 | 1) => onChange({ matiere: CHOIX_MATIERES[(rang + sens + CHOIX_MATIERES.length) % CHOIX_MATIERES.length]! });
   return (
     <div className="bulle-choix">
       <div className="bulle-choix-apercu">
@@ -573,8 +577,12 @@ function BulleChoix({
           </button>
         </div>
         <p className="bulle-numero" aria-live="polite">
-          {matiere === MATIERE_COUSUE ? 'Aquarelle cousue' : `Matière ${matiere} sur ${NB_MATIERES}`}
+          {matiere === MATIERE_COUSUE ? 'Aquarelle cousue' : `Matière ${rang} sur ${CHOIX_MATIERES.length - 1}`}
         </p>
+        {/* personne ne parcourt 183 matières une à une : le hasard en propose une autre d'un geste */}
+        <button type="button" className="lien-discret petit" onClick={() => onChange({ matiere: matiereAuHasard() })}>
+          Une autre matière, au hasard
+        </button>
       </div>
       <div className="bulle-choix-options">
         <fieldset className="couleurs">

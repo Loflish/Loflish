@@ -19,7 +19,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  transition: opacity 1800ms var(--doux);
+  transition: opacity 1000ms var(--doux);
 }
 .backdrop:not(.mode-explore) .backdrop-ornements {
   opacity: 0;
@@ -37,7 +37,9 @@
   mix-blend-mode: multiply; /* le pigment se mêle au papier */
   touch-action: none;
   cursor: grab;
-  transition: opacity var(--lent) var(--doux);
+  /* les fondus d'une page à l'autre durent 1 s : à 1,8 s, cinq couches plein écran se mêlaient trop longtemps
+     (écran dense : une image sur deux perdue au retour dans la constellation, mesuré le 6 novembre 2026) */
+  transition: opacity 1000ms var(--doux);
 }
 /* hors de la constellation, la toile s'efface d'un fondu (le moteur, lui, s'arrête aussitôt) */
 .backdrop:not(.mode-explore) .backdrop-constellation {
@@ -273,8 +275,6 @@
   background: var(--papier-dense);
   border: 1.5px dashed var(--fil-rouge-doux);
   border-radius: 999px;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
   transition: border-color var(--vif) var(--doux), background-color var(--vif) var(--doux);
 }
 .explorer-actions .lien-discret:hover,
@@ -374,8 +374,6 @@
   background:
     var(--couture) left 3px / 236px 8px repeat-x,
     var(--papier-dense);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
 }
 .dock-item {
   flex: 1 1 0;
@@ -422,8 +420,6 @@
     padding: 0.5rem 0.7rem;
     min-height: 0;
     background: none;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
   }
   .dock::before {
     content: '';
@@ -863,7 +859,7 @@
   inset: -4%;
   overflow: hidden;
   opacity: 0;
-  transition: opacity 1800ms var(--doux);
+  transition: opacity 1000ms var(--doux);
   /* autour du logo brodé, la peinture s'éclaircit à peine (Tom, 26 octobre : pas de halo blanc derrière) ;
      c'est le liseré clair du fil (.explorer-logo) qui le garde lisible */
   -webkit-mask-image: radial-gradient(ellipse 30% 18% at 16% 7%, rgba(0, 0, 0, 0.8) 35%, #000 100%);
@@ -875,6 +871,10 @@
   height: 100%;
   object-fit: cover;
   animation: fond-respire 140s ease-in-out infinite alternate;
+}
+/* la toute première peinture se montre sans fondu : c'est le plus grand élément de la page */
+.fond-peint.sans-fondu {
+  transition: none;
 }
 .fond-peint.is-on {
   opacity: 0.5;
@@ -904,7 +904,7 @@
   opacity: 0;
 }
 .backdrop-atmosphere {
-  transition: opacity 1800ms var(--doux);
+  transition: opacity 1000ms var(--doux);
 }
 /* le papier de la carte d'aperçu, posé sur le tissu : ivoire dense, le tissu transparaît à peine */
 .papier-page {
@@ -913,7 +913,7 @@
   pointer-events: none;
   background: var(--papier-dense);
   opacity: 0;
-  transition: opacity 1800ms var(--doux);
+  transition: opacity 1000ms var(--doux);
 }
 .backdrop:not(.mode-explore) .papier-page {
   opacity: 1;
@@ -925,7 +925,7 @@
   background-image: var(--papier-chiffon);
   background-size: 520px 520px;
   opacity: 0;
-  transition: opacity 1800ms var(--doux);
+  transition: opacity 1000ms var(--doux);
 }
 .backdrop:not(.mode-explore) .fibres {
   opacity: 1;
@@ -949,7 +949,11 @@
   background-size: 900px 900px;
   mix-blend-mode: multiply;
   opacity: 0.13;
-  transition: opacity 1800ms var(--doux);
+  transition: opacity 1000ms var(--doux);
+}
+/* `?tissu=aura` : pour comparer, le tissu teint du 5 novembre derrière les pages ; la toile écrue s'allège pour le laisser voir */
+html.tissu-visible .backdrop:not(.mode-explore) .papier-page {
+  opacity: 0.3;
 }
 /* tant que la trame et les fibres ne sont pas chargées, leurs calques restent transparents : ils viennent en fondu */
 html.hd:not(.surfaces) .backdrop .lin-hd,
@@ -968,7 +972,7 @@ html.hd:not(.surfaces) .backdrop .fibres {
   top: 0;
   z-index: 30;
   pointer-events: none;
-  transition: opacity 1300ms var(--doux);
+  transition: opacity 900ms var(--doux);
   will-change: transform, opacity;
 }
 .fond-peint.fond-tissu {
@@ -1066,7 +1070,7 @@ html.entree-douce .backdrop-constellation {
   background-repeat: repeat;
   mix-blend-mode: soft-light;
   opacity: 0;
-  transition: opacity 1800ms var(--doux);
+  transition: opacity 1000ms var(--doux);
 }
 .backdrop.mode-explore .toile-brute {
   opacity: 0.5;
@@ -1079,7 +1083,7 @@ html.entree-douce .backdrop-constellation {
 }
 .backdrop.mode-explore .lin-hd.sous-toile-brute {
   opacity: 0;
-  transition: opacity 1800ms var(--doux);
+  transition: opacity 1000ms var(--doux);
 }
 
 /* ——— moins de mouvement demandé : les panneaux apparaissent sans glisser, les bulles en image ne respirent plus
