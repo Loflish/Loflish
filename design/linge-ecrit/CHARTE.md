@@ -110,7 +110,8 @@ La performance mesurée est celle d'un navigateur sans carte graphique : à refa
   d'écriture brodées au point avant, illisibles, avec le fil qui pend. Sur le profil, dans la couleur de la
   personne ; dans la marge de « Créer ma trace » (grand écran), deux lignes de plus à chaque étape.
   Décor seulement, jamais sous un texte à lire. Retirer l'import de `ecriture.css` rend le site d'avant.
-- **Essai « filaments »** (`src/engine/filaments.ts`, `?fils=1`, `?fils=2` plus dense) : de longs fils très fins
+- **Essai « filaments »** (`src/engine/filaments.ts`, `?fils=1`, `?fils=2` plus dense ; tracé par la carte graphique,
+  40 000 fils tissés sur ordinateur, 18 000 sur téléphone, un pixel d’écran chacun) : de longs fils très fins
   qui couvrent la constellation, se suivent par faisceaux, se croisent en deux familles et prennent la couleur de
   la peinture qu'ils traversent. Sans le drapeau, rien n'est créé. Le moteur n'est pas modifié.
 - **Passe de finition** d'après trois guides de design lus à la source (Impeccable, Taste Skill,

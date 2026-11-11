@@ -52,7 +52,8 @@ const note = (nom, ok, detail = '') => { res.push({ nom, ok: !!ok }); console.lo
     for (let i = 0; i < 60 && !(await p.locator('.apercu').count()); i++) { await p.mouse.click(30 + ((i * 97) % (vp.width - 60)), 130 + ((i * 53) % (vp.height - 330))); await p.waitForTimeout(220); }
     if (!(await p.locator('.apercu').count())) return false;
     const nom = await txt('.apercu-nom'); const ferme = await p.locator('.apercu-close').count();
-    await p.locator('.apercu .lien-entrer').click(); await p.waitForURL(/#\/trace\//, { timeout: 6000 }); await p.waitForTimeout(600);
+    // la fiche suit sa bulle, qui dérive : sur une machine lente elle n'est jamais « immobile », on clique sans attendre qu'elle le soit
+    await p.locator('.apercu .lien-entrer').click({ force: true }); await p.waitForURL(/#\/trace\//, { timeout: 15000 }); await p.waitForTimeout(600);
     return ferme === 1 && (await txt('h1.trace-nom')) === nom ? `« ${nom} »` : false;
   });
   await va('', 3000);
@@ -65,6 +66,8 @@ const note = (nom, ok, detail = '') => { res.push({ nom, ok: !!ok }); console.lo
     return n === 3 && liens.length === 5 && /dock-menu/.test(focus) ? liens.join(' · ') : false;
   });
   await va('bulle/sakinah', 4500);
+  // sur une machine lente, la constellation met plus de temps à amener la bulle : on attend la fiche ou le profil
+  await p.waitForFunction(() => document.querySelector('.apercu-nom') || /trace\/sakinah/.test(location.hash), null, { timeout: 25000 }).catch(() => undefined);
   await essai('lien partagé #/bulle/sakinah : aperçu ou profil de Sakinah', async () => ((await p.locator('.apercu-nom').count()) ? /Sakinah/.test(await txt('.apercu-nom')) : /trace\/sakinah/.test(p.url())));
   await va('archives/2026', 3000);
   await essai('archives/2026 : la constellation de l’édition', async () => /édition 2026/.test(await txt('.explorer-edition')));

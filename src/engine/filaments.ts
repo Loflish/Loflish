@@ -3,14 +3,15 @@
  * qui suivent un chemin, « comme l'eau et l'encre ». Derrière `?fils=1` (ou `?fils=2`, plus dense) : sans ce
  * drapeau, rien de ce fichier n'est créé et la constellation reste exactement celle d'avant.
  *
- * Deuxième version, d'après ses deux images (de longs traits fins tirés d'un même geste, et les hachures au crayon
- * de couleur des dessins de mise en place) : de longs fils très fins, presque droits, qui couvrent tout l'espace,
- * se suivent par faisceaux, se croisent en deux familles comme une hachure croisée, et prennent la couleur de la
- * peinture qu'ils traversent. Ils glissent lentement le long de leur propre chemin. Aspect brut : chaque point
- * est posé un peu à côté, comme à la main, et le fil est cousu en longs points lancés.
- * (La première version, des fils courts qui s'enroulaient autour des bulles, est dans l'historique : cbb9e77.)
+ * Troisième version (Tom : « encore plus fins », « plusieurs milliers », « détaillés ») : les fils sont tracés par
+ * la carte graphique, d'un seul geste. Des dizaines de milliers de fils d'un pixel d'écran (un demi-pixel sur un
+ * téléphone), dont plusieurs milliers visibles à la fois. Chaque fil est un long chemin dessiné une fois pour
+ * toutes ; ce qu'on en voit est un brin qui glisse le long du chemin, net à la tête, effilé à la queue, cousu en
+ * longs points lancés. Les fils voisins partent presque ensemble : ils se suivent par vagues. Deux familles se
+ * croisent, comme une hachure. Chaque fil prend, à chaque endroit, la couleur de la peinture qu'il traverse.
+ * (Versions précédentes dans l'historique : fils enroulés autour des bulles, cbb9e77 ; hachures en 2D, 5889a8b.)
  *
- * Le moteur n'est pas modifié : on lit seulement sa caméra et la position des bulles à l'écran.
+ * Le moteur n'est pas modifié : on lit seulement sa caméra.
  */
 
 export type VarianteFils = 1 | 2;
@@ -41,141 +42,237 @@ export interface BulleVue {
   hex: string;
 }
 
-/** Le fil bordeaux du linge écrit : un fil sur douze, pour tenir l'ensemble. */
-const FIL_ROUGE = 'rgb(122,47,69)';
-/** Points gardés par fil, et images entre deux points : un fil fait jusqu'à 15 segments de 16 à 36 px. */
-const POINTS = 16;
-const PAS = 32;
+/** Le plus petit zoom que la constellation permet, avec une marge : la trame couvre l'écran jusque-là. */
+const ZOOM_MIN = 0.72;
+/** Longueur d'un pas le long d'un chemin, en pixels du monde. */
+const PAS = 26;
 
-function rgb(hex: string): [number, number, number] {
-  const n = parseInt(hex.slice(1), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-/**
- * Une couleur de la peinture ou d'une bulle devient un fil teint : même teinte, plus saturée, un ton plus bas
- * (la peinture est pâle, un fil de sa couleur exacte ne se verrait pas). Arrondie à quelques valeurs : les fils
- * de même bobine sont tracés d'un seul geste.
- */
-function teindre(r: number, g: number, b: number): string {
-  const m = (r + g + b) / 3;
-  const c = (v: number) => {
-    const t = Math.min(255, Math.max(0, (m + (v - m) * 2.4) * 0.74));
-    return Math.round(t / 24) * 24;
-  };
-  return `rgb(${c(r)},${c(g)},${c(b)})`;
-}
+const SOMMET = `#version 300 es
+precision highp float;
+layout(location = 0) in vec2 aBase;   // le milieu du chemin, en fraction de la trame
+layout(location = 1) in vec2 aEcart;  // le point, par rapport à ce milieu (seizièmes de pixel)
+layout(location = 2) in vec4 aFil;    // place le long du chemin, départ, allure, teinte
+layout(location = 3) in vec4 aPlus;   // couture invisible entre deux fils, force du fil
+uniform vec2 uTrame;
+uniform vec2 uCam;
+uniform float uZoom;
+uniform vec2 uEcran;
+uniform float uTemps;
+out float vForce;
+out float vPlace;
+out float vTeinte;
+void main() {
+  vec2 base = aBase * uTrame;
+  // la trame se répète à l'infini : chaque fil est dessiné dans sa copie la plus proche de la caméra
+  base += uTrame * floor((uCam - base) / uTrame + 0.5);
+  vec2 m = (base + aEcart / 16.0 - uCam) * uZoom;
+  gl_Position = vec4(m.x / (uEcran.x * 0.5), -m.y / (uEcran.y * 0.5), 0.0, 1.0);
+  // le brin visible : il parcourt le chemin, net à la tête, effilé à la queue
+  float longueur = 0.5;
+  float tour = fract(aFil.y + uTemps * (0.028 + aFil.z * 0.02));
+  float derriere = tour * (1.0 + longueur) - aFil.x;
+  float brin = smoothstep(0.0, 0.03, derriere) * (1.0 - smoothstep(longueur * 0.45, longueur, derriere));
+  vForce = brin * (1.0 - aPlus.x) * (0.45 + aPlus.y * 0.55);
+  vPlace = aFil.x;
+  vTeinte = aFil.w;
+}`;
+
+const FRAGMENT = `#version 300 es
+precision mediump float;
+uniform sampler2D uPeinture;
+uniform vec2 uToile;     // taille du calque, en pixels d'écran
+uniform vec2 uCouvre;    // la part de la peinture que l'écran montre
+uniform float uOpacite;
+uniform float uPoints;   // nombre de points lancés le long d'un chemin
+in float vForce;
+in float vPlace;
+in float vTeinte;
+out vec4 couleur;
+void main() {
+  if (vForce < 0.02) discard;
+  // le point lancé : le fil plonge un instant dans la toile, puis ressort
+  if (fract(vPlace * uPoints + vTeinte * 9.0) < 0.1) discard;
+  vec2 uv = gl_FragCoord.xy / uToile;
+  uv = (vec2(uv.x, 1.0 - uv.y) - 0.5) * uCouvre + 0.5;
+  vec3 c = texture(uPeinture, uv).rgb;
+  // un fil teint : la teinte de la peinture, plus saturée, un ton plus bas
+  float gris = (c.r + c.g + c.b) / 3.0;
+  c = clamp((gris + (c - gris) * 2.7) * (0.6 + vTeinte * 0.3), 0.0, 1.0);
+  // un fil sur douze est le fil bordeaux du linge écrit
+  if (vTeinte > 0.917) c = vec3(0.48, 0.18, 0.27);
+  float a = vForce * uOpacite;
+  couleur = vec4(c * a, a);
+}`;
 
 export class Filaments {
-  private ctx: CanvasRenderingContext2D;
-  private n: number;
+  private gl: WebGL2RenderingContext | null;
+  private programme: WebGLProgram | null = null;
+  private lieux: Record<string, WebGLUniformLocation | null> = {};
+  private sommets = 0;
+  private part = 1;
+  private trame: [number, number] = [2400, 1800];
+  private points = 24;
   private w = 0;
   private h = 0;
   private dpr = 1;
-  /** les points posés, dans le monde de la constellation (un pixel à zoom 1), en anneau par fil */
-  private px: Float32Array;
-  private py: Float32Array;
-  /** la pointe de l'aiguille : la position exacte, sans le tremblé de la main */
-  private ax: Float32Array;
-  private ay: Float32Array;
-  private tete: Uint8Array;
-  private longueur: Uint8Array;
-  private age: Uint16Array;
-  private vie: Uint16Array;
-  private allure: Float32Array;
-  /** la famille de hachure : 0, le grand geste ; 1, celle qui le croise */
-  private famille: Uint8Array;
-  private couleur: string[];
-  private image = 0;
+  private image: { w: number; h: number } | null = null;
   private temps = 0;
   private raf = 0;
   private actif = true;
   private reduit = false;
   private pause = false;
   private derniereCam: Cam = { x: NaN, y: NaN, zoom: NaN };
-  private peinture: { data: Uint8ClampedArray; w: number; h: number } | null = null;
-  private lent = 0;
   private dernierInstant = 0;
+  private lent = 0;
 
   constructor(
     private canvas: HTMLCanvasElement,
-    variante: VarianteFils,
+    private variante: VarianteFils,
     private cam: () => Cam | undefined,
-    private bulles: () => BulleVue[],
+    _bulles?: () => BulleVue[],
     fond?: string,
   ) {
-    this.ctx = canvas.getContext('2d')!;
-    const petit = Math.min(window.innerWidth, window.innerHeight) < 700;
-    this.n = Math.round((petit ? 1000 : 2800) * (variante === 2 ? 1.8 : 1));
-    const t = this.n * POINTS;
-    this.px = new Float32Array(t);
-    this.py = new Float32Array(t);
-    this.ax = new Float32Array(this.n);
-    this.ay = new Float32Array(this.n);
-    this.tete = new Uint8Array(this.n);
-    this.longueur = new Uint8Array(this.n);
-    this.age = new Uint16Array(this.n);
-    this.vie = new Uint16Array(this.n);
-    this.allure = new Float32Array(this.n);
-    this.famille = new Uint8Array(this.n);
-    this.couleur = new Array<string>(this.n).fill(FIL_ROUGE);
+    this.gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: true, depth: false, stencil: false });
+    if (!this.gl) return;
     this.resize();
+    if (!this.preparer()) {
+      this.gl = null;
+      return;
+    }
+    this.tisser();
     if (fond) this.lirePeinture(fond);
   }
 
-  /** La peinture du fond, réduite à quelques pixels : chaque fil prend le ton de ce qu'il traverse. */
+  private preparer(): boolean {
+    const gl = this.gl!;
+    const compiler = (type: number, source: string) => {
+      const s = gl.createShader(type)!;
+      gl.shaderSource(s, source);
+      gl.compileShader(s);
+      return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
+    };
+    const a = compiler(gl.VERTEX_SHADER, SOMMET), b = compiler(gl.FRAGMENT_SHADER, FRAGMENT);
+    if (!a || !b) return false;
+    const p = gl.createProgram()!;
+    gl.attachShader(p, a);
+    gl.attachShader(p, b);
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) return false;
+    this.programme = p;
+    for (const n of ['uTrame', 'uCam', 'uZoom', 'uEcran', 'uTemps', 'uPeinture', 'uToile', 'uCouvre', 'uOpacite', 'uPoints'])
+      this.lieux[n] = gl.getUniformLocation(p, n);
+    // en attendant la peinture : un mauve neutre
+    gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([214, 196, 208, 255]));
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    return true;
+  }
+
+  /** La direction du geste : un grand mouvement d'ensemble qui s'incurve, périodique sur la trame (elle se répète sans couture). */
+  private direction(x: number, y: number, famille: number): number {
+    const [tx, ty] = this.trame;
+    const u = (x / tx) * Math.PI * 2, v = (y / ty) * Math.PI * 2;
+    const a = 0.6 * Math.sin(u + v * 0 + 0.4) + 0.42 * Math.sin(-u + 2 * v + 1.7) + 0.2 * Math.sin(3 * u + 2 * v + 4.1) + 0.1 * Math.sin(5 * u - 4 * v + 2.2);
+    return (famille ? -0.16 : -0.98) + a * (famille ? 0.7 : 1);
+  }
+
+  /** Tous les chemins, tirés une fois pour toutes et confiés à la carte graphique. */
+  private tisser() {
+    const gl = this.gl!;
+    const petit = Math.min(this.w, this.h) < 700;
+    this.points = petit ? 18 : 24;
+    const chemin = this.points * PAS;
+    this.trame = [Math.ceil(this.w / ZOOM_MIN + chemin), Math.ceil(this.h / ZOOM_MIN + chemin)];
+    const fils = Math.round((petit ? 18000 : 40000) * (this.variante === 2 ? 1.8 : 1));
+    const M = this.points;
+    const parFil = M + 2; // un sommet invisible de chaque côté : les fils se suivent dans un seul tracé
+    const total = fils * parFil;
+    const octets = new ArrayBuffer(total * 16);
+    const vue = new DataView(octets);
+    const xs = new Float32Array(M), ys = new Float32Array(M);
+    const [tx, ty] = this.trame;
+    let o = 0;
+    let jumeau = false;
+    let gx = 0, gy = 0, gPhase = 0, gFamille = 0;
+    for (let f = 0; f < fils; f++) {
+      // un fil sur sept est doublé : le même chemin, un pixel et demi à côté
+      const doubler: boolean = jumeau;
+      if (!doubler) {
+        gx = Math.random() * tx;
+        gy = Math.random() * ty;
+        gFamille = Math.random() < 0.24 ? 1 : 0;
+        // les voisins partent presque ensemble : le départ suit la place sur la toile, à un souffle près
+        gPhase = (gx * 0.62 + gy * 0.38) / 900 + Math.random() * 0.3;
+      }
+      jumeau = !doubler && Math.random() < 0.14;
+      const cote = doubler ? 1.6 : 0;
+      let x = gx, y = gy;
+      for (let i = 0; i < M; i++) {
+        const d = this.direction(x, y, gFamille);
+        // chaque point un peu à côté de la ligne idéale, comme à la main
+        const ecart = (Math.random() - 0.5) * 2.2 + cote;
+        xs[i] = x - Math.sin(d) * ecart;
+        ys[i] = y + Math.cos(d) * ecart;
+        x += Math.cos(d) * PAS;
+        y += Math.sin(d) * PAS;
+      }
+      const mx = xs[M >> 1]!, my = ys[M >> 1]!;
+      const bx = ((mx % tx) + tx) % tx, by = ((my % ty) + ty) % ty;
+      const phase = Math.floor((((gPhase % 1) + 1) % 1) * 255);
+      const allure = Math.floor(Math.random() * 255);
+      const teinte = Math.floor(Math.random() * 255);
+      const force = Math.floor((doubler ? 0.55 : 0.35 + Math.random() * 0.65) * 255);
+      for (let k = 0; k < parFil; k++) {
+        const i = Math.min(M - 1, Math.max(0, k - 1));
+        vue.setUint16(o, Math.round((bx / tx) * 65535), true);
+        vue.setUint16(o + 2, Math.round((by / ty) * 65535), true);
+        vue.setInt16(o + 4, Math.round((xs[i]! - mx) * 16), true);
+        vue.setInt16(o + 6, Math.round((ys[i]! - my) * 16), true);
+        vue.setUint8(o + 8, Math.round((i / (M - 1)) * 255));
+        vue.setUint8(o + 9, phase);
+        vue.setUint8(o + 10, allure);
+        vue.setUint8(o + 11, teinte);
+        vue.setUint8(o + 12, k === 0 || k === parFil - 1 ? 255 : 0);
+        vue.setUint8(o + 13, force);
+        o += 16;
+      }
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, octets, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.UNSIGNED_SHORT, true, 16, 0);
+    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 2, gl.SHORT, false, 16, 4);
+    gl.enableVertexAttribArray(2);
+    gl.vertexAttribPointer(2, 4, gl.UNSIGNED_BYTE, true, 16, 8);
+    gl.enableVertexAttribArray(3);
+    gl.vertexAttribPointer(3, 4, gl.UNSIGNED_BYTE, true, 16, 12);
+    this.sommets = total;
+  }
+
+  /** La peinture du fond : chaque fil prend, à chaque endroit, le ton de ce qu'il traverse. */
   private lirePeinture(src: string) {
     const img = new Image();
     img.decoding = 'async';
     img.onload = () => {
-      const w = 96;
-      const h = Math.max(1, Math.round((96 * img.naturalHeight) / img.naturalWidth));
+      const gl = this.gl;
+      if (!gl) return;
+      // réduite : la teinte d'une région, pas le grain du papier
       const c = document.createElement('canvas');
-      c.width = w;
-      c.height = h;
-      const x = c.getContext('2d', { willReadFrequently: true });
+      c.width = 256;
+      c.height = Math.max(1, Math.round((256 * img.naturalHeight) / img.naturalWidth));
+      const x = c.getContext('2d');
       if (!x) return;
-      x.drawImage(img, 0, 0, w, h);
-      try {
-        this.peinture = { data: x.getImageData(0, 0, w, h).data, w, h };
-      } catch {
-        this.peinture = null;
-        return;
-      }
-      // les fils déjà cousus avant l'arrivée de la peinture prennent leur couleur maintenant
-      const cam = this.cam() ?? { x: 0, y: 0, zoom: 1 };
-      const b = this.bulles();
-      for (let i = 0; i < this.n; i++) {
-        const sx = (this.ax[i]! - cam.x) * cam.zoom + this.w / 2, sy = (this.ay[i]! - cam.y) * cam.zoom + this.h / 2;
-        this.couleur[i] = this.bobinePour(sx, sy, b);
-      }
+      x.drawImage(img, 0, 0, c.width, c.height);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      this.image = { w: img.naturalWidth, h: img.naturalHeight };
+      this.derniereCam.zoom = NaN;
     };
     img.src = src;
-  }
-
-  private bobinePour(sx: number, sy: number, bulles: BulleVue[]): string {
-    const tirage = Math.random();
-    if (tirage < 0.08) return FIL_ROUGE;
-    // un fil sur cinq prend la couleur de la bulle la plus proche : le fil de chacun dans la trame de tous
-    if (tirage < 0.28 && bulles.length) {
-      let mieux = bulles[0]!, dMin = Infinity;
-      for (const b of bulles) {
-        const d = (b.x - sx) ** 2 + (b.y - sy) ** 2;
-        if (d < dMin) {
-          dMin = d;
-          mieux = b;
-        }
-      }
-      const [r, g, b] = rgb(mieux.hex);
-      return teindre(r, g, b);
-    }
-    const p = this.peinture;
-    if (!p) return 'rgb(120,96,120)';
-    // l'image couvre l'écran (object-fit: cover)
-    const e = Math.max(this.w / p.w, this.h / p.h);
-    const ix = Math.min(p.w - 1, Math.max(0, Math.floor((sx - (this.w - p.w * e) / 2) / e)));
-    const iy = Math.min(p.h - 1, Math.max(0, Math.floor((sy - (this.h - p.h * e) / 2) / e)));
-    const i = (iy * p.w + ix) * 4;
-    return teindre(p.data[i]!, p.data[i + 1]!, p.data[i + 2]!);
   }
 
   resize() {
@@ -185,6 +282,11 @@ export class Filaments {
     this.canvas.width = Math.round(this.w * this.dpr);
     this.canvas.height = Math.round(this.h * this.dpr);
     this.derniereCam.zoom = NaN;
+  }
+
+  /** Nombre de fils tissés (pour les mesures). */
+  get n(): number {
+    return Math.round(this.sommets / (this.points + 2));
   }
 
   setActif(v: boolean) {
@@ -197,13 +299,9 @@ export class Filaments {
   setPause(v: boolean) {
     this.pause = v;
   }
-
   start() {
-    const cam = this.cam() ?? { x: 0, y: 0, zoom: 1 };
-    const b = this.bulles();
-    for (let i = 0; i < this.n; i++) this.naitre(i, cam, b, true);
-    // la trame est déjà là à l'arrivée : les fils sont tirés d'avance, sans rien dessiner
-    for (let k = 0; k < PAS * (POINTS - 1); k++) this.avancer(cam, b, 1);
+    // la trame est déjà là à l'arrivée : on part d'un moment quelconque de son mouvement
+    this.temps = 40 + Math.random() * 200;
     this.boucle();
   }
   stop() {
@@ -211,123 +309,33 @@ export class Filaments {
     this.raf = 0;
   }
 
-  private naitre(i: number, cam: Cam, bulles: BulleVue[], partout: boolean) {
-    // partout sur la toile, et un peu au-delà : les fils entrent et sortent par les bords
-    const sx = -160 + Math.random() * (this.w + 320);
-    const sy = -160 + Math.random() * (this.h + 320);
-    const o = i * POINTS;
-    const x = (sx - this.w / 2) / cam.zoom + cam.x, y = (sy - this.h / 2) / cam.zoom + cam.y;
-    this.px[o] = this.ax[i] = x;
-    this.py[o] = this.ay[i] = y;
-    this.tete[i] = 0;
-    this.longueur[i] = 1;
-    this.vie[i] = PAS * (POINTS + 4) + Math.floor(Math.random() * 1400);
-    this.age[i] = partout ? Math.floor(Math.random() * 300) : 0;
-    this.allure[i] = 0.5 + Math.random() * 0.62;
-    this.famille[i] = Math.random() < 0.22 ? 1 : 0;
-    this.couleur[i] = this.bobinePour(sx, sy, bulles);
-  }
-
-  /**
-   * La direction du geste en un point du monde. Un grand mouvement d'ensemble (vers le haut et la droite), qui
-   * s'incurve lentement d'un endroit à l'autre : les fils voisins se suivent, se resserrent en faisceaux là où le
-   * geste converge, s'écartent ailleurs. La seconde famille croise la première d'un quart de tour environ.
-   */
-  private direction(x: number, y: number, t: number, famille: number): number {
-    const a =
-      0.62 * Math.sin(x * 0.00125 + y * 0.0007 + t * 0.00055) +
-      0.4 * Math.sin(-x * 0.0019 + y * 0.0026 + 1.7 - t * 0.0008) +
-      0.2 * Math.sin(x * 0.0052 + y * 0.0041 + 4.1 + t * 0.0011);
-    return (famille ? -0.18 : -0.98) + a * (famille ? 0.7 : 1);
-  }
-
-  private avancer(cam: Cam, bulles: BulleVue[], dt: number) {
-    this.image++;
-    this.temps += dt;
-    const pousser = this.image % PAS === 0;
-    const { w, h } = this;
-    const z = cam.zoom;
-    for (let i = 0; i < this.n; i++) {
-      const o = i * POINTS;
-      const dir = this.direction(this.ax[i]!, this.ay[i]!, this.temps, this.famille[i]!);
-      const a = (this.allure[i]! * dt) / z;
-      const x = (this.ax[i] = this.ax[i]! + Math.cos(dir) * a);
-      const y = (this.ay[i] = this.ay[i]! + Math.sin(dir) * a);
-      let t = this.tete[i]!;
-      if (pousser) {
-        // le point posé : un peu à côté de la ligne idéale, comme à la main
-        const ecart = (Math.random() - 0.5) * 2.6;
-        this.px[o + t] = x - Math.sin(dir) * ecart;
-        this.py[o + t] = y + Math.cos(dir) * ecart;
-        t = (t + 1) % POINTS;
-        this.tete[i] = t;
-        if (this.longueur[i]! < POINTS) this.longueur[i] = this.longueur[i]! + 1;
-      }
-      this.px[o + t] = x;
-      this.py[o + t] = y;
-      const age = (this.age[i] = this.age[i]! + 1);
-      const sx = (x - cam.x) * z + w / 2, sy = (y - cam.y) * z + h / 2;
-      if (age > this.vie[i]! || sx < -520 || sx > w + 520 || sy < -520 || sy > h + 520) this.naitre(i, cam, bulles, false);
-    }
-  }
-
   private dessiner(cam: Cam) {
-    const { ctx, w, h, dpr } = this;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    const z = cam.zoom;
-    const cx = w / 2 - cam.x * z, cy = h / 2 - cam.y * z;
-    // la part déjà parcourue du pas en cours : la queue du fil se retire d'autant, sans à-coup
-    const part = (this.image % PAS) / PAS;
-    // un tracé par bobine : quelques dizaines de traits à l'écran, pas un par fil
-    const parBobine = new Map<string, number[]>();
-    for (let i = 0; i < this.n; i++) {
-      const c = this.couleur[i]!;
-      let l = parBobine.get(c);
-      if (!l) parBobine.set(c, (l = []));
-      l.push(i);
-    }
-    for (const [c, fils] of parBobine) {
-      ctx.strokeStyle = c;
-      for (let passe = 0; passe < 2; passe++) {
-        // deux grosseurs : le fil simple, très fin, et un fil sur cinq, double
-        ctx.lineWidth = passe ? 1.25 : 0.7;
-        ctx.globalAlpha = passe ? 0.5 : 0.72;
-        // de longs points lancés : le fil plonge un instant dans la toile, puis ressort
-        ctx.setLineDash(passe ? [34, 3.5] : [22, 2.6]);
-        ctx.beginPath();
-        for (const i of fils) {
-          if ((i % 5 === 0 ? 1 : 0) !== passe) continue;
-          const n = this.longueur[i]!;
-          if (n < 2) continue;
-          const o = i * POINTS;
-          const t = this.tete[i]!;
-          const en = (j: number) => o + ((t - (n - 1) + j + POINTS * 2) % POINTS);
-          // le fil s'efface par la queue en fin de vie : on ne dessine que la part vivante
-          const reste = Math.min(1, (this.vie[i]! - this.age[i]!) / (PAS * 3));
-          const depuis = Math.min(n - 2, Math.floor((n - 1) * (1 - Math.max(0, reste))));
-          const k0 = en(depuis), k1 = en(depuis + 1);
-          const f = n === POINTS && depuis === 0 ? part : 0;
-          ctx.moveTo((this.px[k0]! + (this.px[k1]! - this.px[k0]!) * f) * z + cx, (this.py[k0]! + (this.py[k1]! - this.py[k0]!) * f) * z + cy);
-          // une courbe douce par les milieux : pas d'angle entre deux points
-          for (let j = depuis + 1; j < n - 1; j++) {
-            const ka = en(j), kb = en(j + 1);
-            const xa = this.px[ka]! * z + cx, ya = this.py[ka]! * z + cy;
-            ctx.quadraticCurveTo(xa, ya, (xa + this.px[kb]! * z + cx) / 2, (ya + this.py[kb]! * z + cy) / 2);
-          }
-          ctx.lineTo(this.px[o + t]! * z + cx, this.py[o + t]! * z + cy);
-        }
-        ctx.stroke();
-      }
-    }
-    ctx.setLineDash([]);
-    ctx.globalAlpha = 1;
+    const gl = this.gl;
+    if (!gl || !this.programme) return;
+    const L = this.lieux;
+    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(this.programme);
+    gl.uniform2f(L.uTrame!, this.trame[0], this.trame[1]);
+    gl.uniform2f(L.uCam!, cam.x, cam.y);
+    gl.uniform1f(L.uZoom!, cam.zoom);
+    gl.uniform2f(L.uEcran!, this.w, this.h);
+    gl.uniform1f(L.uTemps!, this.temps);
+    gl.uniform1i(L.uPeinture!, 0);
+    gl.uniform2f(L.uToile!, this.canvas.width, this.canvas.height);
+    // l'image couvre l'écran (object-fit: cover) : la part qu'on en voit
+    const i = this.image;
+    const e = i ? Math.max(this.w / i.w, this.h / i.h) : 1;
+    gl.uniform2f(L.uCouvre!, i ? this.w / (i.w * e) : 1, i ? this.h / (i.h * e) : 1);
+    // un fil d'un pixel d'écran : un demi-pixel sur un téléphone, où il peut être plein ; ailleurs on l'allège
+    gl.uniform1f(L.uOpacite!, this.dpr >= 1.5 ? 0.95 : 0.62);
+    gl.uniform1f(L.uPoints!, this.points * 0.9);
+    gl.drawArrays(gl.LINE_STRIP, 0, Math.floor((this.sommets * this.part) / (this.points + 2)) * (this.points + 2));
   }
 
   private boucle = () => {
-    if (this.raf || !this.actif) return;
+    if (this.raf || !this.actif || !this.gl) return;
     const pas = (instant: number) => {
       this.raf = 0;
       if (!this.actif) return;
@@ -336,32 +344,19 @@ export class Filaments {
       const cam = this.cam();
       if (!cam) return;
       const bouge = cam.x !== this.derniereCam.x || cam.y !== this.derniereCam.y || cam.zoom !== this.derniereCam.zoom;
-      // la constellation est un monde qui se referme sur lui-même : si la caméra saute d'un bord à l'autre, les fils la suivent
-      const sx = cam.x - this.derniereCam.x, sy = cam.y - this.derniereCam.y;
-      if (Math.abs(sx) > 1800 || Math.abs(sy) > 1800) {
-        const dx = Math.abs(sx) > 1800 ? sx : 0, dy = Math.abs(sy) > 1800 ? sy : 0;
-        for (let i = 0; i < this.px.length; i++) {
-          this.px[i] = this.px[i]! + dx;
-          this.py[i] = this.py[i]! + dy;
-        }
-        for (let i = 0; i < this.n; i++) {
-          this.ax[i] = this.ax[i]! + dx;
-          this.ay[i] = this.ay[i]! + dy;
-        }
-      }
       this.derniereCam = { x: cam.x, y: cam.y, zoom: cam.zoom };
       const fige = this.pause || this.reduit;
+      const ecoule = this.dernierInstant ? instant - this.dernierInstant : 16.7;
+      this.dernierInstant = instant;
       if (!fige) {
-        const dt = this.dernierInstant ? Math.min(2.5, (instant - this.dernierInstant) / 16.67) : 1;
-        this.avancer(cam, this.bulles(), dt);
+        this.temps += Math.min(0.05, ecoule / 1000);
         // un appareil qui peine : on retire des fils plutôt que de saccader
-        this.lent = instant - this.dernierInstant > 34 ? this.lent + 1 : Math.max(0, this.lent - 1);
-        if (this.lent > 40 && this.n > 400) {
-          this.n = Math.round(this.n * 0.8);
+        this.lent = ecoule > 34 ? this.lent + 1 : Math.max(0, this.lent - 1);
+        if (this.lent > 45 && this.part > 0.3) {
+          this.part *= 0.75;
           this.lent = 0;
         }
       }
-      this.dernierInstant = instant;
       if (!fige || bouge) this.dessiner(cam);
     };
     this.raf = requestAnimationFrame(pas);
