@@ -792,6 +792,31 @@
   pointer-events: none;
 }
 
+/* en attendant sa peinture (une fraction de seconde), la bulle est déjà là : un lavis rond dans sa couleur,
+   puis l'aquarelle arrive en fondu au lieu de surgir */
+.trace-bulle .bubble-image::before,
+.perdre-carte .bubble-image::before {
+  content: '';
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--lavis) 0%, var(--lavis) 55%, transparent 100%);
+  transition: opacity 500ms var(--doux);
+}
+.trace-bulle .bubble-image:has(img)::before,
+.perdre-carte .bubble-image:has(img)::before {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .trace-bulle .bubble-image img,
+  .perdre-carte .bubble-image img {
+    animation: bulle-arrive 500ms var(--doux) backwards, breathe 9s ease-in-out 500ms infinite;
+  }
+  @keyframes bulle-arrive {
+    from { opacity: 0; }
+  }
+}
+
 .hint-small {
   display: none;
 }

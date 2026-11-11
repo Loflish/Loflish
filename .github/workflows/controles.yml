@@ -21,8 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -35,7 +35,8 @@ jobs:
       - name: Compiler le prototype (celui que les contrôles parcourent)
         run: npm run build
       - name: Installer le navigateur des contrôles
-        run: npx playwright install --with-deps chromium
+        timeout-minutes: 8
+        run: npx playwright install --only-shell chromium
       - name: Parcours, textes, accessibilité, démarrage, défauts rejoués
         run: npm run controles
 
@@ -44,8 +45,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -54,5 +55,11 @@ jobs:
         run: npm --prefix server ci
       - name: Types
         run: npm --prefix server run typecheck
+      - name: Trouver PostgreSQL (les tests démarrent leur propre base jetable)
+        run: |
+          if ! ls /usr/lib/postgresql/*/bin/initdb >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
+          fi
+          echo "PG_BIN=$(dirname "$(ls /usr/lib/postgresql/*/bin/initdb | sort -V | tail -1)")" >> "$GITHUB_ENV"
       - name: Tests
         run: npm --prefix server test
