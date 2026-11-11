@@ -965,10 +965,10 @@ html.entree-douce .backdrop-constellation {
 .entree-phrase::after {
   content: '';
   display: block;
-  height: 2px;
   width: 0;
   margin: 0.5em auto 0;
-  background: repeating-linear-gradient(90deg, #64303d 0 9px, transparent 9px 15px);
+  height: 8px;
+  background: var(--couture) left center / 236px 8px repeat-x;
   transition: width 1600ms var(--doux) 250ms;
 }
 .entree-phrase.est-visible::after {
@@ -984,10 +984,15 @@ html.entree-douce .backdrop-constellation {
   position: absolute;
   right: 24px;
   bottom: 20px;
-  color: var(--encre-2);
-  background: var(--papier);
-  padding: 6px 12px;
+  min-height: var(--cible);
+  color: var(--encre);
+  background: var(--papier-dense);
+  padding: 0.5rem 1.2rem;
+  border: 1.5px dashed var(--fil-rouge-doux);
   border-radius: 999px;
+}
+.entree-passer:hover {
+  border-color: var(--fil-rouge);
 }
 
 /*
