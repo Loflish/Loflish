@@ -9,7 +9,7 @@
   position: relative;
   min-height: 100dvh;
   padding: 0 var(--gouttiere) 2rem;
-  overflow-x: hidden;
+  /* le lavis déborde du coin : clip le coupe sans créer de zone de défilement (sinon, body le coupe déjà) */
   overflow-x: clip;
 }
 .trace > * {
@@ -34,7 +34,6 @@
   -webkit-mask: var(--tache-lavis, radial-gradient(closest-side, #000 20%, transparent)) center / contain no-repeat;
   mask: var(--tache-lavis, radial-gradient(closest-side, #000 20%, transparent)) center / contain no-repeat;
   opacity: 0.34;
-  mix-blend-mode: multiply;
   pointer-events: none;
   transform-origin: 70% 30%;
 }
@@ -747,6 +746,9 @@ li:nth-child(3n) > .fragment::after {
 .salle-scrim {
   position: fixed;
   inset: 0;
+  /* enfant direct de la page : il ne prend pas sa largeur de lecture, il couvre tout l'écran */
+  max-width: none !important;
+  margin: 0 !important;
   z-index: 20;
   background: rgba(236, 230, 218, 0.72);
   animation: apercu-in 400ms var(--doux) both;

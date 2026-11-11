@@ -8,7 +8,6 @@
   position: relative;
   min-height: 100dvh;
   padding: 0 var(--gouttiere) 2rem;
-  overflow-x: hidden;
   overflow-x: clip;
 }
 .page > * {
@@ -1373,7 +1372,8 @@
   position: absolute;
   top: 0.9rem;
   right: 1.3rem;
-  color: var(--encre-2);
+  /* posé dans le coin lavé du panneau : l'encre la plus sombre, pour rester lisible sur toutes les couleurs */
+  color: var(--encre);
 }
 
 /* ——— profil introuvable : centré */

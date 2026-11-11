@@ -9,7 +9,7 @@ import { useEffect } from 'react';
  */
 /** Les parties qui commencent par une couture : la même liste que dans src/styles/pages.css. */
 const COUTURES =
-  '[data-couture], .bloc, .site-footer, .projet-section, .verif, .ma-trace-bloc, .compte-bloc + .compte-bloc, .juridique-liste > li';
+  '.bloc, .site-footer, .projet-section, .verif, .ma-trace-bloc, .compte-bloc + .compte-bloc, .juridique-liste > li';
 
 export function useCoutures(): void {
   useEffect(() => {

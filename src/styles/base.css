@@ -228,7 +228,9 @@ ul {
 .bouton:active:not(:disabled) {
   transform: translateY(1px) scale(0.985);
 }
-.bouton:focus-visible {
+/* le focus l'emporte sur le survol : l'anneau cousu reste visible, souris posée ou non */
+.bouton:focus-visible,
+.bouton:hover:focus-visible:not(:disabled) {
   outline: 2px dashed var(--focus);
   outline-offset: 4px;
 }
@@ -528,52 +530,6 @@ details[open] > summary::before {
   pointer-events: none;
   background: var(--couture-cadre-pale) 0 0 / 100% 100% no-repeat;
   transition: opacity var(--moyen) var(--doux);
-}
-
-/* ——— une couture : la séparation entre deux parties. Elle se coud quand elle entre dans l'écran
-   (src/lib/couture.ts pose data-cousu) ; sans animation demandée, elle est simplement là. */
-
-.couture,
-[data-couture]::before {
-  display: block;
-  height: 8px;
-  background: var(--couture) left center / 236px 8px repeat-x;
-}
-[data-couture] {
-  position: relative;
-}
-[data-couture]::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  pointer-events: none;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .couture[data-couture],
-  [data-couture]::before {
-    clip-path: inset(0 100% 0 0);
-    transition: clip-path var(--coud) var(--doux);
-  }
-  .couture[data-cousu],
-  [data-cousu]::before {
-    clip-path: inset(0 0 0 0);
-  }
-}
-
-/* sans observateur d'intersection (très vieux navigateur) : les coutures sont simplement là */
-.sans-couture-animee .couture[data-couture],
-.sans-couture-animee [data-couture]::before {
-  clip-path: none;
-}
-
-/* le cœur brodé : un seul par page, là où le texte s'arrête */
-.coeur-brode {
-  display: block;
-  width: 22px;
-  height: 20px;
-  background: var(--coeur) center / contain no-repeat;
 }
 
 /* les pages arrivent posées, sans fondu (choix du créateur) ; seuls les ornements prennent vie */

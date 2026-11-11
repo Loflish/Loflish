@@ -135,6 +135,17 @@
 .apercu.is-leaving {
   animation: apercu-out 600ms var(--doux) forwards;
 }
+/* l'aperçu vit hors de la page (au-dessus de tout) : il s'efface quand le menu s'ouvre, pour ne pas couvrir ses liens.
+   Pendant une recherche il reste visible : c'est lui qui répond au clic sur un résultat. */
+#root:has(.menu-panel) ~ .apercu {
+  visibility: hidden;
+}
+@media (min-width: 700px) {
+  /* il suit la bulle à chaque image : sa propre couche, pour ne pas repeindre le tissu */
+  .apercu {
+    will-change: transform;
+  }
+}
 @keyframes apercu-out {
   to { opacity: 0; }
 }
@@ -150,7 +161,7 @@
   place-items: center;
   width: var(--cible);
   height: var(--cible);
-  color: var(--encre-2);
+  color: var(--encre);
   border-radius: 50%;
 }
 .apercu-close:hover { color: var(--encre); background: var(--fil-rouge-voile); }
@@ -205,6 +216,8 @@
 }
 .explorer-logo {
   position: fixed;
+  /* la ligne de l'édition (archives) ne passe jamais sous les boutons ronds */
+  max-width: calc(100vw - 5.2rem);
   left: clamp(0.9rem, 2.4vw, 2.2rem);
   top: max(clamp(0.9rem, 2.4vw, 2rem), env(safe-area-inset-top));
   z-index: 4;
@@ -687,11 +700,17 @@
 .perdre-carte .bubble-image {
   margin: 0.4rem 0 1.5rem 0.3rem;
 }
+/* sous le doigt, la carte suit sans retard ; relâchée, elle revient en douceur */
+.perdre-carte:active {
+  transition: none;
+  cursor: grabbing;
+}
+/* « backwards » : une fois la carte arrivée, l'animation ne retient plus rien, et la carte suit le doigt */
 .entre-droite {
-  animation: entre-droite 700ms var(--pose) both;
+  animation: entre-droite 700ms var(--pose) backwards;
 }
 .entre-gauche {
-  animation: entre-gauche 700ms var(--pose) both;
+  animation: entre-gauche 700ms var(--pose) backwards;
 }
 @keyframes entre-droite {
   from { opacity: 0; transform: translateX(40px) rotate(1.2deg); }
@@ -714,6 +733,9 @@
 }
 .perdre-texte {
   flex: 1;
+  /* sur un écran bas, le texte défile dans le panneau : « Ouvrir la trace » reste toujours visible */
+  min-height: 0;
+  overflow: auto;
   font-family: var(--serif);
   font-style: italic;
   font-size: 1.28rem;
@@ -1023,4 +1045,21 @@ html.entree-douce .backdrop-constellation {
 .backdrop.mode-explore .lin-hd.sous-toile-brute {
   opacity: 0;
   transition: opacity 1800ms var(--doux);
+}
+
+/* ——— moins de mouvement demandé : les panneaux apparaissent sans glisser, les bulles en image ne respirent plus
+   (la constellation, elle, ralentit sans s'arrêter : choix du projet) */
+@media (prefers-reduced-motion: reduce) {
+  .apercu:not(.is-leaving),
+  .menu-panel,
+  .search-panel,
+  .salle,
+  .media-vue,
+  .entre-droite,
+  .entre-gauche {
+    animation-name: apercu-in;
+  }
+  .breathing img {
+    animation: none;
+  }
 }

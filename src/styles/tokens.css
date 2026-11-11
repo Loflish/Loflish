@@ -92,12 +92,24 @@
 .apercu-demo,
 .bulle-choix,
 [style*='--bulle'] {
+  /* sans color-mix (Safari avant 16.2) : un lavis bleu de l'aube, le même pour tous */
   --lavis: rgba(136, 146, 201, 0.34);
   --lavis-leger: rgba(136, 146, 201, 0.15);
   --lavis-fort: rgba(136, 146, 201, 0.58);
-  --lavis: color-mix(in oklab, var(--bulle) 34%, transparent);
-  --lavis-leger: color-mix(in oklab, var(--bulle) 15%, transparent);
-  --lavis-fort: color-mix(in oklab, var(--bulle) 58%, transparent);
+}
+@supports (color: color-mix(in oklab, red, red)) {
+  :root,
+  .trace,
+  .page,
+  .apercu,
+  .perdre-carte,
+  .apercu-demo,
+  .bulle-choix,
+  [style*='--bulle'] {
+    --lavis: color-mix(in oklab, var(--bulle) 34%, transparent);
+    --lavis-leger: color-mix(in oklab, var(--bulle) 15%, transparent);
+    --lavis-fort: color-mix(in oklab, var(--bulle) 58%, transparent);
+  }
 }
 
 @media (prefers-color-scheme: dark) {
