@@ -8,6 +8,7 @@ import { Encre } from '../engine/encre';
 import { Entree } from './Entree';
 import { FondEau, reglagesEau } from '../engine/eau';
 import { Ornements, varianteOrnements } from '../engine/ornements';
+import { Filaments, varianteFils } from '../engine/filaments';
 import { FOND_DES_PAGES, FOND_ESSAI, FOND_FEUTRE, FOND_VIDEO, FONDS, HD, HD_FILES, LEGER, loadMatieres, loadTaches, TOILE_BRUTE, TOILE_PLEINE, type Fond } from '../lib/hd';
 import { Constellation, MODES } from '../engine/constellation';
 import { colorById } from '../lib/palette';
@@ -167,6 +168,8 @@ function FondsPeints({ actif }: { actif: Fond }) {
 
 // les ornements de Palerme : seulement si l'adresse les demande, le temps de les juger (?palerme=1)
 const VARIANTE_ORNEMENTS = varianteOrnements();
+/** essai du 11 novembre : la constellation tissée de fils qui suivent un courant (`?fils=1`, `?fils=2` plus dense) */
+const VARIANTE_FILS = varianteFils();
 
 const ATMOSPHERE_BY_MODE = { explore: 1, perdre: 0.9, trace: 0.7, creer: 0.55, texte: 0.85, minimal: 0.3 } as const;
 /**
@@ -187,6 +190,8 @@ export function Backdrop() {
   const atmo = useRef<Atmosphere | null>(null);
   const ornRef = useRef<HTMLCanvasElement>(null);
   const orn = useRef<Ornements | null>(null);
+  const filsRef = useRef<HTMLCanvasElement>(null);
+  const fils = useRef<Filaments | null>(null);
   const hoverLabel = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const encreRef = useRef<HTMLCanvasElement>(null);
@@ -286,17 +291,39 @@ export function Backdrop() {
       o.start();
       (window as unknown as { __nmmDebug: Record<string, unknown> }).__nmmDebug.orn = o;
     }
+    if (VARIANTE_FILS && filsRef.current) {
+      // les fils lisent la caméra et la place des bulles à l'écran : le moteur n'est pas modifié
+      const vues = () => {
+        const e = engine.current;
+        const l: { x: number; y: number; r: number; hex: string }[] = [];
+        if (!e) return l;
+        const W = window.innerWidth, H = window.innerHeight;
+        for (const p of presences) {
+          const s = e.screenPos(p.id);
+          if (s && s.x > -s.r * 3 && s.x < W + s.r * 3 && s.y > -s.r * 3 && s.y < H + s.r * 3) l.push({ x: s.x, y: s.y, r: s.r, hex: p.hex });
+        }
+        return l;
+      };
+      const haut = window.matchMedia('(max-aspect-ratio: 3/4)').matches;
+      const f = new Filaments(filsRef.current, VARIANTE_FILS, () => engine.current?.cam, vues, haut ? FONDS.explorer.haut : FONDS.explorer.large);
+      fils.current = f;
+      f.start();
+      (window as unknown as { __nmmDebug: Record<string, unknown> }).__nmmDebug.fils = f;
+    }
 
     const onResize = () => {
       place();
       c.resize();
       orn.current?.resize();
+      fils.current?.resize();
     };
     window.addEventListener('resize', onResize);
     return () => {
       window.removeEventListener('resize', onResize);
       orn.current?.stop();
       orn.current = null;
+      fils.current?.stop();
+      fils.current = null;
       a.stop();
       c.destroy();
       engine.current = null;
@@ -390,6 +417,7 @@ export function Backdrop() {
     atmo.current?.setIntensity(ATMOSPHERE_BY_MODE[mode]);
     atmo.current?.setPage(mode === 'explore' ? 0 : 1);
     orn.current?.setActif(mode === 'explore');
+    fils.current?.setActif(mode === 'explore');
     // le shader s'efface avec la constellation (fondu CSS), puis s'arrête
     const t = window.setTimeout(() => atmo.current?.pause(!AVEC_NAPPES.has(mode)), AVEC_NAPPES.has(mode) ? 0 : 1900);
     return () => window.clearTimeout(t);
@@ -398,6 +426,7 @@ export function Backdrop() {
   useEffect(() => {
     engine.current?.setReducedMotion(reducedMotion);
     orn.current?.setReduit(reducedMotion);
+    fils.current?.setReduit(reducedMotion);
   }, [reducedMotion, engine, moteur]);
 
   // le visiteur a mis le mouvement en pause : les bulles et la peinture s'arrêtent sur l'image
@@ -405,6 +434,7 @@ export function Backdrop() {
     engine.current?.setPause(enPause);
     atmo.current?.setStill(enPause);
     orn.current?.setPause(enPause);
+    fils.current?.setPause(enPause);
   }, [enPause, engine, moteur]);
 
   // ta bulle se distingue, uniquement sur ton appareil
@@ -445,6 +475,7 @@ export function Backdrop() {
       {VARIANTE_ORNEMENTS && (
         <canvas ref={ornRef} className={`backdrop-ornements${VARIANTE_ORNEMENTS === 'klimt' ? ' colle-au-fond' : ''}`} aria-hidden="true" />
       )}
+      {VARIANTE_FILS && <canvas ref={filsRef} className="backdrop-fils" aria-hidden="true" />}
       <canvas
         ref={cvsRef}
         className="backdrop-constellation"
