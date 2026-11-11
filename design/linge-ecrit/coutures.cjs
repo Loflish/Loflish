@@ -1,7 +1,7 @@
 /*
  * Le linge écrit : les coutures du site.
  * Génère src/styles/coutures.css : le point avant (horizontal, vertical, en cadre), le cœur brodé,
- * les fils qui pendent et le bord effiloché, en SVG dans des variables CSS. Aucune image à télécharger.
+ * les fils qui pendent, le bord effiloché et l'écriture cousue, en SVG dans des variables CSS. Aucune image à télécharger.
  *
  *   node design/linge-ecrit/coutures.cjs
  *
@@ -70,6 +70,53 @@ function fils() {
     <path d="M30 0c-1 6 4 10 2 17" stroke-width="0.9" opacity="0.5"/></svg>`);
 }
 
+/**
+ * L'écriture cousue : des lignes d'écriture à la main, brodées au point avant, que l'on ne peut pas lire
+ * (ce sont les mots de quelqu'un d'autre, on n'en voit que le geste). Au bout de certaines lignes, le fil n'est
+ * pas coupé : il pend. Sert de masque : la couleur vient de la page (le fil de la personne).
+ */
+function lettre(w, h) {
+  const t = hasard();
+  const A = h * entre(1.75, 2.1), D = h * entre(0.9, 1.25);
+  const c = (...v) => 'c' + v.map(n1).join(' ');
+  if (t < 0.26) return c(w * 0.5, 0, w * 0.9, -h, w * 0.45, -h) + c(-w * 0.45, 0, -w * 0.25, h, w * 0.55, h); // e
+  if (t < 0.4) return c(w * 0.5, 0, w * 0.85, -A, w * 0.42, -A) + c(-w * 0.4, 0, -w * 0.2, A, w * 0.58, A); // l
+  if (t < 0.62) return c(w * 0.1, -h * 1.25, w * 0.8, -h * 1.25, w, 0); // n
+  if (t < 0.76) return `q${n1(w * 0.25)} ${n1(-h * 1.1)} ${n1(w * 0.5)} ${n1(-h * 0.15)}t${n1(w * 0.5)} ${n1(h * 0.15)}`; // i
+  if (t < 0.88) return c(w * 0.6, 0, w * 0.7, D, w * 0.2, D) + c(-w * 0.5, 0, -w * 0.1, -D, w * 0.8, -D); // g
+  return c(-w * 0.2, -h, w * 0.9, -h, w * 0.7, -h * 0.1) + c(-w * 0.2, h * 0.3, -w * 0.5, h * 0.2, w * 0.3, h * 0.1); // o
+}
+const n1 = (x) => Math.round(x * 10) / 10;
+function ecriture(W, lignes, interligne, h, pendants) {
+  let corps = '';
+  for (let l = 0; l < lignes; l++) {
+    const y0 = 30 + l * interligne;
+    let x = entre(4, 22);
+    const fin = W - entre(8, l === lignes - 1 ? W * 0.45 : W * 0.12);
+    let bout = [x, y0];
+    while (x < fin - 30) {
+      const lettres = 2 + Math.floor(hasard() * 7);
+      let d = `M${n1(x)} ${n1(y0 + entre(-1.2, 1.2))}`;
+      let larg = 0;
+      for (let k = 0; k < lettres; k++) {
+        const w = entre(7.5, 12);
+        if (x + larg + w > fin) break;
+        d += lettre(w, h * entre(0.88, 1.12));
+        larg += w;
+      }
+      if (larg) corps += `<path d="${d}" stroke-dasharray="${n1(entre(4.8, 6.4))} ${n1(entre(2.8, 3.5))}" stroke-dashoffset="${n1(entre(0, 8))}"/>`;
+      bout = [x + larg, y0];
+      x += larg + entre(11, 20);
+    }
+    if (pendants && hasard() < 0.5) {
+      const L = entre(46, 120);
+      corps += `<path d="M${n1(bout[0])} ${n1(bout[1])}c${n1(entre(4, 10))} ${n1(L * 0.3)} ${n1(entre(-9, -2))} ${n1(L * 0.62)} ${n1(entre(-3, 6))} ${n1(L)}" stroke-width="0.9"/>`;
+    }
+  }
+  const H = Math.round(30 + (lignes - 1) * interligne + (pendants ? 130 : 22));
+  return uri(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" fill="none" stroke="#000" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><g transform="skewX(-10)">${corps}</g></svg>`);
+}
+
 const css = `/*
  * Les coutures du linge écrit. Fichier généré : ne pas modifier à la main.
  * Source : design/linge-ecrit/coutures.cjs (node design/linge-ecrit/coutures.cjs).
@@ -85,6 +132,10 @@ const css = `/*
   --effiloche-fin: ${effiloche(3, 4)};
   --coeur: ${coeur()};
   --fils: ${fils()};
+  /* l'écriture cousue (masques) : large 560 × 310, étroite 200 × 286, haute 200 × 448 pour la marge */
+  --ecriture: ${ecriture(560, 6, 30, 10.5, true)};
+  --ecriture-etroite: ${ecriture(200, 5, 31, 10, true)};
+  --ecriture-haute: ${ecriture(200, 14, 30, 10, false)};
 }
 `;
 const sortie = path.join(__dirname, '..', '..', 'src', 'styles', 'coutures.css');

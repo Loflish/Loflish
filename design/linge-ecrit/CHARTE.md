@@ -99,6 +99,25 @@ au pixel à celles de la constellation (24 sur 24, vérifié en développement).
 Non vérifié : le rendu sur un vrai téléphone, sur Safari et sur Firefox (les contrôles tournent dans Chromium).
 La performance mesurée est celle d'un navigateur sans carte graphique : à refaire sur un téléphone réel.
 
+## Fusion avec la version du PC, écriture cousue, filaments (11 novembre, après-midi)
+
+- **Fusion** : la branche `ameliorations-fable-2026-11-03` (juridique, « Après moi », décès, serveur, espace du
+  fondateur, fonctions de la constellation, 183 matières) est réunie avec le linge écrit. Ce qui est né sur le PC
+  est habillé dans `src/styles/linge-fusion.css`, qui remplace `design-fable.css`.
+- **Les pages gardent la mousseline nue** (Tom, devant Compte, Juridique et Projet : « j'adore, conserve »).
+  Le tissu « aura-37 » reste un essai : `?tissu=aura-37`.
+- **L'écriture cousue** (`src/styles/ecriture.css`, dessins `--ecriture*` de `coutures.cjs`) : des lignes
+  d'écriture brodées au point avant, illisibles, avec le fil qui pend. Sur le profil, dans la couleur de la
+  personne ; dans la marge de « Créer ma trace » (grand écran), deux lignes de plus à chaque étape.
+  Décor seulement, jamais sous un texte à lire. Retirer l'import de `ecriture.css` rend le site d'avant.
+- **Essai « filaments »** (`src/engine/filaments.ts`, `?fils=1`, `?fils=2` plus dense) : de longs fils très fins
+  qui couvrent la constellation, se suivent par faisceaux, se croisent en deux familles et prennent la couleur de
+  la peinture qu'ils traversent. Sans le drapeau, rien n'est créé. Le moteur n'est pas modifié.
+- **Passe de finition** d'après trois guides de design lus à la source (Impeccable, Taste Skill,
+  awesome-design-md) : aucune étiquette sous 12 px (`--cartel-taille` 0,78rem), curseur d'écriture et barres de
+  défilement aux couleurs du linge. Non repris, par choix : la règle « pas de sur-titre en petites capitales »
+  (ce sont les cartels du musée) et la largeur des paragraphes des pages que Tom veut conserver.
+
 ## Retour en arrière
 
 La version précédente est intacte sur la branche `refonte-octobre` et sous l'étiquette `version-preferee-2026-10-27`.

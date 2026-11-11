@@ -65,7 +65,7 @@
   --t-2xl: clamp(2.5rem, 1.5rem + 5vw, 4.6rem);
   --t-3xl: clamp(3rem, 1.6rem + 7.4vw, 6.4rem);
   /* cartel : les petites capitales d'un marquoir */
-  --cartel-taille: 0.74rem;
+  --cartel-taille: 0.78rem; /* 12,5 px : aucune étiquette sous 12 px (passe de finition du 11 novembre) */
   --cartel-espace: 0.13em;
 
   --gouttiere: clamp(1.15rem, 0.5rem + 3.4vw, 3.5rem);

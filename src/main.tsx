@@ -23,6 +23,7 @@ import './styles/pages.css';
 // le linge écrit (11 novembre) remplace la feuille « design-fable » du 3 novembre ; les finitions et l'impression restent
 import './styles/finitions.css';
 import './styles/linge-fusion.css';
+import './styles/ecriture.css';
 import './styles/print.css';
 
 import { StrictMode } from 'react';

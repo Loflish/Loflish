@@ -556,3 +556,14 @@
 .backdrop:not(.mode-explore) .backdrop-fils {
   opacity: 0;
 }
+
+/* ——— les surfaces du navigateur aux couleurs du linge (passe de finition) : le curseur d'écriture est une
+   aiguille de fil bordeaux, la barre de défilement un fil sur la toile */
+
+:root {
+  caret-color: var(--fil-rouge);
+  scrollbar-color: var(--fil-rouge-doux) transparent;
+}
+.media-duree {
+  font-size: 0.76rem;
+}

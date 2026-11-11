@@ -9,6 +9,14 @@ modifié ; le moteur (feutre, eau, bulles) est inchangé. Charte, sources et vé
 La version du 30 octobre reste intacte sur `refonte-octobre`.
 Prochaine étape : Tom regarde la refonte sur son téléphone et dit ce qu'il garde.
 
+## Point de reprise — 11 novembre 2026, après-midi
+
+- La version du PC et le linge écrit sont **fusionnés** sur `claude/vibrant-galileo-h4yjfn` (voir
+  `design/linge-ecrit/CHARTE.md`, « Fusion… »). `npm run controles` couvre le site fusionné.
+- Essais derrière un drapeau d'adresse : `?fils=1` / `?fils=2` (filaments), `?tissu=aura-37` (tissu des pages).
+- À trancher par Tom : garder ou non les filaments par défaut ; « Se perdre » avec ou sans panneau ;
+  les 20 points juridiques (voir le rapport remis le 11 novembre).
+
 ## Point de reprise — 5 novembre 2026
 
 Catalogue des bulles choisi par Tom : 183 bulles aimées des planches 2 et 3, sans doublons (palette M). Drap coloré

@@ -1,0 +1,104 @@
+/*
+ * L'écriture cousue (11 novembre 2026) : ce qui manquait au « linge écrit », l'écriture elle-même.
+ * Des lignes d'écriture à la main brodées au point avant, illisibles (on n'en voit que le geste), avec le fil
+ * qui pend au bout de certaines lignes : les linges couverts d'écriture au fil rouge que Tom a montrés,
+ * et les textes cousus de Ruth Rae. Décor seulement : jamais sous un texte à lire, jamais porteur de sens.
+ *
+ * Une seule feuille : retirer son import dans main.tsx rend exactement le site d'avant.
+ * Les dessins viennent de design/linge-ecrit/coutures.cjs (variables --ecriture*), utilisés en masque :
+ * la couleur est celle du fil de la personne (sa couleur, descendue vers le bordeaux).
+ */
+
+/* ——— le profil : le linge de la personne, écrit dans sa couleur, à côté de sa bulle */
+
+.trace-head {
+  position: relative;
+  isolation: isolate;
+}
+.trace-head::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 8.6rem;
+  right: -0.2rem;
+  width: min(44%, 12rem);
+  aspect-ratio: 200 / 284;
+  background: var(--fil-rouge);
+  -webkit-mask: var(--ecriture-etroite) 0 0 / 100% 100% no-repeat;
+  mask: var(--ecriture-etroite) 0 0 / 100% 100% no-repeat;
+  opacity: 0.78;
+  pointer-events: none;
+}
+@supports (color: color-mix(in oklab, red, blue)) {
+  .trace-head::before,
+  .etape-fil::after {
+    /* la couleur de la personne, un ton plus bas : un fil teint, qui se lit sur la toile sans la dominer */
+    background: color-mix(in oklab, var(--bulle) 70%, var(--encre));
+  }
+}
+@media (min-width: 900px) {
+  .trace-head::before {
+    top: 1rem;
+    right: auto;
+    left: clamp(24rem, 40%, 36rem);
+    width: min(35rem, 38%);
+    aspect-ratio: 560 / 310;
+    -webkit-mask-image: var(--ecriture);
+    mask-image: var(--ecriture);
+  }
+}
+/* en mode lecture, les mots seuls */
+.trace.lecture .trace-head::before {
+  display: none;
+}
+
+/* ——— créer ma trace : dans la marge, le linge s'écrit, deux lignes de plus à chaque étape */
+
+@media (min-width: 1180px) {
+  .etape-fil::after {
+    content: '';
+    position: absolute;
+    top: 3.5rem;
+    right: calc(100% + clamp(2rem, 5vw, 5rem));
+    width: 11rem;
+    aspect-ratio: 200 / 442;
+    background: var(--fil-rouge);
+    -webkit-mask: var(--ecriture-haute) 0 0 / 100% 100% no-repeat;
+    mask: var(--ecriture-haute) 0 0 / 100% 100% no-repeat;
+    opacity: 0.7;
+    pointer-events: none;
+    clip-path: inset(0 0 calc(100% - var(--fait) / var(--total) * 100%) 0);
+    transition: clip-path 1400ms var(--doux);
+  }
+}
+
+/* ——— l'écriture se coud à l'arrivée, de gauche à droite */
+
+@media (prefers-reduced-motion: no-preference) {
+  .trace-head::before {
+    animation: ecriture-coud 2600ms var(--doux) 700ms both;
+  }
+  @keyframes ecriture-coud {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0 -3% -3% 0);
+    }
+  }
+}
+
+/* ——— jamais à l'impression, ni en contraste renforcé */
+
+@media print {
+  .trace-head::before,
+  .etape-fil::after {
+    display: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .trace-head::before,
+  .etape-fil::after {
+    display: none;
+  }
+}

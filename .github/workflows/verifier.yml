@@ -34,7 +34,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm --prefix server ci
-      # ubuntu-latest embarque PostgreSQL 16 ; test/base.ts le démarre sur un port à part
+      # test/base.ts démarre sa propre base jetable : on cherche PostgreSQL là où la machine l'a installé
+      # (le chemin fixe /usr/lib/postgresql/16/bin n'existe plus sur ubuntu-latest), et on l'installe s'il manque
+      - name: Trouver PostgreSQL
+        run: |
+          if ! ls /usr/lib/postgresql/*/bin/initdb >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
+          fi
+          echo "PG_BIN=$(dirname "$(ls /usr/lib/postgresql/*/bin/initdb | sort -V | tail -1)")" >> "$GITHUB_ENV"
       - run: npm run serveur:test
-        env:
-          PG_BIN: /usr/lib/postgresql/16/bin
