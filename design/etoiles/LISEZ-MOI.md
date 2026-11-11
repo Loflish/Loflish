@@ -91,3 +91,11 @@ Ouvrir chaque page Commons et lire le bandeau de licence. Points faibles connus 
 - Le texte complet des bandeaux de licence sur Commons.
 - Les dates de Kartini et de Li Qingzhao, données de mémoire.
 - La recherche d'apocryphes n'est pas exhaustive : Quote Investigator n'a été lu que pour deux citations écartées, pas interrogé pour chacune des 24.
+
+
+## Contre-vérification du 11 novembre 2026
+
+Quatre fiches tirées dans la liste (Marie Curie, Olympe de Gouges, Rabindranath Tagore, Olaudah Equiano) ont été
+relues une seconde fois, indépendamment, sur la page source indiquée : les quatre citations y figurent mot pour mot.
+Les vingt autres fiches n'ont été lues qu'une fois. Rien n'est déposé dans le musée : ces fiches attendent la
+relecture du fondateur (les traductions « du musée » surtout) avant tout dépôt.
