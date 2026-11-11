@@ -734,6 +734,29 @@ export class FondEau {
     gl.uniform1f(this.u.vie!, a ? 0.5 + 0.5 * s * s * (3 - 2 * s) : 1);
   }
 
+  /**
+   * Ce qui place et fait couler la peinture à cet instant, pour un calque qui doit la suivre exactement
+   * (l'essai des fils, src/engine/filaments.ts). Lecture seule : l'eau n'en dépend pas.
+   */
+  mouvement(): { cadre: [number, number]; derive: [number, number]; phase: number; ampleur: number; flotte: number; fluide: number; force: number } | null {
+    if (!this.gl || !this.image) return null;
+    const e = this.echelle * this.zoomEclosion;
+    const a = this.apparition;
+    const k = a ? Math.min(1, a.t / a.duree) : 1;
+    const s = Math.min(1, Math.max(0, (k - 0.8) / 0.2));
+    const vie = a ? 0.5 + 0.5 * s * s * (3 - 2 * s) : 1;
+    const reste = this.eclosionDebut >= 0 ? (1 - Math.min(1, (performance.now() - this.eclosionDebut) / ECLOSION)) ** 3 : 0;
+    return {
+      cadre: [this.cadre.x / e, this.cadre.y / e],
+      derive: [this.derive.x, this.derive.y],
+      phase: ((this.t / this.reglages.periode) % 1) * Math.PI * 2,
+      ampleur: this.reglages.ampleur * (this.video ? this.reglages.fluxVideo : 1),
+      flotte: this.reglages.flotte,
+      fluide: this.reglages.fluide,
+      force: (1 + 1.8 * reste) * vie,
+    };
+  }
+
   private envoyerCadre(): void {
     const gl = this.gl;
     if (!gl) return;
