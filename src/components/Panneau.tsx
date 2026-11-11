@@ -10,7 +10,26 @@ export function Panneau({ titre, onClose, children }: { titre: string; onClose: 
   const opener = useMemo(() => document.activeElement as HTMLElement | null, []);
   useEffect(() => {
     ref.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') return onClose();
+      // au clavier, la tabulation reste dans la salle : rien derrière elle n'est atteignable
+      if (e.key === 'Tab' && ref.current) {
+        const focusables = [...ref.current.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input, select, textarea, [tabindex="0"]')].filter(
+          (el) => el.offsetParent !== null,
+        );
+        if (!focusables.length) return e.preventDefault();
+        const premier = focusables[0]!;
+        const dernier = focusables[focusables.length - 1]!;
+        const actif = document.activeElement;
+        if (e.shiftKey && (actif === premier || actif === ref.current)) {
+          e.preventDefault();
+          dernier.focus();
+        } else if (!e.shiftKey && actif === dernier) {
+          e.preventDefault();
+          premier.focus();
+        }
+      }
+    };
     window.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     return () => {

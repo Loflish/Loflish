@@ -43,6 +43,8 @@ const formats = [['320', { width: 320, height: 640 }, true], ['390', { width: 39
           }
           if (el.matches('a, button, input:not([type=hidden]), select, textarea, summary, [role=button], [role=radio], [role=switch]')) {
             if (el.disabled) continue;
+            // un champ masqué à la vue (classe sr-only) se commande par son libellé visible : ce n'est pas une cible au doigt
+            if (el.classList.contains('sr-only')) continue;
             if (r.width < 24 || r.height < 24) petits.push({ c: (String(el.className).slice(0, 30) || el.tagName) + ' « ' + (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 20) + ' »', w: Math.round(r.width), h: Math.round(r.height) });
           }
         }

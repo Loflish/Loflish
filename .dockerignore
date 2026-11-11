@@ -1,3 +1,5 @@
+# Ce que l'image Docker ne doit jamais recevoir : les dépendances locales (réinstallées dans l'image),
+# les builds, les secrets, les données, les essais visuels et les outils de travail.
 node_modules
 server/node_modules
 dist
@@ -6,8 +8,20 @@ server/donnees
 server/.env
 .env
 .git
+.github
+.claude
+CLAUDE.local.md
 captures-demo
 design
+reports
+research_notes
 sauvegardes
+scripts
 *.log
 tsconfig.tsbuildinfo
+# les essais visuels et les palettes de l'atelier : vite.config.ts les retire déjà du site publié
+public/hd/taches-melange
+public/hd/taches-claude
+public/hd/taches-gothique
+public/hd/palerme
+public/hd/fond-explorer-*

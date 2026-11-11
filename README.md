@@ -29,7 +29,18 @@ npm run serveur          # l'API, http://localhost:8787 (PostgreSQL requis)
 npm run dev:en-ligne     # le site relié à l'API
 npm run serveur:test     # les tests du serveur, sur une vraie base jetable
 docker compose up -d --build   # tout le musée en production (site, API, base, HTTPS, sauvegardes)
+
+# vérifier
+npm run verifier         # tout d'un coup : types, lint, tests du site, tests du serveur, build
+npm run lint             # ESLint
+npm run test:site        # les tests du site (Vitest, sans navigateur)
+npm test                 # les tests du site puis ceux du serveur
+npm run format           # Prettier
 ```
+
+Les 100 améliorations du 3 novembre 2026 (outillage, chargement à la demande, accessibilité, impression, liens
+profonds, sauvegarde locale…) sont listées point par point, avec la façon de vérifier chacune, dans
+[AMELIORATIONS-2026-11-03.md](AMELIORATIONS-2026-11-03.md).
 
 ## Contrôles : le filet de sécurité
 
@@ -76,7 +87,7 @@ La version validée le 11 novembre 2026 est gardée sur la branche `verrou/linge
   `src/engine/constellation.ts`.
 - **Fond vivant** (lin + nappes de pigment façon Monet, très lent) — `src/engine/atmosphere.ts`.
 - **Typographie** : une seule police, Newsreader ; la hiérarchie vient de la taille, de la graisse et de
-  l'italique (les mots des personnes en italique ; les étiquettes en petites capitales espacées). Les écritures qu'elle ne dessine pas prennent IBM Plex
+  l'italique (les mots des personnes en italique). Les écritures qu'elle ne dessine pas prennent IBM Plex
   (arabe, hébreu, devanagari, thaï, cyrillique, grec) ou la police du système (japonais, chinois, coréen) :
   `src/styles/tokens.css`.
 - **Alphabet brodé** (les 200 caractères) : les lettres d'IBM Plex Sans cousues en contour au point avant
@@ -88,8 +99,8 @@ La version validée le 11 novembre 2026 est gardée sur la branche `verrou/linge
   la main, reste reproductible (`alphabet.py … main`). Un mot sans fin se coupe : rien ne sort du cadre.
 - **Icônes brodées** : les symboles des rubriques et des questions (`public/hd/icones`) ; les icônes
   d'interface restent au trait.
-- **Logo brodé** : détouré depuis la photo du tableau, fibres et points conservés. Son bordeaux
-  est aussi le fil de toutes les coutures du site (jamais la couleur d'un texte courant). Version sur une ligne recomposée lettre par lettre (`design/logo/logo_ligne.py`),
+- **Logo brodé** : détouré depuis la photo du tableau, fibres et points conservés, bordeaux
+  réservé au logo. Version sur une ligne recomposée lettre par lettre (`design/logo/logo_ligne.py`),
   version trois lignes d'origine conservée dans `design/logo/`. À refaire depuis le scan définitif.
 
 ## Matières HD (Higgsfield)
@@ -131,9 +142,14 @@ Préparation des images : `python3 design/hd/preparer.py fond|lin|papier …`, m
 
 - Constellation et mouvement toujours présents (choix du projet) ; si le système demande de réduire
   les animations, les bulles ralentissent sans s'arrêter.
-- Au clavier : flèches pour se déplacer dans la constellation, `+`/`-` pour s'approcher.
+- Au clavier : flèches pour se déplacer dans la constellation, `+`/`-` pour s'approcher, Début pour revenir
+  au centre, `/` ou Ctrl+K pour chercher ; un lien « Aller au contenu » apparaît à la première tabulation ;
+  les salles et la visionneuse gardent la tabulation en leur sein.
+- « Réduire les animations » du système : plus de respiration des bulles ni des fonds (`src/styles/finitions.css`).
 - Fond rendu en basse résolution à cadence réduite ; bulles générées progressivement avec un budget
-  de temps par image ; moins de bulles sur mobile.
+  de temps par image ; moins de bulles sur mobile ; onglet caché, la constellation s'arrête.
+- Chaque page arrive à la demande (`src/App.tsx`) ; React dans son propre fichier, gardé d'une version à l'autre.
+- Une trace s'imprime (ou s'enregistre en PDF) avec tous ses fragments (`src/styles/print.css`).
 
 ## Le serveur (`server/`)
 

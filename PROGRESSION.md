@@ -9,6 +9,48 @@ modifié ; le moteur (feutre, eau, bulles) est inchangé. Charte, sources et vé
 La version du 30 octobre reste intacte sur `refonte-octobre`.
 Prochaine étape : Tom regarde la refonte sur son téléphone et dit ce qu'il garde.
 
+## Point de reprise — 5 novembre 2026
+
+Catalogue des bulles choisi par Tom : 183 bulles aimées des planches 2 et 3, sans doublons (palette M). Drap coloré
+derrière les pages validé. Audit « tics de l'IA et droit » (`reports/Audit tics et droit 2026-11-05.md`) : trois manques
+nets traités ce jour (écran « Après moi » art. 85, mentions légales structurées à compléter, registre des traitements
+provisoire) ; restent les points partiels (droits au dépôt des médias, motivation des retraits, opposition des proches,
+IP à la création, vidéos tierces, cadre des dons) et les huit points à confirmer par un avocat.
+
+## Point de reprise — 4 novembre 2026
+
+Chantier des bulles : Tom a trié (290 gardées sur 300), puis voulu une nouvelle direction « filaments comme Beksiński, mais
+joyeux, vifs, constellation, GRIS ». La planche 5 « filaments de lumière » est peinte par code (`design/hd/lumiere.py`,
+Flow refusant la connexion) et, après la grande comparaison (`reports/Bulles 2026-11-04/`), Tom l'a choisie : c'est le
+catalogue du site (`CATALOGUE` dans `src/lib/hd.ts`, `?bulles=anciennes` pour l'ancien). Points 126 à 129 de
+`AMELIORATIONS-2026-11-03.md`. Reste : relecture de Tom, fusion, mise en ligne avec son accord.
+
+## Point de reprise — 3 novembre 2026
+
+Sur la branche `ameliorations-fable-2026-11-03` (partie de `refonte-octobre`, 00ac316) : 100 améliorations
+d'outillage, de chargement, d'accessibilité, d'impression, de partage et de robustesse, sans toucher à la direction
+artistique ni à l'atelier des bulles. Liste point par point et façon de vérifier chacune :
+[AMELIORATIONS-2026-11-03.md](AMELIORATIONS-2026-11-03.md). `npm run verifier` est vert (24 tests du site,
+32 tests du serveur). Rien n'est poussé sur GitHub : Tom relit d'abord, corrige s'il veut, puis décide.
+Prochaine étape : reprendre le chantier des bulles (planche 4, tri dans `/#/atelier/tri`, catalogue de Créer).
+
+Même jour, second commit « Design Fable » : mesures d'abord (Lighthouse, axe-core, images par seconde, traces), cahier des
+charges v1.1 confronté au site, puis retouches : spécification de mouvement (120 / 420 ms), quatre réponses en deux colonnes
+de lecture avec l'essentiel en épigraphe, fil cousu au survol et sous les titres de salle, boutons de papier, mode Lecture,
+loader-bulle, filtre par année, shaders compilés en parallèle (2,5 s de blocage en moins), taches chargées seulement dans la
+constellation, six matières en WebP sans perte. Rapport et planches avant/après :
+`Desktop/Claude Code/reports/Design Fable 2026-11-03.md`. `?fable=0` rend le site d'avant ; `?toucher=1` essaie les
+collisions et le curseur (cahier §54).
+
+## Point de reprise — 3 novembre 2026
+
+Branche `ameliorations-fable-2026-11-03` (partie de `refonte-octobre`), non poussée, à relire par Tom : trois commits,
+« 100 améliorations » (`AMELIORATIONS-2026-11-03.md`, points 1 à 100), « Design Fable » (101 à 120, mesuré : rapport
+`reports/Design Fable 2026-11-03.md` hors dépôt) et « Atelier 8K » (121 à 125 : peinture 5 120 px, bulles peintes dans un
+travailleur, matières 1 024 px pour les grandes bulles, nappes des Nabis derrière les pages). Chaque lot est retirable
+par adresse (`?fable=0`, `?travailleur=0`, `?nappes=0`). Reste ensuite : relecture de Tom, fusion dans `refonte-octobre`
+avec son accord, puis le chantier des bulles (planche 4, tri `/#/atelier/tri`, catalogue de Créer).
+
 ## Point de reprise — 30 octobre 2026
 
 La version préférée de Tom (fond feutre, eau, entrée) est devenue la version par défaut du site.

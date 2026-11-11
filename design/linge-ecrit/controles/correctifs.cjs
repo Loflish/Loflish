@@ -23,7 +23,7 @@ const init = () => { try { localStorage.setItem('nmm:vu', '1'); localStorage.set
   for (let i = 0; i < 60 && !(await p.locator('.apercu').count()); i++) { await p.mouse.click(30 + ((i * 97) % 315), 130 + ((i * 53) % 380)); await p.waitForTimeout(220); }
   const ap = await p.locator('.apercu').count(); await p.locator('.dock-menu').click(); await p.waitForTimeout(500);
   const libres = await p.evaluate(() => [...document.querySelectorAll('.menu-panel a')].filter((a) => { const r = a.getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return a.contains(e); }).length);
-  console.log((ap && libres === 6 ? 'OK    ' : 'ÉCHEC ') + `3. aperçu ouvert puis menu : ${libres} liens sur 6 accessibles au toucher (aperçu ouvert : ${ap})`);
+  console.log((ap && libres === 5 ? 'OK    ' : 'ÉCHEC ') + `3. aperçu ouvert puis menu : ${libres} liens sur 5 accessibles au toucher (aperçu ouvert : ${ap})`);
   // 4. très grand écran : le voile de la salle couvre tout
   p = await ouvrir(1920, 1000, 'trace/sakinah', false); await p.locator('.fragments-grid:not(.fragments-sens) .fragment').first().click(); await p.waitForTimeout(900);
   const v = await p.evaluate(() => { const r = document.querySelector('.salle-scrim').getBoundingClientRect(); const s = document.querySelector('.salle').getBoundingClientRect(); return [r.left, r.width, innerWidth - s.right]; });

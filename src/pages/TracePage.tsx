@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BubbleImage, Footer } from '../components/Chrome';
 import { ChoixConfidentialite } from '../components/ChoixConfidentialite';
 import { TexteBrode } from '../components/TexteBrode';
@@ -56,8 +56,14 @@ const TITRE_MEDIAS = 'Photos, vidéos, sons & documents';
 
 type SalleState = { kind: 'rubrique'; r: Rubrique } | { kind: 'medias' } | { kind: 'ajout-media' } | { kind: 'signaler' };
 
+/** Le lien d'une salle précise d'une trace (#/trace/…?salle=souvenirs) : il s'ouvre directement dessus. */
+function lienSalle(id: string, salle: RubriqueId | 'medias'): string {
+  return `${window.location.origin}${window.location.pathname}#/trace/${encodeURIComponent(id)}?salle=${salle}`;
+}
+
 export function TracePage() {
   useMuseumMode('trace');
+  const navigate = useNavigate();
   const { id = '' } = useParams();
   useMesTraces(); // se met à jour quand on ajoute un fragment
   // aperçu autonome : tout est déjà là ; en ligne : le profil complet se charge à la demande
@@ -76,20 +82,34 @@ export function TracePage() {
   const canRepondre = editable && auteur && !scellee;
   const [edition, setEdition] = useState(false);
   const [vue, setVue] = useState<Media | null>(null);
+  // mode lecture : une colonne, les mots seuls, en plus grand (le temps de cette page : retenu, il tronquait
+  // sans prévenir la trace suivante, et même celle que l'on venait de publier)
+  const [lecture, setLecture] = useState(false);
+  const basculerLecture = () => setLecture((l) => !l);
 
   useEffect(() => {
     window.scrollTo(0, 0);
     setAuteur(mine);
-    // arrivée depuis « Mes traces » : ouvrir directement une rubrique
-    const ouvrir = (location.state as { ouvrir?: RubriqueId } | null)?.ouvrir;
-    const r = RUBRIQUES.find((x) => x.id === ouvrir);
+    // arrivée depuis « Mes traces », ou par un lien vers une salle (…?salle=souvenirs) : ouvrir directement la rubrique
+    const voulu = (location.state as { ouvrir?: RubriqueId } | null)?.ouvrir ?? new URLSearchParams(location.search).get('salle');
+    const r = RUBRIQUES.find((x) => x.id === voulu);
     if (r) setSalle({ kind: 'rubrique', r });
-  }, [id, mine, location.state]);
+    else if (voulu === 'medias') setSalle({ kind: 'medias' });
+  }, [id, mine, location.state, location.search]);
 
   if (!trace && chargement) {
     return (
-      <main className="page page-texte page-centree">
-        <p className="lead muted">Un instant, la mémoire s’ouvre…</p>
+      <main className="page page-texte page-centree" aria-busy="true">
+        <div>
+          <div className="chargement-bulle" aria-hidden="true" />
+          <p className="lead muted">Un instant, la mémoire s’ouvre…</p>
+          <div className="squelette" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
       </main>
     );
   }
@@ -112,14 +132,14 @@ export function TracePage() {
 
   return (
     <OuvrirMedia.Provider value={setVue}>
-      <main className="trace" style={{ ['--bulle' as string]: color.hex }}>
-        <nav className="trace-nav" aria-label="Navigation du profil">
+      <main className={`trace${lecture ? ' lecture' : ''}`} style={{ ['--bulle' as string]: color.hex }}>
+        <nav className="trace-nav" aria-label="Navigation de la trace">
           <Link to="/" className="lien-discret">
             <Icon name="retour" size={16} /> Retour au musée
           </Link>
           <div className="trace-nav-right">
             {mine && (
-              <div className="segmented segmented-petit" role="radiogroup" aria-label="Aperçu du profil">
+              <div className="segmented segmented-petit" role="radiogroup" aria-label="Aperçu de la trace">
                 <button role="radio" aria-checked={!auteur} onClick={() => setAuteur(false)}>
                   Vue visiteur
                 </button>
@@ -129,6 +149,15 @@ export function TracePage() {
               </div>
             )}
             <BoutonPartager titre={trace.nom} url={lienTrace(trace.id)} />
+            <button className="lien-discret" onClick={() => navigate('/', { state: { focus: trace.id } })} title="Retrouver cette bulle dans la constellation">
+              <Icon name="lieu" size={16} /> Sa bulle
+            </button>
+            <button className="lien-discret" onClick={basculerLecture} aria-pressed={lecture} title="Les mots seuls, en une colonne">
+              <Icon name="livre" size={16} /> {lecture ? 'Tout voir' : 'Lecture'}
+            </button>
+            <button className="lien-discret" onClick={() => window.print()} title="Imprimer la trace, ou l’enregistrer en PDF">
+              <Icon name="document" size={16} /> Imprimer
+            </button>
             {!mine && (
               <button className="lien-discret" onClick={() => setSalle({ kind: 'signaler' })}>
                 <Icon name="drapeau" size={16} /> Signaler
@@ -140,8 +169,12 @@ export function TracePage() {
         {editable && trace.statut === 'retiree' && (
           <p className="trace-bandeau trace-bandeau-retiree" role="status">
             {memoire ? 'Cette mémoire a été retirée du musée' : 'Ta bulle a été retirée du musée'}
-            {trace.retireeRaison ? ` : ${trace.retireeRaison}` : '.'} Tu peux m’écrire pour en parler :{' '}
-            <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.
+            {trace.retireeRaison ? ` : ${trace.retireeRaison}` : '.'} Tu peux m’écrire pour en parler : <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.
+          </p>
+        )}
+        {editable && trace.statut === 'en_attente' && (
+          <p className="trace-bandeau" role="status">
+            Cette mémoire n’est pas encore dans le musée : je la lis d’abord. Tu peux déjà y ajouter des fragments.
           </p>
         )}
         {editable && auteur && trace.statut !== 'retiree' && <Bandeau trace={trace} />}
@@ -318,6 +351,14 @@ export function TracePage() {
           )}
         </div>
 
+        {lecture && (
+          <p className="lecture-fin">
+            <button className="lien-entrer" onClick={basculerLecture}>
+              Voir toute la trace <Icon name="fleche" size={16} />
+            </button>
+          </p>
+        )}
+        <Impression trace={trace} />
         <Footer />
 
         {salle && (
@@ -331,6 +372,51 @@ export function TracePage() {
         {vue && <MediaVue m={vue} onClose={() => setVue(null)} />}
       </main>
     </OuvrirMedia.Provider>
+  );
+}
+
+/**
+ * Pour l'imprimante seulement (print.css) : toutes les rubriques et tous leurs fragments, à la suite,
+ * puis les titres des photos, sons et documents. À l'écran, cette section n'existe pas.
+ */
+function Impression({ trace }: { trace: Trace }) {
+  const remplies = RUBRIQUES.filter((r) => (trace.rubriques[r.id]?.length ?? 0) > 0);
+  const libres = mediasLibres(trace);
+  if (!remplies.length && !libres.length) return null;
+  return (
+    <section className="impression" aria-hidden="true">
+      <h2>{trace.type === 'memoire' ? 'Fragments de son existence' : 'Fragments de mon existence'}</h2>
+      {remplies.map((r) => (
+        <div key={r.id} className="impression-rubrique">
+          <h3>{titreRubrique(r, trace.type)}</h3>
+          {(trace.rubriques[r.id] ?? []).map((e) => {
+            const meta = [e.categorie, e.lien, e.quand, e.lieu].filter(Boolean).join(', ');
+            return (
+              <p key={e.id} className="impression-fragment" dir="auto">
+                {e.titre && <em>{e.titre}. </em>}
+                {e.texte}
+                {meta && <span className="impression-meta"> ({meta})</span>}
+              </p>
+            );
+          })}
+        </div>
+      ))}
+      {libres.length > 0 && (
+        <div className="impression-rubrique">
+          <h3>{TITRE_MEDIAS}</h3>
+          {libres.map((m) => (
+            <p key={m.id} className="impression-fragment">
+              {m.titre}
+              {m.legende ? ` : ${m.legende}` : ''}
+              {m.url ? <span className="impression-meta"> ({m.url})</span> : ''}
+            </p>
+          ))}
+        </div>
+      )}
+      <p className="impression-pied">
+        {trace.nom}, {TYPE_LABEL[trace.type].toLowerCase()}. Nos Mots Mémoriaux, {lienTrace(trace.id)}
+      </p>
+    </section>
   );
 }
 
@@ -350,8 +436,8 @@ function Bandeau({ trace }: { trace: Trace }) {
   if (!estScellee(trace)) {
     return (
       <p className="trace-bandeau">
-        Cinq ans ont passé depuis la publication : un clic sur {memoire ? 'ce que tu as écrit' : 'une réponse'} ou sur un fragment te permet de le
-        modifier.{droits}
+        Cinq ans ont passé depuis la publication : un clic sur {memoire ? 'ce que tu as écrit' : 'une réponse'} ou sur un fragment te permet de le modifier.
+        {droits}
       </p>
     );
   }
@@ -360,8 +446,8 @@ function Bandeau({ trace }: { trace: Trace }) {
       <Icon name="cadenas" size={18} />
       <span>
         {memoire ? 'Cette mémoire est publique. Ce que tu as écrit sur cette personne est scellé' : 'Ta trace est publique. Tes quatre réponses sont scellées'}{' '}
-        jusqu’au {dateLongue(reouverture(trace)!)}. Chaque fragment et chaque fichier que tu déposes est scellé à son tour : une fois déposé, il
-        ne peut plus être modifié ni retiré pendant cinq ans.{droits}
+        jusqu’au {dateLongue(reouverture(trace)!)}. Chaque fragment et chaque fichier que tu déposes est scellé à son tour : une fois déposé, il ne peut plus
+        être modifié ni retiré pendant cinq ans.{droits}
       </span>
     </p>
   );
@@ -523,7 +609,7 @@ function ElementView({
       )}
       {auteur && (
         <p className="element-auteur">
-          {rang < MAX_EN_AVANT && <span className="element-montre-note">Montré sur ton profil</span>}
+          {rang < MAX_EN_AVANT && <span className="element-montre-note">Montré sur ta trace</span>}
           {e.scelleLe && scelle && (
             <span className="element-scelle">
               <Icon name="cadenas" size={14} /> Scellé le {dateLongue(e.scelleLe)}
@@ -567,13 +653,17 @@ function RubriqueDetail({ r, trace, canEdit }: { r: Rubrique; trace: Trace; canE
   return (
     <div className="rubrique-detail">
       {question && <p className="salle-q">{question}</p>}
-      {canEdit && items.length > 1 && (
-        <p className="bloc-note bloc-note-auteur">Les trois premiers se montrent sur ton profil. Range-les avec les flèches.</p>
-      )}
+      {canEdit && items.length > 1 && <p className="bloc-note bloc-note-auteur">Les trois premiers se montrent sur ta trace. Range-les avec les flèches.</p>}
       {items.map((e, i) => (
         <ElementView key={e.id} e={e} trace={trace} rubrique={r.id} auteur={canEdit} rang={i} total={items.length} />
       ))}
       {canEdit && <FragmentEditor key={items.length} traceId={trace.id} rubrique={r.id} items={items} memoire={trace.type === 'memoire'} />}
+      {items.length > 0 && (
+        <p className="voir-tout">
+          {/* le lien ouvre la trace directement sur cette salle */}
+          <BoutonPartager titre={`${trace.nom}, ${titreRubrique(r, trace.type).toLowerCase()}`} url={lienSalle(trace.id, r.id)} />
+        </p>
+      )}
     </div>
   );
 }
@@ -616,14 +706,14 @@ function MediasTout({ trace, auteur }: { trace: Trace; auteur: boolean }) {
   const libres = mediasLibres(trace);
   return (
     <>
-      {auteur && libres.length > 1 && <p className="bloc-note bloc-note-auteur">Les trois premiers se montrent sur ton profil. Range-les avec les flèches.</p>}
+      {auteur && libres.length > 1 && <p className="bloc-note bloc-note-auteur">Les trois premiers se montrent sur ta trace. Range-les avec les flèches.</p>}
       <div className="salle-medias-tout">
         {libres.map((m, i) => (
           <div key={m.id} className="media-case">
             <MediaThumb m={m} size="l" />
             {auteur && (
               <span className="media-case-actions">
-                {i < MAX_EN_AVANT && <span className="element-montre-note">Montré sur ton profil</span>}
+                {i < MAX_EN_AVANT && <span className="element-montre-note">Montré sur ta trace</span>}
                 {libres.length > 1 && <Trier premier={i === 0} dernier={i === libres.length - 1} onDeplacer={(sens) => deplacerMedia(trace.id, m.id, sens)} />}
               </span>
             )}

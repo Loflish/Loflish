@@ -4,35 +4,56 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#ECE6DA" />
-    <!-- sur un téléphone, le musée s'ajoute à l'écran d'accueil et s'ouvre en plein écran -->
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="color-scheme" content="light" />
     <meta name="description" content="Nos Mots Mémoriaux, un musée vivant où chacun peut laisser sa trace, ses derniers mots et ses souvenirs." />
     <meta property="og:title" content="Nos Mots Mémoriaux" />
     <meta property="og:description" content="Un musée vivant où chacun peut laisser sa trace, ses derniers mots et ses souvenirs." />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Nos Mots Mémoriaux" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:url" content="https://nosmotsmemoriaux.org/" />
+    <meta property="og:image" content="https://nosmotsmemoriaux.org/brand/apercu-partage.jpg" />
+    <meta property="og:image:alt" content="Nos Mots Mémoriaux, brodé à la main en fil bordeaux" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="apple-mobile-web-app-title" content="Nos Mots" />
     <title>Nos Mots Mémoriaux</title>
     <!-- la police de lecture arrive en même temps que le code, pas après lui -->
     <link rel="preload" as="font" type="font/woff2" crossorigin href="/node_modules/@fontsource-variable/newsreader/files/newsreader-latin-opsz-normal.woff2" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <!-- la peinture de la constellation est demandée d'avance, mais seulement quand l'adresse ouvre la constellation
-         (les mêmes routes que estRouteExplorer, src/lib/museum.tsx) : un profil ou une page de texte ne la télécharge pas -->
+    <link rel="manifest" href="/manifest.webmanifest" />
     <script>
-      (function () {
-        var p = (location.hash || '#/').slice(1).split('?')[0] || '/';
-        if (/^\/(se-perdre|trace\/|creer|ma-trace|projet|ressources|soutenir|juridique|archives\/?$|oeuvre-commune|compte|connexion|admin|atelier\/)/.test(p)) return;
-        var haut = matchMedia('(max-aspect-ratio: 3/4)').matches;
+      // le fond de la constellation est préchargé seulement là où il sert (accueil, lien vers une bulle) :
+      // sur les autres pages, le navigateur se plaignait d'un préchargement inutile
+      if (/^(#\/?(\?.*)?|#\/bulle\/.*)?$/.test(location.hash)) {
         var l = document.createElement('link');
         l.rel = 'preload';
         l.as = 'image';
-        l.setAttribute('fetchpriority', 'high');
-        l.href = haut ? 'hd/essais/fond-feutre-lisse-9x16.webp' : 'hd/essais/fond-feutre-lisse-16x9.webp';
+        l.fetchPriority = 'high';
+        // chemin relatif : le site s'héberge aussi dans un sous-dossier (base './')
+        l.href = innerWidth / innerHeight >= 0.75 ? 'hd/essais/fond-feutre-lisse-16x9.webp' : 'hd/essais/fond-feutre-lisse-9x16.webp';
         document.head.appendChild(l);
-      })();
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Nos Mots Mémoriaux",
+        "url": "https://nosmotsmemoriaux.org/",
+        "inLanguage": "fr",
+        "description": "Un musée vivant où chacun peut laisser sa trace, ses derniers mots et ses souvenirs."
+      }
     </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p style="font-family: Georgia, serif; max-width: 34rem; margin: 4rem auto; padding: 0 1.5rem; line-height: 1.5">
+        Nos Mots Mémoriaux est un musée vivant : il a besoin de JavaScript pour dessiner sa constellation et lire les traces. Active-le dans
+        ton navigateur, puis recharge la page.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

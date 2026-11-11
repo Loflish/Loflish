@@ -457,6 +457,9 @@ details[open] > summary::before {
 .admin-etat > div,
 .question-200,
 .fragment,
+.brouillon-reprise,
+.media-vue-tiers,
+.tri-carte,
 .tissu {
   isolation: isolate;
   background: none;
@@ -475,6 +478,8 @@ details[open] > summary::before {
 .admin-etat > div,
 .question-200,
 .fragment,
+.brouillon-reprise,
+.media-vue-tiers,
 .tissu {
   position: relative;
 }
@@ -493,6 +498,9 @@ details[open] > summary::before {
 .admin-etat > div::before,
 .question-200::before,
 .fragment::before,
+.brouillon-reprise::before,
+.media-vue-tiers::before,
+.tri-carte::before,
 .tissu::before {
   content: '';
   position: absolute;
@@ -522,6 +530,9 @@ details[open] > summary::before {
 .admin-etat > div::after,
 .question-200::after,
 .fragment::after,
+.brouillon-reprise::after,
+.media-vue-tiers::after,
+.tri-carte::after,
 .tissu::after {
   content: '';
   position: absolute;

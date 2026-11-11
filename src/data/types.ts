@@ -1,5 +1,5 @@
 /**
- * Modèle d'un profil de dernières volontés (« trace »).
+ * Modèle d'une trace : les mots qu'une personne laisse de son vivant, ou la mémoire d'une personne décédée.
  * Structure issue du cahier des charges maître (Blocs 2A → 2S) et de
  * l'architecture « Proposition A révisée ».
  */
@@ -120,8 +120,8 @@ export interface Trace {
   parametres?: Parametres;
   /** Présence légère (constellation) : le profil complet se charge à la demande. */
   leger?: boolean;
-  /** Vu par l'auteur ou le fondateur : une bulle peut être retirée du musée. */
-  statut?: 'publiee' | 'retiree';
+  /** Vu par l'auteur ou le fondateur : une mémoire attend d'être lue avant d'entrer dans le musée ; une bulle peut être retirée. */
+  statut?: 'publiee' | 'en_attente' | 'retiree';
   retireeRaison?: string;
   /** Données de démonstration. */
   demo?: boolean;

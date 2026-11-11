@@ -26,7 +26,7 @@ const note = (nom, ok, detail = '') => { res.push({ nom, ok: !!ok }); console.lo
     await p.getByRole('button', { name: 'Reprendre le mouvement' }).click();
     return m !== null;
   });
-  await essai('explorer : recherche, filtres type / rubrique / pays, résultats', async () => {
+  await essai('explorer : recherche, filtres type / rubrique / années / pays, résultats', async () => {
     await p.getByRole('button', { name: 'Rechercher' }).click();
     await p.locator('.search-panel input[type=search]').fill('mer');
     await p.waitForTimeout(500);
@@ -36,9 +36,9 @@ const note = (nom, ok, detail = '') => { res.push({ nom, ok: !!ok }); console.lo
     const nChips = await p.locator('.search-panel .chip').count();
     const nPays = await p.locator('.search-panel select option').count();
     const live = await txt('.search-results .muted');
-    await p.locator('.search-panel .chip', { hasText: 'Toutes' }).click();
+    await p.locator('.search-panel .chip').filter({ hasText: /^Toutes$/ }).click();
     await p.locator('.search-panel .chip', { hasText: 'Souvenirs' }).click();
-    return n1 > 0 && nChips === 21 && nPays > 3 && /présence|Aucune/.test(live) ? `${n1} résultats, ${nChips} pastilles, ${nPays - 1} pays` : false;
+    return n1 > 0 && nChips === 25 && nPays > 3 && /présence|trace|Aucune/.test(live) ? `${n1} résultats, ${nChips} pastilles, ${nPays - 1} pays` : false;
   });
   await essai('explorer : un résultat mène à la bulle (aperçu) ou au profil', async () => {
     await p.locator('.search-results .result').first().click();
@@ -56,13 +56,13 @@ const note = (nom, ok, detail = '') => { res.push({ nom, ok: !!ok }); console.lo
     return ferme === 1 && (await txt('h1.trace-nom')) === nom ? `« ${nom} »` : false;
   });
   await va('', 3000);
-  await essai('dock : 3 destinations + menu de 6 liens, Échap rend le focus', async () => {
+  await essai('dock : 3 destinations + menu de 5 liens, Échap rend le focus', async () => {
     const n = await p.locator('.dock a.dock-item').count();
     await p.locator('.dock-menu').click();
     const liens = await p.locator('.menu-panel a').allTextContents();
     await p.keyboard.press('Escape'); await p.waitForTimeout(200);
     const focus = await p.evaluate(() => document.activeElement?.className || '');
-    return n === 3 && liens.length === 6 && /dock-menu/.test(focus) ? liens.join(' · ') : false;
+    return n === 3 && liens.length === 5 && /dock-menu/.test(focus) ? liens.join(' · ') : false;
   });
   await va('bulle/sakinah', 4500);
   await essai('lien partagé #/bulle/sakinah : aperçu ou profil de Sakinah', async () => ((await p.locator('.apercu-nom').count()) ? /Sakinah/.test(await txt('.apercu-nom')) : /trace\/sakinah/.test(p.url())));
@@ -87,13 +87,13 @@ const note = (nom, ok, detail = '') => { res.push({ nom, ok: !!ok }); console.lo
     await p.mouse.move(x, y); await p.mouse.down(); await p.mouse.move(x - 60, y, { steps: 4 }); await p.mouse.move(x - 150, y, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(500);
     return (await txt('.perdre-nom')) !== a || 'même nom tiré (rare)';
   });
-  await essai('se perdre : signaler (3 motifs), partager, ouvrir la trace', async () => {
+  await essai('se perdre : signaler (4 motifs), partager, ouvrir la trace', async () => {
     await p.locator('.perdre-signaler').click(); await p.waitForSelector('.salle');
     const motifs = await p.locator('.salle input[type=radio]').count();
     await p.keyboard.press('Escape'); await p.waitForTimeout(300);
     const part = await p.locator('.perdre-actions .partager button, .perdre-actions button', { hasText: 'Partager' }).count();
     await p.locator('.perdre-carte .lien-entrer').click(); await p.waitForTimeout(900);
-    return motifs === 3 && part >= 1 && /#\/trace\//.test(p.url());
+    return motifs === 4 && part >= 1 && /#\/trace\//.test(p.url());
   });
 
   // ——— Profil
@@ -132,7 +132,7 @@ const note = (nom, ok, detail = '') => { res.push({ nom, ok: !!ok }); console.lo
     if (vides) await p.locator('.fragments-vides summary').click();
     const liste = await p.locator('.fragments-vides-liste li').count();
     await p.getByRole('button', { name: 'Signaler' }).click(); await p.waitForSelector('.salle'); const r = await p.locator('.salle input[type=radio]').count(); await p.keyboard.press('Escape');
-    return /Léa/.test(prov) && cit === 1 && r === 3 ? `${liste} rubriques vides repliées` : false;
+    return /Léa/.test(prov) && cit === 1 && r === 4 ? `${liste} rubriques vides repliées` : false;
   });
   await va('trace/inconnue-xyz', 1500);
   await essai('profil introuvable : message et retour', async () => /n’existe pas/.test(await txt('.introuvable-texte')));
@@ -143,7 +143,7 @@ const note = (nom, ok, detail = '') => { res.push({ nom, ok: !!ok }); console.lo
   await va('ressources');
   await essai('ressources : findahelpline, 112 / 911, 6 lignes directes', async () => { await p.locator('.lignes-directes summary').click(); const n = await p.locator('.lignes li').count(); const tel = await p.locator('.ligne-num[href^="tel:"]').count(); return (await p.locator('a.aide-monde[href*="findahelpline"]').count()) === 1 && n === 6 && tel === 6; });
   await va('juridique');
-  await essai('juridique : 7 sections', async () => (await p.locator('.juridique-liste > li').count()) === 7);
+  await essai('juridique : 13 sections', async () => (await p.locator('.juridique-liste > li').count()) === 13);
   await va('soutenir');
   await essai('soutenir : 3 volets', async () => (await p.locator('.trois-colonnes > *').count()) === 3);
   await va('archives');

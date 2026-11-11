@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Trace } from '../data/types';
 import { appel, EN_LIGNE } from '../lib/api';
-import { CONTACT } from '../lib/contact';
+import { CONTACT, EMAIL_VALIDE } from '../lib/contact';
 import { Icon } from './Icon';
 
 /**
@@ -16,6 +16,7 @@ import { Icon } from './Icon';
 const MOTIFS = [
   ['danger', 'Quelqu’un est en danger'],
   ['haine', 'Haine, harcèlement ou violence'],
+  ['vie_privee', 'Il s’agit de moi, ou d’un proche : je m’oppose à ce contenu'],
   ['autre', 'Autre chose'],
 ] as const;
 type Motif = (typeof MOTIFS)[number][0];
@@ -40,11 +41,13 @@ async function garderDansLaPage(d: Record<string, unknown>): Promise<boolean> {
 }
 
 export function Signaler({ trace, onDone }: { trace: Trace; onDone: () => void }) {
-  const [motif, setMotif] = useState<Motif>('autre');
+  // aucun motif coché d'avance : la personne choisit
+  const [motif, setMotif] = useState<Motif | ''>('');
   const [message, setMessage] = useState('');
+  const [email, setEmail] = useState('');
   const [etat, setEtat] = useState<'' | 'envoi' | 'ok' | 'courriel' | 'erreur'>('');
   const [erreur, setErreur] = useState('');
-  const libelle = MOTIFS.find(([v]) => v === motif)![1];
+  const libelle = MOTIFS.find(([v]) => v === motif)?.[1] ?? '';
 
   if (etat === 'ok' || etat === 'courriel')
     return (
@@ -62,8 +65,13 @@ export function Signaler({ trace, onDone }: { trace: Trace; onDone: () => void }
     );
 
   const envoyer = async () => {
+    if (!motif) return;
     setEtat('envoi');
-    const corps = { traceId: trace.id, motif, message: message.trim() || undefined };
+    if (motif === 'vie_privee' && !EMAIL_VALIDE.test(email)) {
+      setErreur('Laisse une adresse e-mail : la réponse à ton opposition arrive sous un mois.');
+      return setEtat('erreur');
+    }
+    const corps = { traceId: trace.id, motif, message: message.trim() || undefined, email: email.trim() || undefined };
     try {
       if (EN_LIGNE) {
         await appel('POST', '/api/signalements', corps);
@@ -71,7 +79,7 @@ export function Signaler({ trace, onDone }: { trace: Trace; onDone: () => void }
       }
       if (await garderDansLaPage({ ...corps, traceNom: trace.nom })) return setEtat('ok');
       const sujet = `Signalement : ${libelle}`;
-      const texte = `Trace : ${trace.nom} (${trace.id})\nMotif : ${libelle}\n\n${message.trim()}`;
+      const texte = `Trace : ${trace.nom} (${trace.id})\nMotif : ${libelle}${email.trim() ? `\nRépondre à : ${email.trim()}` : ''}\n\n${message.trim()}`;
       window.location.href = `mailto:${CONTACT}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(texte)}`;
       setEtat('courriel');
     } catch (e) {
@@ -101,6 +109,16 @@ export function Signaler({ trace, onDone }: { trace: Trace; onDone: () => void }
           </label>
         ))}
       </fieldset>
+      {motif === 'vie_privee' && (
+        <p className="mot-fondateur">
+          Une mémoire ne doit rien révéler de la santé, des convictions, de la vie intime ou des conflits d’une personne vivante, ni la nommer sans son accord.
+          Dis-moi ce qui te concerne : je réponds sous un mois, et le contenu peut être retiré en attendant.
+        </p>
+      )}
+      <label className="field">
+        <span className="field-label">{motif === 'vie_privee' ? 'Ton adresse e-mail, pour te répondre' : 'Ton adresse e-mail (facultatif)'}</span>
+        <input type="email" value={email} maxLength={200} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+      </label>
       <label className="field">
         <span className="field-label">Quelques mots (facultatif)</span>
         <textarea value={message} maxLength={2000} rows={4} onChange={(e) => setMessage(e.target.value)} />
@@ -110,7 +128,7 @@ export function Signaler({ trace, onDone }: { trace: Trace; onDone: () => void }
           {erreur}
         </p>
       )}
-      <button className="bouton" onClick={envoyer} disabled={etat === 'envoi'}>
+      <button className="bouton" onClick={envoyer} disabled={etat === 'envoi' || !motif}>
         {etat === 'envoi' ? 'Envoi…' : 'Envoyer le signalement'}
       </button>
     </div>

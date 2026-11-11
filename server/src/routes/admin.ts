@@ -5,6 +5,7 @@ import { journaliser, requete, transaction, une } from '../db';
 import { relireBannissements } from '../bannis';
 import { presence, type LigneTrace } from '../serialiser';
 import { stockage } from '../stockage';
+import { envoyerRetrait, envoyerRetraitPartie } from '../courriel';
 
 /**
  * L'espace de l'équipe du musée : modération (« moderation ») et administration
@@ -18,8 +19,10 @@ export async function routesAdmin(app: FastifyInstance) {
       (select count(*) from comptes) comptes,
       (select count(*) from traces where statut = 'publiee') traces_publiees,
       (select count(*) from traces where statut = 'retiree') traces_retirees,
+      (select count(*) from traces where statut = 'en_attente') memoires_a_examiner,
+      (select count(*) from demandes_deces where statut in ('recue', 'en_cours')) deces_ouverts,
       (select count(*) from bannissements) bannissements,
-      (select count(*) from traces where type = 'memoire') memoires,
+      (select count(*) from traces where type = 'memoire' and statut = 'publiee') memoires,
       (select count(*) from fragments) fragments,
       (select count(*) from medias) medias,
       (select coalesce(sum(taille), 0) from medias) octets,
@@ -47,7 +50,12 @@ export async function routesAdmin(app: FastifyInstance) {
     const c = exigerRole(req, 'moderation', 'admin');
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const d = z.object({ statut: z.enum(['traite', 'rejete']), decision: z.string().trim().max(1000).optional() }).parse(req.body);
-    await requete('update signalements set statut = $2, decision = $3, traite_par = $4, traite_le = now() where id = $1', [id, d.statut, d.decision ?? null, c.id]);
+    await requete('update signalements set statut = $2, decision = $3, traite_par = $4, traite_le = now() where id = $1', [
+      id,
+      d.statut,
+      d.decision ?? null,
+      c.id,
+    ]);
     await journaliser(c.id, `signalement.${d.statut}`, id, { decision: d.decision });
     return { ok: true };
   });
@@ -55,7 +63,9 @@ export async function routesAdmin(app: FastifyInstance) {
   // les traces : chercher, retirer une bulle, bannir son auteur
   app.get('/api/admin/traces', async (req) => {
     exigerRole(req, 'moderation', 'admin');
-    const { q, statut } = z.object({ q: z.string().trim().max(80).optional(), statut: z.enum(['publiee', 'retiree']).optional() }).parse(req.query);
+    const { q, statut } = z
+      .object({ q: z.string().trim().max(80).optional(), statut: z.enum(['publiee', 'en_attente', 'retiree']).optional() })
+      .parse(req.query);
     const lignes = await requete<LigneTrace & { email: string | null; n_fragments: string; n_medias: string }>(
       `select t.*, c.email,
               (select count(*) from fragments f where f.trace_id = t.id) n_fragments,
@@ -77,6 +87,8 @@ export async function routesAdmin(app: FastifyInstance) {
         medias: Number(t.n_medias),
         retireeRaison: t.retiree_raison,
         parametres: t.parametres,
+        // ce que le fondateur lit avant de publier une mémoire (privé)
+        memoire: t.type === 'memoire' ? { deposeePar: t.memoire_deposee_par, relation: t.memoire_relation, origine: t.memoire_origine } : undefined,
       })),
     };
   });
@@ -87,9 +99,16 @@ export async function routesAdmin(app: FastifyInstance) {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const d = z.object({ statut: z.enum(['publiee', 'retiree']), raison: z.string().trim().max(500).optional() }).parse(req.body);
     if (d.statut === 'retiree' && !d.raison) throw new Refus(400, 'Indique la raison : l’auteur la lira.', 'raison');
-    const r = await une('update traces set statut = $2, retiree_raison = $3 where id = $1 returning id', [id, d.statut, d.statut === 'retiree' ? d.raison : null]);
+    const r = await une<{ id: string; nom: string; email: string | null }>(
+      `update traces t set statut = $2, retiree_raison = $3, retiree_le = case when $2 = 'retiree' then now() else null end
+       from (select id from traces where id = $1) x left join comptes c on c.id = (select compte_id from traces where id = $1)
+       where t.id = x.id returning t.id, t.nom, c.email`,
+      [id, d.statut, d.statut === 'retiree' ? d.raison : null],
+    );
     if (!r) throw new Refus(404, 'Cette trace n’existe pas.', 'introuvable');
-    await journaliser(c.id, d.statut === 'retiree' ? 'trace.retiree' : 'trace.remise', id, { raison: d.raison });
+    await journaliser(c.id, d.statut === 'retiree' ? 'trace.retiree' : 'trace.publiee', id, { raison: d.raison });
+    // l'auteur reçoit les motifs et la voie de réclamation (DSA art. 17) ; sans e-mail (trace sans compte), rien ne part
+    if (d.statut === 'retiree' && r.email) void envoyerRetrait({ email: r.email, traceId: id, traceNom: r.nom, raison: d.raison! });
     return { ok: true };
   });
 
@@ -98,19 +117,26 @@ export async function routesAdmin(app: FastifyInstance) {
   app.post('/api/admin/traces/:id/bannir', async (req) => {
     const c = exigerRole(req, 'admin');
     const { id } = z.object({ id: z.string() }).parse(req.params);
-    const { raison } = z.object({ raison: z.string().trim().min(3).max(500) }).parse(req.body);
+    // les adresses IP ne sont fermées que sur choix explicite : une adresse est partagée (foyer, école, réseau mobile)
+    const { raison, adresses } = z.object({ raison: z.string().trim().min(3).max(500), adresses: z.boolean().default(false) }).parse(req.body);
     const n = await transaction(async (tx) => {
       const t = await une<{ compte_id: string | null }>('select compte_id from traces where id = $1', [id], tx);
       if (!t) throw new Refus(404, 'Cette trace n’existe pas.', 'introuvable');
       if (!t.compte_id) throw new Refus(400, 'Cette trace n’a plus de compte : retire seulement la bulle.', 'sans-compte');
       if (t.compte_id === c.id) throw new Refus(400, 'Tu ne peux pas te bannir toi-même.', 'soi');
-      const ips = await requete<{ ip: string }>(
-        `select distinct ip from (select ip from sessions where compte_id = $1 union all select derniere_ip as ip from comptes where id = $1) x where ip is not null`,
-        [t.compte_id],
-        tx,
-      );
+      const ips = adresses
+        ? await requete<{ ip: string }>(
+            `select distinct ip from (select ip from sessions where compte_id = $1 union all select derniere_ip as ip from comptes where id = $1) x where ip is not null`,
+            [t.compte_id],
+            tx,
+          )
+        : [];
       for (const { ip } of ips)
-        await requete('insert into bannissements (ip, raison, compte_id, par) values ($1, $2, $3, $4) on conflict (ip) do nothing', [ip, raison, t.compte_id, c.id], tx);
+        await requete(
+          'insert into bannissements (ip, raison, compte_id, par) values ($1, $2, $3, $4) on conflict (ip) do nothing',
+          [ip, raison, t.compte_id, c.id],
+          tx,
+        );
       await requete(`update traces set statut = 'retiree', retiree_raison = $2 where compte_id = $1`, [t.compte_id, raison], tx);
       await requete('update comptes set suspendu = true where id = $1', [t.compte_id], tx);
       await requete('delete from sessions where compte_id = $1', [t.compte_id], tx);
@@ -119,6 +145,36 @@ export async function routesAdmin(app: FastifyInstance) {
     });
     await relireBannissements();
     return { ok: true, adresses: n };
+  });
+
+  // les demandes liées à un décès (loi Informatique et Libertés, art. 85) : la demande, la trace visée,
+  // et les directives « Après moi » laissées par la personne ; le fondateur répond sous un mois
+  app.get('/api/admin/deces', async (req) => {
+    exigerRole(req, 'admin');
+    const lignes = await requete(
+      `select d.*, t.nom as trace_nom, t.statut as trace_statut, c.email as auteur_email,
+              p.choix as directive_choix, p.tiers_nom as directive_tiers_nom, p.tiers_email as directive_tiers_email, p.message as directive_message
+         from demandes_deces d
+         left join traces t on t.id = d.trace_id
+         left join comptes c on c.id = t.compte_id
+         left join directives_post_mortem p on p.compte_id = t.compte_id
+        order by (d.statut in ('recue', 'en_cours')) desc, d.cree_le desc limit 300`,
+    );
+    return { demandes: lignes };
+  });
+
+  app.post('/api/admin/deces/:id', async (req) => {
+    const c = exigerRole(req, 'admin');
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+    const d = z.object({ statut: z.enum(['en_cours', 'traitee', 'refusee']), reponse: z.string().trim().max(4000).optional() }).parse(req.body);
+    const r = await une(
+      `update demandes_deces set statut = $2, reponse = coalesce($3, reponse),
+              traitee_le = case when $2 in ('traitee', 'refusee') then now() else null end where id = $1 returning id`,
+      [id, d.statut, d.reponse ?? null],
+    );
+    if (!r) throw new Refus(404, 'Cette demande n’existe pas.', 'introuvable');
+    await journaliser(c.id, `deces.${d.statut}`, id, { reponse: d.reponse });
+    return { ok: true };
   });
 
   app.get('/api/admin/bannissements', async (req) => {
@@ -143,14 +199,21 @@ export async function routesAdmin(app: FastifyInstance) {
     const c = exigerRole(req, 'moderation', 'admin');
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const { raison } = z.object({ raison: z.string().trim().min(3).max(500) }).parse(req.body);
-    const cles = await transaction(async (tx) => {
+    const { cles, auteur } = await transaction(async (tx) => {
       const cles = await requete<{ cle: string }>('select cle from medias where fragment_id = $1 and cle is not null', [id], tx);
+      const auteur = await une<{ trace_id: string; nom: string; email: string | null }>(
+        'select t.id as trace_id, t.nom, c.email from fragments f join traces t on t.id = f.trace_id left join comptes c on c.id = t.compte_id where f.id = $1',
+        [id],
+        tx,
+      );
       const f = await une('delete from fragments where id = $1 returning trace_id', [id], tx);
       if (!f) throw new Refus(404, 'Ce fragment n’existe pas.', 'introuvable');
       await journaliser(c.id, 'moderation.fragment_retire', id, { raison, ...f }, tx);
-      return cles;
+      return { cles, auteur };
     });
     for (const { cle } of cles) await stockage.supprimer(cle);
+    // l'auteur apprend le retrait et ses motifs, comme pour une bulle (DSA art. 17)
+    if (auteur?.email) void envoyerRetraitPartie({ email: auteur.email, traceId: auteur.trace_id, traceNom: auteur.nom, partie: 'fragment', raison });
     return { ok: true };
   });
 
@@ -158,10 +221,15 @@ export async function routesAdmin(app: FastifyInstance) {
     const c = exigerRole(req, 'moderation', 'admin');
     const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
     const { raison } = z.object({ raison: z.string().trim().min(3).max(500) }).parse(req.body);
+    const auteur = await une<{ trace_id: string; nom: string; email: string | null }>(
+      'select t.id as trace_id, t.nom, c.email from medias m join traces t on t.id = m.trace_id left join comptes c on c.id = t.compte_id where m.id = $1',
+      [id],
+    );
     const m = await une<{ cle: string | null; trace_id: string }>('delete from medias where id = $1 returning cle, trace_id', [id]);
     if (!m) throw new Refus(404, 'Ce fichier n’existe pas.', 'introuvable');
     if (m.cle) await stockage.supprimer(m.cle);
     await journaliser(c.id, 'moderation.media_retire', id, { raison, trace: m.trace_id });
+    if (auteur?.email) void envoyerRetraitPartie({ email: auteur.email, traceId: auteur.trace_id, traceNom: auteur.nom, partie: 'fichier', raison });
     return { ok: true };
   });
 
@@ -175,7 +243,10 @@ export async function routesAdmin(app: FastifyInstance) {
     return { traits: lignes };
   });
 
-  for (const [chemin, masque] of [['masquer', true], ['reafficher', false]] as const) {
+  for (const [chemin, masque] of [
+    ['masquer', true],
+    ['reafficher', false],
+  ] as const) {
     app.post(`/api/admin/traits/:id/${chemin}`, async (req) => {
       const c = exigerRole(req, 'moderation', 'admin');
       const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
@@ -213,11 +284,20 @@ export async function routesAdmin(app: FastifyInstance) {
   // les éditions des archives
   app.post('/api/admin/editions', async (req) => {
     const c = exigerRole(req, 'admin');
-    const d = z.object({ id: z.string().regex(/^[a-z0-9-]{1,60}$/), titre: z.string().trim().min(1).max(80), annee: z.number().int().min(2020).max(3000), note: z.string().trim().max(300).default('') }).parse(req.body);
-    await requete(
-      'insert into editions (id, titre, annee, note) values ($1,$2,$3,$4) on conflict (id) do update set titre = $2, annee = $3, note = $4',
-      [d.id, d.titre, d.annee, d.note],
-    );
+    const d = z
+      .object({
+        id: z.string().regex(/^[a-z0-9-]{1,60}$/),
+        titre: z.string().trim().min(1).max(80),
+        annee: z.number().int().min(2020).max(3000),
+        note: z.string().trim().max(300).default(''),
+      })
+      .parse(req.body);
+    await requete('insert into editions (id, titre, annee, note) values ($1,$2,$3,$4) on conflict (id) do update set titre = $2, annee = $3, note = $4', [
+      d.id,
+      d.titre,
+      d.annee,
+      d.note,
+    ]);
     await journaliser(c.id, 'edition.enregistree', d.id, d);
     return { ok: true };
   });
@@ -249,24 +329,28 @@ export async function routesAdmin(app: FastifyInstance) {
   // exporter toutes les données (sauvegarde lisible, ou étude) : JSON
   app.get('/api/admin/export', async (req, rep) => {
     const c = exigerRole(req, 'admin');
-    const [traces, fragments, medias, traits, editions, signalements] = await Promise.all([
+    // tout ce qui fait le musée, pour que les compte_id des traces mènent quelque part et que rien d'attendu par la loi
+    // ne manque (directives Après moi, demandes liées à un décès, journal) ; jamais les empreintes des sessions
+    const [traces, fragments, medias, traits, editions, signalements, comptes, directives, deces, journal] = await Promise.all([
       requete('select * from traces order by cree_le'),
       requete('select * from fragments order by cree_le'),
       requete('select * from medias order by cree_le'),
       requete('select id, x1, y1, x2, y2, masque, cousu_le from traits order by cousu_le'),
       requete('select * from editions order by annee'),
       requete('select * from signalements order by cree_le'),
+      requete('select id, email, role, suspendu, majeur_le, cree_le, derniere_connexion from comptes order by cree_le'),
+      requete('select * from directives_post_mortem order by maj_le'),
+      requete('select * from demandes_deces order by cree_le'),
+      requete('select * from journal order by cree_le'),
     ]);
     await journaliser(c.id, 'export', null);
     rep.header('content-disposition', `attachment; filename="nos-mots-memoriaux-${new Date().toISOString().slice(0, 10)}.json"`);
-    return { exporteLe: new Date().toISOString(), traces, fragments, medias, traits, editions, signalements };
+    return { exporteLe: new Date().toISOString(), traces, fragments, medias, traits, editions, signalements, comptes, directives, deces, journal };
   });
 
   app.get('/api/admin/journal', async (req) => {
     exigerRole(req, 'admin');
-    const lignes = await requete(
-      'select j.*, c.email from journal j left join comptes c on c.id = j.compte_id order by j.cree_le desc limit 300',
-    );
+    const lignes = await requete('select j.*, c.email from journal j left join comptes c on c.id = j.compte_id order by j.cree_le desc limit 300');
     return { journal: lignes };
   });
 }

@@ -22,7 +22,12 @@ const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 
 
 function dateFr(r: () => number, from: number, to: number): string {
   const y = from + Math.floor(r() * (to - from + 1));
-  return `${1 + Math.floor(r() * 28)} ${pick(r, MOIS)} ${y}`;
+  // jamais dans le futur : une trace de démonstration « créée le 3 décembre » trahirait la démonstration
+  const auj = new Date();
+  const mois = y < auj.getFullYear() ? 12 : auj.getMonth() + 1;
+  const m = Math.floor(r() * mois);
+  const jours = y === auj.getFullYear() && m === auj.getMonth() ? auj.getDate() : 28;
+  return `${1 + Math.floor(r() * jours)} ${MOIS[m]} ${y}`;
 }
 
 function nomAffiche(r: () => number): { nom: string; pseudo?: string } {
@@ -37,7 +42,13 @@ function nomAffiche(r: () => number): { nom: string; pseudo?: string } {
 /** Évite les gros groupes de même couleur : on parcourt la palette mélangée. */
 function colorCycle(r: () => number, n: number): string[] {
   const out: string[] = [];
-  while (out.length < n) out.push(...shuffle(r, GRIS_PALETTE.map((c) => c.id)));
+  while (out.length < n)
+    out.push(
+      ...shuffle(
+        r,
+        GRIS_PALETTE.map((c) => c.id),
+      ),
+    );
   return out.slice(0, n);
 }
 
@@ -59,8 +70,7 @@ function generate(count: number): Trace[] {
     const who = nomAffiche(rr);
     const rubriques: Partial<Record<RubriqueId, Element[]>> = {};
     const keys = shuffle(rr, Object.keys(POOL) as (keyof typeof POOL)[]).slice(0, 2 + Math.floor(rr() * 6));
-    if (rr() < 0.7)
-      for (const { sens, ...e } of items(rr, SENS_POOL, 's', 4)) (rubriques[sens!] ??= []).push(e);
+    if (rr() < 0.7) for (const { sens, ...e } of items(rr, SENS_POOL, 's', 4)) (rubriques[sens!] ??= []).push(e);
     for (const k of keys) rubriques[k as RubriqueId] = items(rr, POOL[k] as Omit<Element, 'id'>[], k, 3);
     const cree = dateFr(rr, 2025, 2026);
     const trace: Trace = {
@@ -178,8 +188,11 @@ function save(): void {
   if (!EN_LIGNE)
     try {
       localStorage.setItem(LOCAL_KEY, JSON.stringify(local));
+      derniereErreur = '';
     } catch {
-      /* stockage plein ou indisponible : la trace reste en mémoire pour la session */
+      // stockage plein ou indisponible : la trace reste en mémoire pour la session, et l'auteur le sait
+      derniereErreur =
+        'Le navigateur n’a plus de place pour garder ce dépôt : il disparaîtra en fermant la page. Emporte tes traces dans un fichier (page Compte).';
     }
   notifier();
 }
@@ -195,9 +208,7 @@ export function publishLocal(t: Trace): void {
   const scellee: Trace = {
     ...t,
     scelleeLe: t.scelleeLe ?? maintenant,
-    rubriques: Object.fromEntries(
-      Object.entries(t.rubriques).map(([k, list]) => [k, (list ?? []).map((e) => ({ ...e, scelleLe: e.scelleLe ?? maintenant }))]),
-    ),
+    rubriques: Object.fromEntries(Object.entries(t.rubriques).map(([k, list]) => [k, (list ?? []).map((e) => ({ ...e, scelleLe: e.scelleLe ?? maintenant }))])),
   };
   local = [scellee, ...local.filter((x) => x.id !== t.id)];
   save();
@@ -206,6 +217,37 @@ export function publishLocal(t: Trace): void {
 /** Mes traces (visibles comme « miennes » uniquement sur cet appareil). */
 export function useMesTraces(): Trace[] {
   return useSyncExternalStore(abonner, () => snapshot);
+}
+
+// ——— aperçu autonome : emporter ses traces dans un fichier, et les reprendre sur un autre appareil
+// (le 26 octobre, un navigateur qui a perdu sa mémoire a effacé des essais : un fichier, lui, reste)
+
+/** Le fichier à télécharger : les traces de cet appareil, telles quelles (les fichiers déposés ne sont pas dedans). */
+export function exporterLocal(): string {
+  return JSON.stringify({ musee: 'Nos Mots Mémoriaux', exporteLe: new Date().toISOString(), email: emailDuCompte() || undefined, traces: local }, null, 2);
+}
+
+/** Reprendre un fichier exporté : chaque trace valide remplace celle de même identifiant, ou s'ajoute. Rend combien ont été reprises. */
+export function importerLocal(texte: string): number {
+  const d = JSON.parse(texte) as { traces?: unknown };
+  const liste = Array.isArray(d.traces) ? d.traces : [];
+  const valides = liste.filter(
+    (t): t is Trace =>
+      !!t &&
+      typeof t === 'object' &&
+      typeof (t as Trace).id === 'string' &&
+      typeof (t as Trace).nom === 'string' &&
+      ['personnelle', 'memoire'].includes((t as Trace).type) &&
+      typeof (t as Trace).couleur === 'string',
+  );
+  if (!valides.length) throw new Error('Ce fichier ne contient aucune trace de Nos Mots Mémoriaux.');
+  const propres = valides.map((t) => migrer({ ...t, rubriques: t.rubriques ?? {}, medias: (t.medias ?? []).filter((m) => !m.fichier || m.src) }));
+  const ids = new Set(propres.map((t) => t.id));
+  local = [...propres, ...local.filter((t) => !ids.has(t.id))];
+  // deux bulles au plus, différentes : la plus récente de chaque sorte
+  local = local.filter((t, i) => local.findIndex((x) => x.type === t.type) === i);
+  save();
+  return propres.filter((t) => local.includes(t)).length;
 }
 
 export function isMine(id: string): boolean {
@@ -327,7 +369,12 @@ export function deplacerFragment(id: string, rubrique: RubriqueId, elementId: st
 }
 
 /** Modifier un fragment : seulement une fois ses cinq ans de scellement passés ; il est scellé de nouveau. */
-export async function modifierFragment(id: string, rubrique: RubriqueId, elementId: string, champs: Omit<Element, 'id' | 'medias' | 'scelleLe' | 'enAvant'>): Promise<void> {
+export async function modifierFragment(
+  id: string,
+  rubrique: RubriqueId,
+  elementId: string,
+  champs: Omit<Element, 'id' | 'medias' | 'scelleLe' | 'enAvant'>,
+): Promise<void> {
   if (EN_LIGNE) {
     const r = await appel<{ trace: Trace }>('PUT', `/api/fragments/${elementId}`, champs);
     retenir(r.trace);
@@ -368,7 +415,7 @@ export function premiersDabord<T>(list: T[]): { avant: T[]; reste: T[] } {
 
 /** Texte d'aperçu : les 200 caractères, ou, pour une mémoire, ce que l'on dit de la personne (500 caractères). */
 export function apercu(t: Trace): string {
-  return t.questions ? t.questions[3] : t.memoire?.aperçu ?? '';
+  return t.questions ? t.questions[3] : (t.memoire?.aperçu ?? '');
 }
 
 export const TYPE_LABEL: Record<Trace['type'], string> = {
@@ -535,6 +582,38 @@ export async function modifierParametres(id: string, p: Partial<NonNullable<Trac
   notifier();
 }
 
+/** Après moi (article 85) : ce que deviennent mes données à ma mort. */
+export interface ApresMoi {
+  choix: 'conserver_publique' | 'conserver_famille' | 'transmettre' | 'effacer';
+  tiersNom?: string;
+  tiersEmail?: string;
+  message?: string;
+  versionTexte: string;
+  consentiLe: string;
+}
+export async function lireApresMoi(): Promise<ApresMoi | null> {
+  const r = await appel<{ directives: ApresMoi | null }>('GET', '/api/moi/apres-moi');
+  return r.directives;
+}
+export async function enregistrerApresMoi(d: Omit<ApresMoi, 'consentiLe'>): Promise<ApresMoi> {
+  const r = await appel<{ directives: ApresMoi }>('PUT', '/api/moi/apres-moi', d);
+  return r.directives;
+}
+export async function revoquerApresMoi(): Promise<void> {
+  await appel('DELETE', '/api/moi/apres-moi');
+}
+/** Signaler un décès (article 85 II) : la demande est gardée et le fondateur répond sous un mois. */
+export async function signalerDeces(d: {
+  email: string;
+  nomDefunt: string;
+  lien: string;
+  traceId?: string;
+  demande: 'cloturer' | 'conserver' | 'transmettre' | 'autre';
+  message?: string;
+}): Promise<void> {
+  await appel('POST', '/api/deces', d);
+}
+
 export async function seDeconnecter(): Promise<void> {
   await appel('POST', '/api/auth/deconnexion').catch(() => undefined);
   compte = null;
@@ -564,7 +643,17 @@ export async function publier(t: Trace, majeur: boolean): Promise<{ trace?: Trac
   }
   const corps =
     t.type === 'personnelle'
-      ? { type: t.type, nom: t.nom, pseudo: t.pseudo, couleur: t.couleur, matiere: t.matiere, pays: t.pays, questions: t.questions, q2Destinataire: t.q2Destinataire, parametres: t.parametres }
+      ? {
+          type: t.type,
+          nom: t.nom,
+          pseudo: t.pseudo,
+          couleur: t.couleur,
+          matiere: t.matiere,
+          pays: t.pays,
+          questions: t.questions,
+          q2Destinataire: t.q2Destinataire,
+          parametres: t.parametres,
+        }
       : { type: t.type, nom: t.nom, couleur: t.couleur, matiere: t.matiere, pays: t.pays, memoire: t.memoire, parametres: t.parametres };
   const r = await appel<{ trace: Trace }>('POST', '/api/traces', corps);
   const n = normaliserTrace(r.trace);
@@ -583,7 +672,13 @@ export async function deposerFragment(traceId: string, rubrique: RubriqueId, e: 
     if (!addElement(traceId, rubrique, { ...e, id, medias: medias.map((m) => m.id) }, medias)) throw new Error('Cette rubrique est complète.');
     return;
   }
-  const donnees = { rubrique, ...e, mediaTitre: mediaTitre || undefined, mediaLien: choix && 'url' in choix ? { url: choix.url } : undefined };
+  const donnees = {
+    rubrique,
+    ...e,
+    mediaTitre: mediaTitre || undefined,
+    mediaLien: choix && 'url' in choix ? { url: choix.url } : undefined,
+    droits: choix && 'file' in choix ? true : undefined,
+  };
   const r =
     choix && 'file' in choix
       ? await appel<{ trace: Trace }>('POST', `/api/traces/${traceId}/fragments`, formulaire(donnees, (await preparerEnvoi(choix.file)).fichier))
@@ -599,7 +694,13 @@ export async function deposerMedia(traceId: string, choix: NonNullable<MediaChoi
     return;
   }
   const prepare = 'file' in choix ? await preparerEnvoi(choix.file) : null;
-  const donnees = { titre: titre || undefined, legende: legende || undefined, duree: prepare?.duree, lien: 'url' in choix ? choix.url : undefined };
+  const donnees = {
+    titre: titre || undefined,
+    legende: legende || undefined,
+    duree: prepare?.duree,
+    lien: 'url' in choix ? choix.url : undefined,
+    droits: prepare ? true : undefined,
+  };
   const r = await appel<{ trace: Trace }>('POST', `/api/traces/${traceId}/medias`, prepare ? formulaire(donnees, prepare.fichier) : donnees);
   retenir(r.trace);
 }

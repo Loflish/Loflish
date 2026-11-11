@@ -1,0 +1,1046 @@
+{
+ "note": "Planche 5 « filaments de lumière » (4 novembre 2026) : écrit design/planche-5-lumiere.json, les 100 prompts prêts pour\nNano Banana 2.1. Même structure que planche-4-gothique.json (gabarit, fils, fonds, bulles), mais la direction a changé :\nla manière de Beksiński (tout est tissé de lignes, bords perdus, une seule présence) et des filaments fumés, avec la\nlumière et la joie de GRIS : le papier est la lumière, aucune masse noire. Matière en gris neutre, teintée ensuite.\n\n  python design/hd/planche5_prompts.py",
+ "gabarit": "Ink and watercolour drawing of {motif}. The whole disc is bright and airy: {fond}. Over it, {fil}, weightless, drifting {mouvement}. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+ "fils": {
+  "sec": "streaks of a fast dry brush, its bristles splitting into parallel threads with bare paper showing between them",
+  "brume": "thin arcs of fine sprayed droplets, nervous and wandering, like lines of mist flicked from a long wand",
+  "tremble": "long trembling lines like a seismograph, thousands of tiny tremors, thin and vibrating",
+  "branche": "thin branching filaments seen under a microscope, each dividing again, each one separate from the next, ending in tiny points",
+  "boucle": "one continuous looping line, drawn slowly with a long stick, overlapping itself",
+  "eau": "fine parallel lines of moving water, following the flow and bending around the eddy",
+  "flottant": "thin concentric ink rings stretched into moire waves, as in floating ink",
+  "botte": "coarse quick strokes of a bundled brush, dissolving into mist",
+  "fouet": "one thick and thin lash of black ink, with a few fine threads following it",
+  "chanvre": "long slightly wavy fibre strokes laid side by side, soft and patient",
+  "pendu": "thousands of fine threads hanging perfectly straight and parallel, in long even curtains",
+  "rayon": "hundreds of fine straight pencil lines radiating from hidden points and crossing into a soft moire",
+  "une": "one single unbroken line that never leaves the paper, folding back on itself",
+  "flamme": "thin streamers pulled long and fanning outward, finer and finer until they vanish",
+  "etoile": "long threads joining tiny bright knots, stretched around empty voids",
+  "soie": "thousands of long thin ink lines, fine as spider silk, drawn slowly with a pen, tapering and fading away, dark grey and smoky",
+  "reserve": "pale filaments left in reserve, bright paper lines inside a soft grey veil, like a print of light",
+  "fumee": "long filaments of smoke, fine and dark, rising slowly and bending in the air, each one separate from the others"
+ },
+ "fonds": {
+  "aube": "a pale wet wash, lightest at the centre, a little more pigment gathered near the soft edge",
+  "souffle": "transparent veils of pale grey crossing the disc like wind, the paper glowing through them",
+  "eau": "a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere",
+  "poussiere": "a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere",
+  "reserve": "bare glowing paper with only a few pale clouds of wash near the edge",
+  "courant": "one pale current of diluted ink flowing across the disc, the rest almost bare paper",
+  "givre": "a pale wash with faint crystalline granulation, bright and cool",
+  "bruine": "a fine pale rain of diluted ink falling softly across the bright disc"
+ },
+ "mouvements": {
+  "haut": "upward",
+  "cote": "sideways in a gust",
+  "rond": "in a slow spiral",
+  "bas": "down like slow snow",
+  "ouvert": "outward from the centre",
+  "calme": "barely, almost still"
+ },
+ "bulles": [
+  {
+   "n": 1,
+   "famille": "Poussière de lumière",
+   "nom": "Les étoiles reliées",
+   "motif": "a scatter of tiny bright points joined by thin lines into a loose constellation",
+   "fil": "soie",
+   "fond": "aube",
+   "mouvement": "haut"
+  },
+  {
+   "n": 2,
+   "famille": "Poussière de lumière",
+   "nom": "La poussière soulevée",
+   "motif": "a swarm of tiny specks of light lifted by a gust and turning together",
+   "fil": "brume",
+   "fond": "souffle",
+   "mouvement": "cote"
+  },
+  {
+   "n": 3,
+   "famille": "Poussière de lumière",
+   "nom": "La traînée",
+   "motif": "one long trail of fine lines and specks crossing the disc like a comet without a head",
+   "fil": "boucle",
+   "fond": "eau",
+   "mouvement": "rond"
+  },
+  {
+   "n": 4,
+   "famille": "Poussière de lumière",
+   "nom": "Le nuage de points",
+   "motif": "a soft cloud of countless tiny dots, denser at one side, thinning into bare paper",
+   "fil": "botte",
+   "fond": "poussiere",
+   "mouvement": "bas"
+  },
+  {
+   "n": 5,
+   "famille": "Poussière de lumière",
+   "nom": "La pluie d’étoiles",
+   "motif": "fine slanted lines falling with small bright points at their ends",
+   "fil": "pendu",
+   "fond": "reserve",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 6,
+   "famille": "Poussière de lumière",
+   "nom": "Le semis",
+   "motif": "specks of pigment sown in slow curves, like seeds thrown by a hand",
+   "fil": "flamme",
+   "fond": "courant",
+   "mouvement": "calme"
+  },
+  {
+   "n": 7,
+   "famille": "Poussière de lumière",
+   "nom": "Les cendres claires",
+   "motif": "pale flakes of ash rising in a thin column of fine lines",
+   "fil": "soie",
+   "fond": "givre",
+   "mouvement": "haut"
+  },
+  {
+   "n": 8,
+   "famille": "Poussière de lumière",
+   "nom": "Le ciel ouvert",
+   "motif": "a wide empty field of paper with a few far specks and one thin arc of lines",
+   "fil": "brume",
+   "fond": "bruine",
+   "mouvement": "cote"
+  },
+  {
+   "n": 9,
+   "famille": "Poussière de lumière",
+   "nom": "Les lucioles",
+   "motif": "small points of light trailing short curved lines, scattered without order",
+   "fil": "boucle",
+   "fond": "aube",
+   "mouvement": "rond"
+  },
+  {
+   "n": 10,
+   "famille": "Poussière de lumière",
+   "nom": "La voie",
+   "motif": "a dense band of tiny specks crossing the disc diagonally, fading at both ends",
+   "fil": "botte",
+   "fond": "souffle",
+   "mouvement": "bas"
+  },
+  {
+   "n": 11,
+   "famille": "Poussière de lumière",
+   "nom": "Le vol de poussière",
+   "motif": "specks and short lines streaming in one direction, bending at the edge",
+   "fil": "pendu",
+   "fond": "eau",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 12,
+   "famille": "Poussière de lumière",
+   "nom": "La constellation ouverte",
+   "motif": "five or six bright points far apart, joined by hesitant thin lines",
+   "fil": "flamme",
+   "fond": "poussiere",
+   "mouvement": "calme"
+  },
+  {
+   "n": 13,
+   "famille": "Poussière de lumière",
+   "nom": "Le scintillement",
+   "motif": "tiny crosses of four short lines scattered over the pale wash",
+   "fil": "soie",
+   "fond": "reserve",
+   "mouvement": "haut"
+  },
+  {
+   "n": 14,
+   "famille": "Poussière de lumière",
+   "nom": "La brume de points",
+   "motif": "a fine mist of dots so small they read as grey, with clear gaps of paper",
+   "fil": "brume",
+   "fond": "courant",
+   "mouvement": "cote"
+  },
+  {
+   "n": 15,
+   "famille": "Poussière de lumière",
+   "nom": "La dispersion",
+   "motif": "a tight cluster of specks at one point exploding gently into the empty disc",
+   "fil": "boucle",
+   "fond": "givre",
+   "mouvement": "rond"
+  },
+  {
+   "n": 16,
+   "famille": "Poussière de lumière",
+   "nom": "Les grains du soir",
+   "motif": "coarse granulation of pigment settling at the bottom, light above",
+   "fil": "botte",
+   "fond": "bruine",
+   "mouvement": "bas"
+  },
+  {
+   "n": 17,
+   "famille": "Poussière de lumière",
+   "nom": "Le tourbillon de poussière",
+   "motif": "specks and fine lines turning in a loose spiral around an empty centre",
+   "fil": "pendu",
+   "fond": "aube",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 18,
+   "famille": "Poussière de lumière",
+   "nom": "L’écume",
+   "motif": "a froth of tiny pale bubbles of reserve inside a soft grey veil",
+   "fil": "flamme",
+   "fond": "souffle",
+   "mouvement": "calme"
+  },
+  {
+   "n": 19,
+   "famille": "Poussière de lumière",
+   "nom": "La neige d’encre",
+   "motif": "small flakes of diluted ink drifting down, each one a tiny soft dot",
+   "fil": "soie",
+   "fond": "eau",
+   "mouvement": "haut"
+  },
+  {
+   "n": 20,
+   "famille": "Poussière de lumière",
+   "nom": "Le dernier point",
+   "motif": "bare paper with one single tiny speck and a few thin lines leaning towards it",
+   "fil": "brume",
+   "fond": "poussiere",
+   "mouvement": "cote"
+  },
+  {
+   "n": 21,
+   "famille": "L’encre dans l’eau",
+   "nom": "La plume qui monte",
+   "motif": "one plume of diluted ink rising in clear water, unfolding into fine filaments",
+   "fil": "eau",
+   "fond": "souffle",
+   "mouvement": "rond"
+  },
+  {
+   "n": 22,
+   "famille": "L’encre dans l’eau",
+   "nom": "Les deux courants",
+   "motif": "two pale currents of ink crossing slowly, their filaments intertwining",
+   "fil": "fouet",
+   "fond": "eau",
+   "mouvement": "bas"
+  },
+  {
+   "n": 23,
+   "famille": "L’encre dans l’eau",
+   "nom": "La goutte dissoute",
+   "motif": "a soft cloud of ink dissolving outward into thin threads, no centre left",
+   "fil": "rayon",
+   "fond": "poussiere",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 24,
+   "famille": "L’encre dans l’eau",
+   "nom": "Le voile sous l’eau",
+   "motif": "a translucent veil of ink hanging in water, its lower edge fraying into filaments",
+   "fil": "etoile",
+   "fond": "reserve",
+   "mouvement": "calme"
+  },
+  {
+   "n": 25,
+   "famille": "L’encre dans l’eau",
+   "nom": "Le ruban",
+   "motif": "one long ribbon of diluted ink folding on itself as it sinks",
+   "fil": "fumee",
+   "fond": "courant",
+   "mouvement": "haut"
+  },
+  {
+   "n": 26,
+   "famille": "L’encre dans l’eau",
+   "nom": "Les anneaux flottants",
+   "motif": "concentric rings of pale ink floating on water, stretched by a breath",
+   "fil": "tremble",
+   "fond": "givre",
+   "mouvement": "cote"
+  },
+  {
+   "n": 27,
+   "famille": "L’encre dans l’eau",
+   "nom": "Le remous",
+   "motif": "ink lines following a slow whirl of water and curling back on themselves",
+   "fil": "eau",
+   "fond": "bruine",
+   "mouvement": "rond"
+  },
+  {
+   "n": 28,
+   "famille": "L’encre dans l’eau",
+   "nom": "La marée claire",
+   "motif": "a soft tide line of pigment with fine threads drifting away from it",
+   "fil": "fouet",
+   "fond": "aube",
+   "mouvement": "bas"
+  },
+  {
+   "n": 29,
+   "famille": "L’encre dans l’eau",
+   "nom": "Le souffle sous l’eau",
+   "motif": "a column of small pale bubbles rising through thin drifting lines",
+   "fil": "rayon",
+   "fond": "souffle",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 30,
+   "famille": "L’encre dans l’eau",
+   "nom": "La chevelure d’eau",
+   "motif": "long parallel lines of ink flowing like water, bending at the edge",
+   "fil": "etoile",
+   "fond": "eau",
+   "mouvement": "calme"
+  },
+  {
+   "n": 31,
+   "famille": "L’encre dans l’eau",
+   "nom": "Le lavis qui s’ouvre",
+   "motif": "a pale wash tearing open gently to show bare paper, threads along the tear",
+   "fil": "fumee",
+   "fond": "poussiere",
+   "mouvement": "haut"
+  },
+  {
+   "n": 32,
+   "famille": "L’encre dans l’eau",
+   "nom": "La vague fine",
+   "motif": "one thin wave of lines rolling across, foam of reserve at its crest",
+   "fil": "tremble",
+   "fond": "reserve",
+   "mouvement": "cote"
+  },
+  {
+   "n": 33,
+   "famille": "L’encre dans l’eau",
+   "nom": "L’eau tremblée",
+   "motif": "lines of water trembling in many tiny vibrations, light between them",
+   "fil": "eau",
+   "fond": "courant",
+   "mouvement": "rond"
+  },
+  {
+   "n": 34,
+   "famille": "L’encre dans l’eau",
+   "nom": "Le fil qui coule",
+   "motif": "one single line of ink drifting down through clear water, turning twice",
+   "fil": "fouet",
+   "fond": "givre",
+   "mouvement": "bas"
+  },
+  {
+   "n": 35,
+   "famille": "L’encre dans l’eau",
+   "nom": "La source",
+   "motif": "fine lines welling up from one point low in the disc and spreading like water",
+   "fil": "rayon",
+   "fond": "bruine",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 36,
+   "famille": "L’encre dans l’eau",
+   "nom": "Le delta",
+   "motif": "threads of ink branching again and again, each branch thinner, towards the light",
+   "fil": "etoile",
+   "fond": "aube",
+   "mouvement": "calme"
+  },
+  {
+   "n": 37,
+   "famille": "L’encre dans l’eau",
+   "nom": "La nappe",
+   "motif": "a flat sheet of pale ink seen from above, with fine ripples drawn in it",
+   "fil": "fumee",
+   "fond": "souffle",
+   "mouvement": "haut"
+  },
+  {
+   "n": 38,
+   "famille": "L’encre dans l’eau",
+   "nom": "Le courant tiède",
+   "motif": "a soft band of warm grey flowing diagonally, filaments combed along it",
+   "fil": "tremble",
+   "fond": "eau",
+   "mouvement": "cote"
+  },
+  {
+   "n": 39,
+   "famille": "L’encre dans l’eau",
+   "nom": "La transparence",
+   "motif": "two overlapping veils of very pale ink, the paper bright where they do not meet",
+   "fil": "eau",
+   "fond": "poussiere",
+   "mouvement": "rond"
+  },
+  {
+   "n": 40,
+   "famille": "L’encre dans l’eau",
+   "nom": "La buée",
+   "motif": "a fine mist of ink condensing into tiny threads on an invisible glass",
+   "fil": "fouet",
+   "fond": "reserve",
+   "mouvement": "bas"
+  },
+  {
+   "n": 41,
+   "famille": "Le vent",
+   "nom": "La rafale",
+   "motif": "hundreds of fine lines bent by one gust, all leaning the same way",
+   "fil": "une",
+   "fond": "eau",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 42,
+   "famille": "Le vent",
+   "nom": "Les rubans de sable",
+   "motif": "long thin ribbons of pigment streaming sideways, lifting at their ends",
+   "fil": "reserve",
+   "fond": "poussiere",
+   "mouvement": "calme"
+  },
+  {
+   "n": 43,
+   "famille": "Le vent",
+   "nom": "La spirale lente",
+   "motif": "one wide spiral of fine lines turning around an empty centre",
+   "fil": "sec",
+   "fond": "reserve",
+   "mouvement": "haut"
+  },
+  {
+   "n": 44,
+   "famille": "Le vent",
+   "nom": "Les ailes du moulin",
+   "motif": "four long arcs of lines radiating from one point, blurred by motion",
+   "fil": "branche",
+   "fond": "courant",
+   "mouvement": "cote"
+  },
+  {
+   "n": 45,
+   "famille": "Le vent",
+   "nom": "Le tourbillon ouvert",
+   "motif": "lines turning in a loose whirl with wide gaps of bare paper",
+   "fil": "flottant",
+   "fond": "givre",
+   "mouvement": "rond"
+  },
+  {
+   "n": 46,
+   "famille": "Le vent",
+   "nom": "L’herbe couchée",
+   "motif": "parallel fine lines pressed flat by wind, springing up again at one side",
+   "fil": "chanvre",
+   "fond": "bruine",
+   "mouvement": "bas"
+  },
+  {
+   "n": 47,
+   "famille": "Le vent",
+   "nom": "Le cerf-volant perdu",
+   "motif": "one long line climbing in a curve with small loops, trailing a thread",
+   "fil": "une",
+   "fond": "aube",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 48,
+   "famille": "Le vent",
+   "nom": "Le vent qui tourne",
+   "motif": "short strokes changing direction across the disc, like wind on water",
+   "fil": "reserve",
+   "fond": "souffle",
+   "mouvement": "calme"
+  },
+  {
+   "n": 49,
+   "famille": "Le vent",
+   "nom": "La bourrasque",
+   "motif": "a knot of dense lines at one side unravelling into the empty disc",
+   "fil": "sec",
+   "fond": "eau",
+   "mouvement": "haut"
+  },
+  {
+   "n": 50,
+   "famille": "Le vent",
+   "nom": "Le souffle chaud",
+   "motif": "soft wavy lines rising and widening, like heat over sand",
+   "fil": "branche",
+   "fond": "poussiere",
+   "mouvement": "cote"
+  },
+  {
+   "n": 51,
+   "famille": "Le vent",
+   "nom": "Les drapeaux",
+   "motif": "a few long strokes snapping and curling in the same wind",
+   "fil": "flottant",
+   "fond": "reserve",
+   "mouvement": "rond"
+  },
+  {
+   "n": 52,
+   "famille": "Le vent",
+   "nom": "Le vent dans les fils",
+   "motif": "many thin threads stretched across, each one vibrating a little",
+   "fil": "chanvre",
+   "fond": "courant",
+   "mouvement": "bas"
+  },
+  {
+   "n": 53,
+   "famille": "Le vent",
+   "nom": "La dune",
+   "motif": "one soft curve of pigment with fine lines combed over its crest",
+   "fil": "une",
+   "fond": "givre",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 54,
+   "famille": "Le vent",
+   "nom": "L’envol",
+   "motif": "fine lines leaving the ground together and spreading into the sky",
+   "fil": "reserve",
+   "fond": "bruine",
+   "mouvement": "calme"
+  },
+  {
+   "n": 55,
+   "famille": "Le vent",
+   "nom": "Le vent du matin",
+   "motif": "pale veils crossing the disc, a few darker threads carried in them",
+   "fil": "sec",
+   "fond": "aube",
+   "mouvement": "haut"
+  },
+  {
+   "n": 56,
+   "famille": "Le vent",
+   "nom": "La girouette",
+   "motif": "lines radiating from one point and all bending the same way at their tips",
+   "fil": "branche",
+   "fond": "souffle",
+   "mouvement": "cote"
+  },
+  {
+   "n": 57,
+   "famille": "Le vent",
+   "nom": "Les feuilles de lignes",
+   "motif": "small curved strokes tumbling in the air, each turning differently",
+   "fil": "flottant",
+   "fond": "eau",
+   "mouvement": "rond"
+  },
+  {
+   "n": 58,
+   "famille": "Le vent",
+   "nom": "Le vent en rond",
+   "motif": "short strokes circling the disc near the edge, calm paper at the centre",
+   "fil": "chanvre",
+   "fond": "poussiere",
+   "mouvement": "bas"
+  },
+  {
+   "n": 59,
+   "famille": "Le vent",
+   "nom": "La tempête douce",
+   "motif": "dense crossing lines on one side, dissolving into stillness on the other",
+   "fil": "une",
+   "fond": "reserve",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 60,
+   "famille": "Le vent",
+   "nom": "Le dernier souffle",
+   "motif": "a few lines drifting slowly, the gust already gone",
+   "fil": "reserve",
+   "fond": "courant",
+   "mouvement": "calme"
+  },
+  {
+   "n": 61,
+   "famille": "Les fragments",
+   "nom": "Les cubes qui flottent",
+   "motif": "small open cubes drawn in thin lines, floating apart, some half dissolved",
+   "fil": "brume",
+   "fond": "poussiere",
+   "mouvement": "haut"
+  },
+  {
+   "n": 62,
+   "famille": "Les fragments",
+   "nom": "La ville qui se défait",
+   "motif": "thin vertical and horizontal lines of a structure coming apart into drift",
+   "fil": "boucle",
+   "fond": "reserve",
+   "mouvement": "cote"
+  },
+  {
+   "n": 63,
+   "famille": "Les fragments",
+   "nom": "L’escalier dans le vide",
+   "motif": "a few short horizontal lines stepping upward into bare paper",
+   "fil": "botte",
+   "fond": "courant",
+   "mouvement": "rond"
+  },
+  {
+   "n": 64,
+   "famille": "Les fragments",
+   "nom": "Le cercle brisé",
+   "motif": "one large circle of lines broken into arcs that drift away from each other",
+   "fil": "pendu",
+   "fond": "givre",
+   "mouvement": "bas"
+  },
+  {
+   "n": 65,
+   "famille": "Les fragments",
+   "nom": "Les colonnes de lignes",
+   "motif": "tall thin bundles of vertical lines, their tops fraying into air",
+   "fil": "flamme",
+   "fond": "bruine",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 66,
+   "famille": "Les fragments",
+   "nom": "La mosaïque pâle",
+   "motif": "small squares of pale wash, loosely tiled, gaps of paper between them",
+   "fil": "soie",
+   "fond": "aube",
+   "mouvement": "calme"
+  },
+  {
+   "n": 67,
+   "famille": "Les fragments",
+   "nom": "Le pont de fils",
+   "motif": "one arc of parallel lines crossing the disc, strands hanging from it",
+   "fil": "brume",
+   "fond": "souffle",
+   "mouvement": "haut"
+  },
+  {
+   "n": 68,
+   "famille": "Les fragments",
+   "nom": "Les statues de poussière",
+   "motif": "tall soft forms of specks standing in a row, crumbling at the top",
+   "fil": "boucle",
+   "fond": "eau",
+   "mouvement": "cote"
+  },
+  {
+   "n": 69,
+   "famille": "Les fragments",
+   "nom": "La fenêtre",
+   "motif": "a rectangle of lines with light pouring through it as bare paper",
+   "fil": "botte",
+   "fond": "poussiere",
+   "mouvement": "rond"
+  },
+  {
+   "n": 70,
+   "famille": "Les fragments",
+   "nom": "Les marches",
+   "motif": "a flight of fine parallel lines rising diagonally and vanishing",
+   "fil": "pendu",
+   "fond": "reserve",
+   "mouvement": "bas"
+  },
+  {
+   "n": 71,
+   "famille": "Les fragments",
+   "nom": "Le dallage",
+   "motif": "a grid of thin lines broken and tilted, as if seen through water",
+   "fil": "flamme",
+   "fond": "courant",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 72,
+   "famille": "Les fragments",
+   "nom": "L’arche ouverte",
+   "motif": "one arch of fine lines, the space inside it brighter than everything",
+   "fil": "soie",
+   "fond": "givre",
+   "mouvement": "calme"
+  },
+  {
+   "n": 73,
+   "famille": "Les fragments",
+   "nom": "Les éclats",
+   "motif": "thin triangular shards of lines scattering from one corner",
+   "fil": "brume",
+   "fond": "bruine",
+   "mouvement": "haut"
+  },
+  {
+   "n": 74,
+   "famille": "Les fragments",
+   "nom": "La tour fine",
+   "motif": "one narrow tower of stacked lines leaning, dissolving at the top",
+   "fil": "boucle",
+   "fond": "aube",
+   "mouvement": "cote"
+  },
+  {
+   "n": 75,
+   "famille": "Les fragments",
+   "nom": "Les pierres légères",
+   "motif": "a few small rounded shapes of pale wash hovering, lines beneath them",
+   "fil": "botte",
+   "fond": "souffle",
+   "mouvement": "rond"
+  },
+  {
+   "n": 76,
+   "famille": "Les fragments",
+   "nom": "Le mur qui respire",
+   "motif": "a wall of horizontal lines bulging softly, light through the cracks",
+   "fil": "pendu",
+   "fond": "eau",
+   "mouvement": "bas"
+  },
+  {
+   "n": 77,
+   "famille": "Les fragments",
+   "nom": "Le fil de la ville",
+   "motif": "one continuous line drawing a skyline of boxes and then unravelling",
+   "fil": "flamme",
+   "fond": "poussiere",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 78,
+   "famille": "Les fragments",
+   "nom": "Les cadres",
+   "motif": "several thin rectangles overlapping, each a little paler than the last",
+   "fil": "soie",
+   "fond": "reserve",
+   "mouvement": "calme"
+  },
+  {
+   "n": 79,
+   "famille": "Les fragments",
+   "nom": "La fissure de lumière",
+   "motif": "a soft grey wash split by one bright crack of bare paper, fine lines along it",
+   "fil": "brume",
+   "fond": "courant",
+   "mouvement": "haut"
+  },
+  {
+   "n": 80,
+   "famille": "Les fragments",
+   "nom": "Les ruines claires",
+   "motif": "broken lines of a structure lying low, pale wash and light above",
+   "fil": "boucle",
+   "fond": "givre",
+   "mouvement": "cote"
+  },
+  {
+   "n": 81,
+   "famille": "Ce qui s’ouvre",
+   "nom": "La voûte claire",
+   "motif": "fans of fine ribs rising from the rim and opening into bright paper above",
+   "fil": "fouet",
+   "fond": "reserve",
+   "mouvement": "rond"
+  },
+  {
+   "n": 82,
+   "famille": "Ce qui s’ouvre",
+   "nom": "La fleur de lignes",
+   "motif": "a bud of lines opening outward, each petal a bundle of thin strokes",
+   "fil": "rayon",
+   "fond": "courant",
+   "mouvement": "bas"
+  },
+  {
+   "n": 83,
+   "famille": "Ce qui s’ouvre",
+   "nom": "L’éventail",
+   "motif": "a fan of fine lines spreading from one point low in the disc",
+   "fil": "etoile",
+   "fond": "givre",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 84,
+   "famille": "Ce qui s’ouvre",
+   "nom": "Le chant",
+   "motif": "concentric ripples of thin lines widening from one small bright point",
+   "fil": "fumee",
+   "fond": "bruine",
+   "mouvement": "calme"
+  },
+  {
+   "n": 85,
+   "famille": "Ce qui s’ouvre",
+   "nom": "La couronne de fils",
+   "motif": "a loose ring of filaments floating around an empty bright centre",
+   "fil": "tremble",
+   "fond": "aube",
+   "mouvement": "haut"
+  },
+  {
+   "n": 86,
+   "famille": "Ce qui s’ouvre",
+   "nom": "L’aile ouverte",
+   "motif": "one wide arc of fine lines unfolding slowly across the disc",
+   "fil": "eau",
+   "fond": "souffle",
+   "mouvement": "cote"
+  },
+  {
+   "n": 87,
+   "famille": "Ce qui s’ouvre",
+   "nom": "Le rayonnement",
+   "motif": "thin lines radiating from a bright centre, fading before the edge",
+   "fil": "fouet",
+   "fond": "eau",
+   "mouvement": "rond"
+  },
+  {
+   "n": 88,
+   "famille": "Ce qui s’ouvre",
+   "nom": "La voûte en éventail",
+   "motif": "four fans of ribs meeting at one pale point, seen from directly below, luminous",
+   "fil": "rayon",
+   "fond": "poussiere",
+   "mouvement": "bas"
+  },
+  {
+   "n": 89,
+   "famille": "Ce qui s’ouvre",
+   "nom": "Les plis qui se défont",
+   "motif": "soft folds of pale wash loosening, fine lines combed along them",
+   "fil": "etoile",
+   "fond": "reserve",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 90,
+   "famille": "Ce qui s’ouvre",
+   "nom": "La graine",
+   "motif": "one small dense knot of lines sending out long thin shoots",
+   "fil": "fumee",
+   "fond": "courant",
+   "mouvement": "calme"
+  },
+  {
+   "n": 91,
+   "famille": "Ce qui s’ouvre",
+   "nom": "L’ogive de lumière",
+   "motif": "a pointed arch of fine lines, bare paper glowing inside it",
+   "fil": "tremble",
+   "fond": "givre",
+   "mouvement": "haut"
+  },
+  {
+   "n": 92,
+   "famille": "Ce qui s’ouvre",
+   "nom": "Le soleil pâle",
+   "motif": "a soft pale disc of reserve with fine filaments streaming out from it",
+   "fil": "eau",
+   "fond": "bruine",
+   "mouvement": "cote"
+  },
+  {
+   "n": 93,
+   "famille": "Ce qui s’ouvre",
+   "nom": "La porte",
+   "motif": "two soft masses of pale wash with a bright narrow gap of paper between them",
+   "fil": "fouet",
+   "fond": "aube",
+   "mouvement": "rond"
+  },
+  {
+   "n": 94,
+   "famille": "Ce qui s’ouvre",
+   "nom": "La main qui s’ouvre",
+   "motif": "five bundles of fine lines spreading from one point like fingers, abstract",
+   "fil": "rayon",
+   "fond": "souffle",
+   "mouvement": "bas"
+  },
+  {
+   "n": 95,
+   "famille": "Ce qui s’ouvre",
+   "nom": "Le bourgeon",
+   "motif": "a tight spiral of lines beginning to unwind at its tip",
+   "fil": "etoile",
+   "fond": "eau",
+   "mouvement": "ouvert"
+  },
+  {
+   "n": 96,
+   "famille": "Ce qui s’ouvre",
+   "nom": "La toile cosmique",
+   "motif": "long fine threads joining small knots around large empty spaces",
+   "fil": "fumee",
+   "fond": "poussiere",
+   "mouvement": "calme"
+  },
+  {
+   "n": 97,
+   "famille": "Ce qui s’ouvre",
+   "nom": "La nef claire",
+   "motif": "two rows of fine vertical lines leaning inward to a bright peak",
+   "fil": "tremble",
+   "fond": "reserve",
+   "mouvement": "haut"
+  },
+  {
+   "n": 98,
+   "famille": "Ce qui s’ouvre",
+   "nom": "L’horizon qui se lève",
+   "motif": "one soft horizontal band of wash with fine lines rising from it",
+   "fil": "eau",
+   "fond": "courant",
+   "mouvement": "cote"
+  },
+  {
+   "n": 99,
+   "famille": "Ce qui s’ouvre",
+   "nom": "La lanterne",
+   "motif": "a small pale glowing shape of reserve with thin lines hanging below it",
+   "fil": "fouet",
+   "fond": "givre",
+   "mouvement": "rond"
+  },
+  {
+   "n": 100,
+   "famille": "Ce qui s’ouvre",
+   "nom": "Le retour de la couleur",
+   "motif": "a wash that starts bare and gathers pigment softly, filaments appearing within it",
+   "fil": "rayon",
+   "fond": "bruine",
+   "mouvement": "bas"
+  }
+ ],
+ "prompts": {
+  "1": "Ink and watercolour drawing of a scatter of tiny bright points joined by thin lines into a loose constellation. The whole disc is bright and airy: a pale wet wash, lightest at the centre, a little more pigment gathered near the soft edge. Over it, thousands of long thin ink lines, fine as spider silk, drawn slowly with a pen, tapering and fading away, dark grey and smoky, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "2": "Ink and watercolour drawing of a swarm of tiny specks of light lifted by a gust and turning together. The whole disc is bright and airy: transparent veils of pale grey crossing the disc like wind, the paper glowing through them. Over it, thin arcs of fine sprayed droplets, nervous and wandering, like lines of mist flicked from a long wand, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "3": "Ink and watercolour drawing of one long trail of fine lines and specks crossing the disc like a comet without a head. The whole disc is bright and airy: a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere. Over it, one continuous looping line, drawn slowly with a long stick, overlapping itself, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "4": "Ink and watercolour drawing of a soft cloud of countless tiny dots, denser at one side, thinning into bare paper. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, coarse quick strokes of a bundled brush, dissolving into mist, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "5": "Ink and watercolour drawing of fine slanted lines falling with small bright points at their ends. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, thousands of fine threads hanging perfectly straight and parallel, in long even curtains, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "6": "Ink and watercolour drawing of specks of pigment sown in slow curves, like seeds thrown by a hand. The whole disc is bright and airy: one pale current of diluted ink flowing across the disc, the rest almost bare paper. Over it, thin streamers pulled long and fanning outward, finer and finer until they vanish, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "7": "Ink and watercolour drawing of pale flakes of ash rising in a thin column of fine lines. The whole disc is bright and airy: a pale wash with faint crystalline granulation, bright and cool. Over it, thousands of long thin ink lines, fine as spider silk, drawn slowly with a pen, tapering and fading away, dark grey and smoky, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "8": "Ink and watercolour drawing of a wide empty field of paper with a few far specks and one thin arc of lines. The whole disc is bright and airy: a fine pale rain of diluted ink falling softly across the bright disc. Over it, thin arcs of fine sprayed droplets, nervous and wandering, like lines of mist flicked from a long wand, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "9": "Ink and watercolour drawing of small points of light trailing short curved lines, scattered without order. The whole disc is bright and airy: a pale wet wash, lightest at the centre, a little more pigment gathered near the soft edge. Over it, one continuous looping line, drawn slowly with a long stick, overlapping itself, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "10": "Ink and watercolour drawing of a dense band of tiny specks crossing the disc diagonally, fading at both ends. The whole disc is bright and airy: transparent veils of pale grey crossing the disc like wind, the paper glowing through them. Over it, coarse quick strokes of a bundled brush, dissolving into mist, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "11": "Ink and watercolour drawing of specks and short lines streaming in one direction, bending at the edge. The whole disc is bright and airy: a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere. Over it, thousands of fine threads hanging perfectly straight and parallel, in long even curtains, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "12": "Ink and watercolour drawing of five or six bright points far apart, joined by hesitant thin lines. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, thin streamers pulled long and fanning outward, finer and finer until they vanish, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "13": "Ink and watercolour drawing of tiny crosses of four short lines scattered over the pale wash. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, thousands of long thin ink lines, fine as spider silk, drawn slowly with a pen, tapering and fading away, dark grey and smoky, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "14": "Ink and watercolour drawing of a fine mist of dots so small they read as grey, with clear gaps of paper. The whole disc is bright and airy: one pale current of diluted ink flowing across the disc, the rest almost bare paper. Over it, thin arcs of fine sprayed droplets, nervous and wandering, like lines of mist flicked from a long wand, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "15": "Ink and watercolour drawing of a tight cluster of specks at one point exploding gently into the empty disc. The whole disc is bright and airy: a pale wash with faint crystalline granulation, bright and cool. Over it, one continuous looping line, drawn slowly with a long stick, overlapping itself, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "16": "Ink and watercolour drawing of coarse granulation of pigment settling at the bottom, light above. The whole disc is bright and airy: a fine pale rain of diluted ink falling softly across the bright disc. Over it, coarse quick strokes of a bundled brush, dissolving into mist, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "17": "Ink and watercolour drawing of specks and fine lines turning in a loose spiral around an empty centre. The whole disc is bright and airy: a pale wet wash, lightest at the centre, a little more pigment gathered near the soft edge. Over it, thousands of fine threads hanging perfectly straight and parallel, in long even curtains, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "18": "Ink and watercolour drawing of a froth of tiny pale bubbles of reserve inside a soft grey veil. The whole disc is bright and airy: transparent veils of pale grey crossing the disc like wind, the paper glowing through them. Over it, thin streamers pulled long and fanning outward, finer and finer until they vanish, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "19": "Ink and watercolour drawing of small flakes of diluted ink drifting down, each one a tiny soft dot. The whole disc is bright and airy: a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere. Over it, thousands of long thin ink lines, fine as spider silk, drawn slowly with a pen, tapering and fading away, dark grey and smoky, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "20": "Ink and watercolour drawing of bare paper with one single tiny speck and a few thin lines leaning towards it. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, thin arcs of fine sprayed droplets, nervous and wandering, like lines of mist flicked from a long wand, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "21": "Ink and watercolour drawing of one plume of diluted ink rising in clear water, unfolding into fine filaments. The whole disc is bright and airy: transparent veils of pale grey crossing the disc like wind, the paper glowing through them. Over it, fine parallel lines of moving water, following the flow and bending around the eddy, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "22": "Ink and watercolour drawing of two pale currents of ink crossing slowly, their filaments intertwining. The whole disc is bright and airy: a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere. Over it, one thick and thin lash of black ink, with a few fine threads following it, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "23": "Ink and watercolour drawing of a soft cloud of ink dissolving outward into thin threads, no centre left. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, hundreds of fine straight pencil lines radiating from hidden points and crossing into a soft moire, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "24": "Ink and watercolour drawing of a translucent veil of ink hanging in water, its lower edge fraying into filaments. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, long threads joining tiny bright knots, stretched around empty voids, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "25": "Ink and watercolour drawing of one long ribbon of diluted ink folding on itself as it sinks. The whole disc is bright and airy: one pale current of diluted ink flowing across the disc, the rest almost bare paper. Over it, long filaments of smoke, fine and dark, rising slowly and bending in the air, each one separate from the others, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "26": "Ink and watercolour drawing of concentric rings of pale ink floating on water, stretched by a breath. The whole disc is bright and airy: a pale wash with faint crystalline granulation, bright and cool. Over it, long trembling lines like a seismograph, thousands of tiny tremors, thin and vibrating, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "27": "Ink and watercolour drawing of ink lines following a slow whirl of water and curling back on themselves. The whole disc is bright and airy: a fine pale rain of diluted ink falling softly across the bright disc. Over it, fine parallel lines of moving water, following the flow and bending around the eddy, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "28": "Ink and watercolour drawing of a soft tide line of pigment with fine threads drifting away from it. The whole disc is bright and airy: a pale wet wash, lightest at the centre, a little more pigment gathered near the soft edge. Over it, one thick and thin lash of black ink, with a few fine threads following it, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "29": "Ink and watercolour drawing of a column of small pale bubbles rising through thin drifting lines. The whole disc is bright and airy: transparent veils of pale grey crossing the disc like wind, the paper glowing through them. Over it, hundreds of fine straight pencil lines radiating from hidden points and crossing into a soft moire, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "30": "Ink and watercolour drawing of long parallel lines of ink flowing like water, bending at the edge. The whole disc is bright and airy: a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere. Over it, long threads joining tiny bright knots, stretched around empty voids, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "31": "Ink and watercolour drawing of a pale wash tearing open gently to show bare paper, threads along the tear. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, long filaments of smoke, fine and dark, rising slowly and bending in the air, each one separate from the others, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "32": "Ink and watercolour drawing of one thin wave of lines rolling across, foam of reserve at its crest. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, long trembling lines like a seismograph, thousands of tiny tremors, thin and vibrating, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "33": "Ink and watercolour drawing of lines of water trembling in many tiny vibrations, light between them. The whole disc is bright and airy: one pale current of diluted ink flowing across the disc, the rest almost bare paper. Over it, fine parallel lines of moving water, following the flow and bending around the eddy, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "34": "Ink and watercolour drawing of one single line of ink drifting down through clear water, turning twice. The whole disc is bright and airy: a pale wash with faint crystalline granulation, bright and cool. Over it, one thick and thin lash of black ink, with a few fine threads following it, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "35": "Ink and watercolour drawing of fine lines welling up from one point low in the disc and spreading like water. The whole disc is bright and airy: a fine pale rain of diluted ink falling softly across the bright disc. Over it, hundreds of fine straight pencil lines radiating from hidden points and crossing into a soft moire, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "36": "Ink and watercolour drawing of threads of ink branching again and again, each branch thinner, towards the light. The whole disc is bright and airy: a pale wet wash, lightest at the centre, a little more pigment gathered near the soft edge. Over it, long threads joining tiny bright knots, stretched around empty voids, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "37": "Ink and watercolour drawing of a flat sheet of pale ink seen from above, with fine ripples drawn in it. The whole disc is bright and airy: transparent veils of pale grey crossing the disc like wind, the paper glowing through them. Over it, long filaments of smoke, fine and dark, rising slowly and bending in the air, each one separate from the others, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "38": "Ink and watercolour drawing of a soft band of warm grey flowing diagonally, filaments combed along it. The whole disc is bright and airy: a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere. Over it, long trembling lines like a seismograph, thousands of tiny tremors, thin and vibrating, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "39": "Ink and watercolour drawing of two overlapping veils of very pale ink, the paper bright where they do not meet. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, fine parallel lines of moving water, following the flow and bending around the eddy, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "40": "Ink and watercolour drawing of a fine mist of ink condensing into tiny threads on an invisible glass. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, one thick and thin lash of black ink, with a few fine threads following it, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "41": "Ink and watercolour drawing of hundreds of fine lines bent by one gust, all leaning the same way. The whole disc is bright and airy: a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere. Over it, one single unbroken line that never leaves the paper, folding back on itself, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "42": "Ink and watercolour drawing of long thin ribbons of pigment streaming sideways, lifting at their ends. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, pale filaments left in reserve, bright paper lines inside a soft grey veil, like a print of light, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "43": "Ink and watercolour drawing of one wide spiral of fine lines turning around an empty centre. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, streaks of a fast dry brush, its bristles splitting into parallel threads with bare paper showing between them, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "44": "Ink and watercolour drawing of four long arcs of lines radiating from one point, blurred by motion. The whole disc is bright and airy: one pale current of diluted ink flowing across the disc, the rest almost bare paper. Over it, thin branching filaments seen under a microscope, each dividing again, each one separate from the next, ending in tiny points, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "45": "Ink and watercolour drawing of lines turning in a loose whirl with wide gaps of bare paper. The whole disc is bright and airy: a pale wash with faint crystalline granulation, bright and cool. Over it, thin concentric ink rings stretched into moire waves, as in floating ink, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "46": "Ink and watercolour drawing of parallel fine lines pressed flat by wind, springing up again at one side. The whole disc is bright and airy: a fine pale rain of diluted ink falling softly across the bright disc. Over it, long slightly wavy fibre strokes laid side by side, soft and patient, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "47": "Ink and watercolour drawing of one long line climbing in a curve with small loops, trailing a thread. The whole disc is bright and airy: a pale wet wash, lightest at the centre, a little more pigment gathered near the soft edge. Over it, one single unbroken line that never leaves the paper, folding back on itself, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "48": "Ink and watercolour drawing of short strokes changing direction across the disc, like wind on water. The whole disc is bright and airy: transparent veils of pale grey crossing the disc like wind, the paper glowing through them. Over it, pale filaments left in reserve, bright paper lines inside a soft grey veil, like a print of light, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "49": "Ink and watercolour drawing of a knot of dense lines at one side unravelling into the empty disc. The whole disc is bright and airy: a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere. Over it, streaks of a fast dry brush, its bristles splitting into parallel threads with bare paper showing between them, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "50": "Ink and watercolour drawing of soft wavy lines rising and widening, like heat over sand. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, thin branching filaments seen under a microscope, each dividing again, each one separate from the next, ending in tiny points, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "51": "Ink and watercolour drawing of a few long strokes snapping and curling in the same wind. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, thin concentric ink rings stretched into moire waves, as in floating ink, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "52": "Ink and watercolour drawing of many thin threads stretched across, each one vibrating a little. The whole disc is bright and airy: one pale current of diluted ink flowing across the disc, the rest almost bare paper. Over it, long slightly wavy fibre strokes laid side by side, soft and patient, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "53": "Ink and watercolour drawing of one soft curve of pigment with fine lines combed over its crest. The whole disc is bright and airy: a pale wash with faint crystalline granulation, bright and cool. Over it, one single unbroken line that never leaves the paper, folding back on itself, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "54": "Ink and watercolour drawing of fine lines leaving the ground together and spreading into the sky. The whole disc is bright and airy: a fine pale rain of diluted ink falling softly across the bright disc. Over it, pale filaments left in reserve, bright paper lines inside a soft grey veil, like a print of light, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "55": "Ink and watercolour drawing of pale veils crossing the disc, a few darker threads carried in them. The whole disc is bright and airy: a pale wet wash, lightest at the centre, a little more pigment gathered near the soft edge. Over it, streaks of a fast dry brush, its bristles splitting into parallel threads with bare paper showing between them, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "56": "Ink and watercolour drawing of lines radiating from one point and all bending the same way at their tips. The whole disc is bright and airy: transparent veils of pale grey crossing the disc like wind, the paper glowing through them. Over it, thin branching filaments seen under a microscope, each dividing again, each one separate from the next, ending in tiny points, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "57": "Ink and watercolour drawing of small curved strokes tumbling in the air, each turning differently. The whole disc is bright and airy: a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere. Over it, thin concentric ink rings stretched into moire waves, as in floating ink, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "58": "Ink and watercolour drawing of short strokes circling the disc near the edge, calm paper at the centre. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, long slightly wavy fibre strokes laid side by side, soft and patient, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "59": "Ink and watercolour drawing of dense crossing lines on one side, dissolving into stillness on the other. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, one single unbroken line that never leaves the paper, folding back on itself, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "60": "Ink and watercolour drawing of a few lines drifting slowly, the gust already gone. The whole disc is bright and airy: one pale current of diluted ink flowing across the disc, the rest almost bare paper. Over it, pale filaments left in reserve, bright paper lines inside a soft grey veil, like a print of light, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "61": "Ink and watercolour drawing of small open cubes drawn in thin lines, floating apart, some half dissolved. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, thin arcs of fine sprayed droplets, nervous and wandering, like lines of mist flicked from a long wand, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "62": "Ink and watercolour drawing of thin vertical and horizontal lines of a structure coming apart into drift. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, one continuous looping line, drawn slowly with a long stick, overlapping itself, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "63": "Ink and watercolour drawing of a few short horizontal lines stepping upward into bare paper. The whole disc is bright and airy: one pale current of diluted ink flowing across the disc, the rest almost bare paper. Over it, coarse quick strokes of a bundled brush, dissolving into mist, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "64": "Ink and watercolour drawing of one large circle of lines broken into arcs that drift away from each other. The whole disc is bright and airy: a pale wash with faint crystalline granulation, bright and cool. Over it, thousands of fine threads hanging perfectly straight and parallel, in long even curtains, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "65": "Ink and watercolour drawing of tall thin bundles of vertical lines, their tops fraying into air. The whole disc is bright and airy: a fine pale rain of diluted ink falling softly across the bright disc. Over it, thin streamers pulled long and fanning outward, finer and finer until they vanish, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "66": "Ink and watercolour drawing of small squares of pale wash, loosely tiled, gaps of paper between them. The whole disc is bright and airy: a pale wet wash, lightest at the centre, a little more pigment gathered near the soft edge. Over it, thousands of long thin ink lines, fine as spider silk, drawn slowly with a pen, tapering and fading away, dark grey and smoky, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "67": "Ink and watercolour drawing of one arc of parallel lines crossing the disc, strands hanging from it. The whole disc is bright and airy: transparent veils of pale grey crossing the disc like wind, the paper glowing through them. Over it, thin arcs of fine sprayed droplets, nervous and wandering, like lines of mist flicked from a long wand, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "68": "Ink and watercolour drawing of tall soft forms of specks standing in a row, crumbling at the top. The whole disc is bright and airy: a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere. Over it, one continuous looping line, drawn slowly with a long stick, overlapping itself, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "69": "Ink and watercolour drawing of a rectangle of lines with light pouring through it as bare paper. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, coarse quick strokes of a bundled brush, dissolving into mist, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "70": "Ink and watercolour drawing of a flight of fine parallel lines rising diagonally and vanishing. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, thousands of fine threads hanging perfectly straight and parallel, in long even curtains, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "71": "Ink and watercolour drawing of a grid of thin lines broken and tilted, as if seen through water. The whole disc is bright and airy: one pale current of diluted ink flowing across the disc, the rest almost bare paper. Over it, thin streamers pulled long and fanning outward, finer and finer until they vanish, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "72": "Ink and watercolour drawing of one arch of fine lines, the space inside it brighter than everything. The whole disc is bright and airy: a pale wash with faint crystalline granulation, bright and cool. Over it, thousands of long thin ink lines, fine as spider silk, drawn slowly with a pen, tapering and fading away, dark grey and smoky, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "73": "Ink and watercolour drawing of thin triangular shards of lines scattering from one corner. The whole disc is bright and airy: a fine pale rain of diluted ink falling softly across the bright disc. Over it, thin arcs of fine sprayed droplets, nervous and wandering, like lines of mist flicked from a long wand, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "74": "Ink and watercolour drawing of one narrow tower of stacked lines leaning, dissolving at the top. The whole disc is bright and airy: a pale wet wash, lightest at the centre, a little more pigment gathered near the soft edge. Over it, one continuous looping line, drawn slowly with a long stick, overlapping itself, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "75": "Ink and watercolour drawing of a few small rounded shapes of pale wash hovering, lines beneath them. The whole disc is bright and airy: transparent veils of pale grey crossing the disc like wind, the paper glowing through them. Over it, coarse quick strokes of a bundled brush, dissolving into mist, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "76": "Ink and watercolour drawing of a wall of horizontal lines bulging softly, light through the cracks. The whole disc is bright and airy: a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere. Over it, thousands of fine threads hanging perfectly straight and parallel, in long even curtains, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "77": "Ink and watercolour drawing of one continuous line drawing a skyline of boxes and then unravelling. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, thin streamers pulled long and fanning outward, finer and finer until they vanish, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "78": "Ink and watercolour drawing of several thin rectangles overlapping, each a little paler than the last. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, thousands of long thin ink lines, fine as spider silk, drawn slowly with a pen, tapering and fading away, dark grey and smoky, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "79": "Ink and watercolour drawing of a soft grey wash split by one bright crack of bare paper, fine lines along it. The whole disc is bright and airy: one pale current of diluted ink flowing across the disc, the rest almost bare paper. Over it, thin arcs of fine sprayed droplets, nervous and wandering, like lines of mist flicked from a long wand, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "80": "Ink and watercolour drawing of broken lines of a structure lying low, pale wash and light above. The whole disc is bright and airy: a pale wash with faint crystalline granulation, bright and cool. Over it, one continuous looping line, drawn slowly with a long stick, overlapping itself, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "81": "Ink and watercolour drawing of fans of fine ribs rising from the rim and opening into bright paper above. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, one thick and thin lash of black ink, with a few fine threads following it, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "82": "Ink and watercolour drawing of a bud of lines opening outward, each petal a bundle of thin strokes. The whole disc is bright and airy: one pale current of diluted ink flowing across the disc, the rest almost bare paper. Over it, hundreds of fine straight pencil lines radiating from hidden points and crossing into a soft moire, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "83": "Ink and watercolour drawing of a fan of fine lines spreading from one point low in the disc. The whole disc is bright and airy: a pale wash with faint crystalline granulation, bright and cool. Over it, long threads joining tiny bright knots, stretched around empty voids, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "84": "Ink and watercolour drawing of concentric ripples of thin lines widening from one small bright point. The whole disc is bright and airy: a fine pale rain of diluted ink falling softly across the bright disc. Over it, long filaments of smoke, fine and dark, rising slowly and bending in the air, each one separate from the others, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "85": "Ink and watercolour drawing of a loose ring of filaments floating around an empty bright centre. The whole disc is bright and airy: a pale wet wash, lightest at the centre, a little more pigment gathered near the soft edge. Over it, long trembling lines like a seismograph, thousands of tiny tremors, thin and vibrating, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "86": "Ink and watercolour drawing of one wide arc of fine lines unfolding slowly across the disc. The whole disc is bright and airy: transparent veils of pale grey crossing the disc like wind, the paper glowing through them. Over it, fine parallel lines of moving water, following the flow and bending around the eddy, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "87": "Ink and watercolour drawing of thin lines radiating from a bright centre, fading before the edge. The whole disc is bright and airy: a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere. Over it, one thick and thin lash of black ink, with a few fine threads following it, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "88": "Ink and watercolour drawing of four fans of ribs meeting at one pale point, seen from directly below, luminous. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, hundreds of fine straight pencil lines radiating from hidden points and crossing into a soft moire, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "89": "Ink and watercolour drawing of soft folds of pale wash loosening, fine lines combed along them. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, long threads joining tiny bright knots, stretched around empty voids, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "90": "Ink and watercolour drawing of one small dense knot of lines sending out long thin shoots. The whole disc is bright and airy: one pale current of diluted ink flowing across the disc, the rest almost bare paper. Over it, long filaments of smoke, fine and dark, rising slowly and bending in the air, each one separate from the others, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "91": "Ink and watercolour drawing of a pointed arch of fine lines, bare paper glowing inside it. The whole disc is bright and airy: a pale wash with faint crystalline granulation, bright and cool. Over it, long trembling lines like a seismograph, thousands of tiny tremors, thin and vibrating, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "92": "Ink and watercolour drawing of a soft pale disc of reserve with fine filaments streaming out from it. The whole disc is bright and airy: a fine pale rain of diluted ink falling softly across the bright disc. Over it, fine parallel lines of moving water, following the flow and bending around the eddy, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "93": "Ink and watercolour drawing of two soft masses of pale wash with a bright narrow gap of paper between them. The whole disc is bright and airy: a pale wet wash, lightest at the centre, a little more pigment gathered near the soft edge. Over it, one thick and thin lash of black ink, with a few fine threads following it, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "94": "Ink and watercolour drawing of five bundles of fine lines spreading from one point like fingers, abstract. The whole disc is bright and airy: transparent veils of pale grey crossing the disc like wind, the paper glowing through them. Over it, hundreds of fine straight pencil lines radiating from hidden points and crossing into a soft moire, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "95": "Ink and watercolour drawing of a tight spiral of lines beginning to unwind at its tip. The whole disc is bright and airy: a wet-in-wet pale wash with natural granulation, like ink diluted in clear water, no dark mass anywhere. Over it, long threads joining tiny bright knots, stretched around empty voids, weightless, drifting outward from the centre. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "96": "Ink and watercolour drawing of long fine threads joining small knots around large empty spaces. The whole disc is bright and airy: a pale wash scattered with a fine dust of tiny specks of pigment, light everywhere. Over it, long filaments of smoke, fine and dark, rising slowly and bending in the air, each one separate from the others, weightless, drifting barely, almost still. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "97": "Ink and watercolour drawing of two rows of fine vertical lines leaning inward to a bright peak. The whole disc is bright and airy: bare glowing paper with only a few pale clouds of wash near the edge. Over it, long trembling lines like a seismograph, thousands of tiny tremors, thin and vibrating, weightless, drifting upward. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "98": "Ink and watercolour drawing of one soft horizontal band of wash with fine lines rising from it. The whole disc is bright and airy: one pale current of diluted ink flowing across the disc, the rest almost bare paper. Over it, fine parallel lines of moving water, following the flow and bending around the eddy, weightless, drifting sideways in a gust. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "99": "Ink and watercolour drawing of a small pale glowing shape of reserve with thin lines hanging below it. The whole disc is bright and airy: a pale wash with faint crystalline granulation, bright and cool. Over it, one thick and thin lash of black ink, with a few fine threads following it, weightless, drifting in a slow spiral. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass.",
+  "100": "Ink and watercolour drawing of a wash that starts bare and gathers pigment softly, filaments appearing within it. The whole disc is bright and airy: a fine pale rain of diluted ink falling softly across the bright disc. Over it, hundreds of fine straight pencil lines radiating from hidden points and crossing into a soft moire, weightless, drifting down like slow snow. Joyful, light, alive, silent. Abstract, never literal. Everything is held inside one large round watercolour disc, centred in the image and filling most of it, with a soft irregular edge, on pure white paper. Flat, no sphere, no 3D. Neutral grey only, the paper itself is the light. Matte, fine dry grain. No text, no frame, no figures, no faces, no hair, no fur, no feathers, no animals, no buildings, no trees, no dark rim, no heavy black mass."
+ }
+}

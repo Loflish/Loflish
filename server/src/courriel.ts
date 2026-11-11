@@ -17,7 +17,10 @@ function lettre(paragraphes: string[], code?: string): string {
   return `<!doctype html><html lang="fr"><body style="margin:0;background:#ece9e2;padding:32px 16px">
 <div style="max-width:480px;margin:0 auto;background:#f6f4ef;border:1px solid #ddd8ce;border-radius:4px;padding:32px 28px;font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1.55;color:#2f2c33">
 <p style="margin:0 0 24px;font-size:15px;letter-spacing:.04em;color:#712a39">Nos Mots Mémoriaux</p>
-${paragraphes.slice(0, code ? 1 : paragraphes.length).map(p).join('')}
+${paragraphes
+  .slice(0, code ? 1 : paragraphes.length)
+  .map(p)
+  .join('')}
 ${code ? `<p style="margin:8px 0 24px;font-size:34px;letter-spacing:.32em;color:#2f2c33">${echapper(code)}</p>${paragraphes.slice(1).map(p).join('')}` : ''}
 </div></body></html>`;
 }
@@ -42,7 +45,14 @@ export async function envoyerCodeConnexion(email: string, code: string): Promise
     email,
     `Ton code : ${code}`,
     lignes.join('\n\n'),
-    lettre(['Voici ton code pour entrer dans le musée :', 'Il est valable 15 minutes et ne sert qu’une fois.', 'Si tu n’as rien demandé, tu peux ignorer ce message.'], code),
+    lettre(
+      [
+        'Voici ton code pour entrer dans le musée :',
+        'Il est valable 15 minutes et ne sert qu’une fois.',
+        'Si tu n’as rien demandé, tu peux ignorer ce message.',
+      ],
+      code,
+    ),
     `code de connexion pour ${email} : ${code}`,
   );
 }
@@ -76,11 +86,12 @@ const MOTIFS: Record<string, string> = {
   haine: 'Haine, harcèlement ou violence',
   autre: 'Autre chose',
   intime: 'Vie privée exposée',
+  vie_privee: 'Opposition d’une personne concernée (vie privée)',
   usurpation: 'Usurpation',
 };
 
 /** Le fondateur reçoit chaque signalement, aussitôt (adresses de ADMIN_EMAILS). */
-export async function envoyerSignalement(s: { motif: string; message?: string; traceId: string; traceNom: string }): Promise<void> {
+export async function envoyerSignalement(s: { motif: string; message?: string; traceId: string; traceNom: string; email?: string }): Promise<void> {
   if (!config.admins.length) return;
   const motif = MOTIFS[s.motif] ?? s.motif;
   const lien = `${config.siteUrl}/#/trace/${s.traceId}`;
@@ -89,9 +100,60 @@ export async function envoyerSignalement(s: { motif: string; message?: string; t
     `Un signalement vient d’arriver : ${motif}.`,
     `Trace : ${s.traceNom} (${lien})`,
     s.message ? `Message : ${s.message}` : 'Pas de message.',
+    s.email ? `Adresse pour répondre : ${s.email} (réponse attendue sous un mois)` : 'Pas d’adresse de réponse.',
     `Pour décider (retirer la bulle, bannir, ou classer) : ${admin}`,
   ];
   const sujet = `${s.motif === 'danger' ? 'Urgent, ' : ''}signalement : ${motif}`;
   for (const email of config.admins)
     await envoyer(email, sujet, lignes.join('\n\n'), lettre(lignes), `signalement (${s.motif}) sur ${s.traceId} pour ${email}`).catch(() => undefined);
+}
+
+export async function envoyerDemandeDeces(d: { email: string; nomDefunt: string; lien: string; demande: string; message?: string }): Promise<void> {
+  if (!config.admins.length) return;
+  const lignes = [
+    `Une demande liée à un décès vient d’arriver (${d.demande}).`,
+    `Personne décédée : ${d.nomDefunt}. Demandeur : ${d.email} (${d.lien}).`,
+    d.message ? `Message : ${d.message}` : 'Pas de message.',
+    'À traiter sous un mois (loi Informatique et Libertés, article 85) : demander l’acte de décès et une pièce d’identité, vérifier les directives « Après moi » de la personne, répondre par écrit.',
+  ];
+  for (const email of config.admins)
+    await envoyer(email, 'Demande liée à un décès', lignes.join('\n\n'), lettre(lignes), `demande de décès (${d.nomDefunt}) pour ${email}`).catch(
+      () => undefined,
+    );
+}
+
+/** L'auteur dont un fragment ou un fichier est retiré reçoit aussi les motifs et la voie de réclamation (DSA, article 17). */
+export async function envoyerRetraitPartie(r: {
+  email: string;
+  traceId: string;
+  traceNom: string;
+  partie: 'fragment' | 'fichier';
+  raison: string;
+}): Promise<void> {
+  const lignes = [
+    `Un ${r.partie} de ta trace « ${r.traceNom} » a été retiré du musée.`,
+    `Motif : ${r.raison}`,
+    'Le reste de ta trace est inchangé. Si tu penses que ce retrait est une erreur, réponds à ce message en expliquant pourquoi : je relirai, et je te répondrai sous un mois. Tu peux aussi saisir un médiateur ou un tribunal.',
+    `Ta trace : ${config.siteUrl}/#/trace/${r.traceId}`,
+  ];
+  await envoyer(
+    r.email,
+    `Un ${r.partie} de ta trace a été retiré`,
+    lignes.join('\n\n'),
+    lettre(lignes),
+    `retrait d’un ${r.partie} de ${r.traceId} notifié à ${r.email}`,
+  ).catch(() => undefined);
+}
+
+/** L'auteur d'une trace retirée reçoit les motifs et la voie de réclamation (règlement sur les services numériques, article 17). */
+export async function envoyerRetrait(r: { email: string; traceId: string; traceNom: string; raison: string }): Promise<void> {
+  const lignes = [
+    `Ta trace « ${r.traceNom} » a été retirée du musée.`,
+    `Motif : ${r.raison}`,
+    'Elle n’est pas effacée : tu la retrouves dans ton compte, et tu peux la modifier. Si tu penses que ce retrait est une erreur, réponds à ce message en expliquant pourquoi : je relirai, et je te répondrai sous un mois. Tu peux aussi saisir un médiateur ou un tribunal.',
+    `Ton compte : ${config.siteUrl}/#/compte`,
+  ];
+  await envoyer(r.email, 'Ta trace a été retirée du musée', lignes.join('\n\n'), lettre(lignes), `retrait de ${r.traceId} notifié à ${r.email}`).catch(
+    () => undefined,
+  );
 }

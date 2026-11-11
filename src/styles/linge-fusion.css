@@ -1,0 +1,542 @@
+/*
+ * La fusion (11 novembre 2026) : tout ce qui est né sur le PC (branche ameliorations-fable-2026-11-03)
+ * et qui n'avait pas encore d'habit dans « Le linge écrit ». Chargée après finitions.css : elle a le dernier mot
+ * sur l'aspect, jamais sur le comportement. Même vocabulaire que le reste : toile, fil, lavis.
+ */
+
+/* ——— médias : des tirages aux vraies proportions, épinglés sur la toile par deux points de fil
+   (Tom, 6 novembre : « de gros carrés énormes » ; plus de tuiles 4:3 identiques) */
+
+.media {
+  display: inline-flex;
+  flex-direction: column;
+  max-width: 100%;
+  --h: 118px;
+}
+.media-s {
+  --h: 54px;
+}
+.media-m {
+  --h: 118px;
+}
+.media-l {
+  --h: 152px;
+}
+.media-surface,
+.media-s .media-surface,
+.media-m .media-surface,
+.media-l .media-surface {
+  display: inline-grid;
+  height: var(--h);
+  width: auto;
+  aspect-ratio: auto;
+  min-width: calc(var(--h) * 0.78);
+  max-width: min(78vw, calc(var(--h) * 2));
+  background: var(--tissu);
+  background-image: var(--lin-tissu, none);
+  background-size: 620px 620px;
+  background-blend-mode: soft-light;
+  box-shadow:
+    0 0 0 1px rgba(100, 48, 61, 0.14),
+    0 1px 2px rgba(47, 44, 51, 0.1);
+  overflow: visible;
+}
+/* une photo ou une vidéo : la boîte prend les proportions de l'image (--ratio, posé au chargement) */
+.media-image .media-surface,
+.media-video .media-surface {
+  padding: 4px;
+  width: calc(var(--h) * var(--ratio, 1.333));
+}
+.media-s.media-image .media-surface,
+.media-s.media-video .media-surface {
+  padding: 2px;
+}
+.media-audio .media-surface {
+  width: calc(var(--h) * 1.3);
+}
+.media-img,
+.media-s .media-img {
+  position: static;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 1px;
+}
+/* tout ce que porte la vignette (image, bouton de lecture, onde, pictogramme) partage la même case */
+.media-surface {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+.media-surface > * {
+  grid-area: 1 / 1;
+}
+.media-surface > .media-play,
+.media-surface > .icon {
+  place-self: center;
+}
+.media-surface > .waveform {
+  place-self: center;
+  min-width: 0;
+  max-width: 78%;
+  overflow: hidden;
+}
+/* un média sans fichier (aperçu, fichier introuvable) : un lavis de sa teinte, jamais une case vide */
+.media-surface:not(:has(.media-img)) {
+  background-image:
+    radial-gradient(120% 100% at 25% 15%, color-mix(in oklab, var(--teinte) 62%, transparent), color-mix(in oklab, var(--teinte) 30%, transparent) 70%),
+    var(--lin-tissu, none);
+  background-size:
+    100% 100%,
+    620px 620px;
+  background-blend-mode: normal;
+}
+/* les deux points de fil qui tiennent le tirage : en haut, à cheval sur le bord */
+.media-m .media-surface::before,
+.media-l .media-surface::before,
+.media-m .media-surface::after,
+.media-l .media-surface::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  width: 9px;
+  height: 7px;
+  background:
+    linear-gradient(var(--fil-rouge), var(--fil-rouge)) 0 0 / 2px 100% no-repeat,
+    linear-gradient(var(--fil-rouge), var(--fil-rouge)) 100% 0 / 2px 100% no-repeat;
+  border-radius: 1px;
+  opacity: 0.85;
+  pointer-events: none;
+}
+.media-m .media-surface::before,
+.media-l .media-surface::before {
+  left: 12%;
+  transform: rotate(-9deg);
+}
+.media-m .media-surface::after,
+.media-l .media-surface::after {
+  right: 12%;
+  transform: rotate(7deg);
+}
+.media figcaption {
+  /* le cartel se plie à la largeur de l'image : il ne l'élargit jamais */
+  width: 0;
+  min-width: 100%;
+}
+.media-kind,
+.media-hote {
+  color: var(--encre-3);
+}
+.media-l .media-ouvrir {
+  width: auto;
+  max-width: 100%;
+}
+.medias-rang,
+.element-medias,
+.salle-medias,
+.salle-medias-tout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.salle-medias,
+.salle-medias-tout {
+  gap: 1.6rem 1.2rem;
+}
+@media (max-width: 520px) {
+  .media-l {
+    --h: 96px;
+  }
+}
+/* l'avertissement avant une vidéo hébergée ailleurs : un morceau de tissu, pas un cadre gris */
+.media-vue-tiers {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  padding: 1.4rem 1.5rem;
+  max-width: 34rem;
+}
+.choix-media-droits {
+  flex-basis: 100%;
+  margin-top: 0.4rem;
+}
+
+/* ——— une page qui se charge : une tache d'aquarelle qui respire, puis des lignes de fil en attente */
+
+.chargement-bulle {
+  width: 34px;
+  height: 34px;
+  margin: 0 auto 0.9rem;
+  background: radial-gradient(circle at 42% 38%, var(--lavis-fort, rgba(136, 146, 201, 0.5)), var(--lavis, rgba(136, 146, 201, 0.3)) 68%, transparent 72%);
+  -webkit-mask: var(--tache-lavis, none) center / contain no-repeat;
+  mask: var(--tache-lavis, none) center / contain no-repeat;
+  animation: linge-respire 2.8s ease-in-out infinite;
+}
+@keyframes linge-respire {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+.squelette {
+  display: grid;
+  gap: 1.1rem;
+  width: min(36rem, 100%);
+}
+.squelette span {
+  display: block;
+  height: 8px;
+  background: var(--couture-pale) left center / 236px 8px repeat-x;
+  animation: linge-attente 2.2s ease-in-out infinite;
+}
+.squelette span:nth-child(1) {
+  width: 46%;
+  background-image: var(--couture);
+}
+.squelette span:nth-child(3) {
+  width: 82%;
+}
+.squelette span:nth-child(4) {
+  width: 64%;
+}
+@keyframes linge-attente {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* ——— le mode lecture d'une trace : une colonne, les mots seuls, plus grands */
+
+.trace.lecture .questions-grid {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 38rem;
+  margin-inline: auto;
+}
+.trace.lecture .question-reponse p,
+.trace.lecture .question-200 .question-reponse p {
+  font-size: 1.3rem;
+  line-height: 1.7;
+  max-width: none;
+}
+.trace.lecture .questions .bloc-titre,
+.trace.lecture .fragments,
+.trace.lecture .trace-bas,
+.trace.lecture .trace-meta {
+  display: none;
+}
+.trace.lecture .trace-head {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  text-align: center;
+  padding-bottom: 1rem;
+}
+.trace.lecture .trace-bulle {
+  align-items: center;
+}
+.trace.lecture .provenance-corps {
+  margin-inline: auto;
+}
+.lecture-fin {
+  text-align: center;
+  padding: 1.5rem 0 2.5rem;
+}
+
+/* ——— la barre d'une trace au téléphone : une seule ligne qui glisse, au lieu de trois avant le nom */
+
+.trace-nav-right .lien-discret {
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .trace-nav-right {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    column-gap: 0.9rem;
+    padding-bottom: 0.2rem;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+  }
+  .trace-nav-right::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ——— la constellation : l'aide est une étiquette de toile ; la recherche souligne au fil */
+
+.explorer-hint {
+  background: rgba(243, 238, 228, 0.86);
+  box-shadow: 0 0 0 1px rgba(100, 48, 61, 0.12);
+}
+.result-extrait mark {
+  background: none;
+  color: var(--encre);
+  box-shadow: inset 0 -0.42em 0 var(--lavis, rgba(136, 146, 201, 0.3));
+}
+.search-total {
+  color: var(--encre-3);
+}
+.filter-annees .chips {
+  gap: 0.3rem;
+}
+.entree-passer-note {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: var(--t-xs);
+  color: var(--encre-3);
+}
+.perdre-aide {
+  color: var(--encre-2);
+}
+
+/* ——— créer : reprendre un brouillon (un morceau de tissu), et ce qui manque pour continuer */
+
+.brouillon-reprise {
+  border-left: 0;
+  background: none;
+  padding: 1.1rem 1.3rem;
+}
+.etape-actions {
+  flex-wrap: wrap;
+}
+.etape-actions .etape-manque {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: right;
+  font-size: var(--t-xs);
+  color: var(--encre-2);
+}
+
+/* ——— « Après moi » (article 85) et la demande liée à un décès : une option par ligne, des champs soulignés au fil */
+
+.apres-moi-choix {
+  border: 0;
+  padding: 0;
+  margin: 0.6rem 0 1.1rem;
+  display: grid;
+  gap: 0.2rem;
+}
+.apres-moi-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: start;
+  min-height: var(--cible);
+  padding: 0.55rem 0;
+  cursor: pointer;
+}
+.apres-moi-option + .apres-moi-option {
+  background: var(--couture-pale) left top / 236px 8px repeat-x;
+}
+.apres-moi-option input {
+  margin-top: 0.3rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--fil-rouge);
+}
+.apres-moi-option strong {
+  display: block;
+  font-weight: 600;
+}
+/* le bloc suit les réglages du compte : même respiration, même couture que les autres blocs */
+:not(.compte-bloc) + .compte-bloc[aria-labelledby='h-apres-moi'] {
+  margin-top: clamp(2.4rem, 5vw, 3.4rem);
+  padding-top: 2.2rem;
+  background: var(--couture-pale) left top / 236px 8px repeat-x;
+}
+.compte-connecte > .intertitre {
+  margin-top: clamp(2.4rem, 5vw, 3.4rem);
+}
+/* « Écris EFFACER » : un champ souligné au fil, comme les autres */
+.compte-effacer > input {
+  font: inherit;
+  color: inherit;
+  width: min(100%, 14rem);
+  min-height: var(--cible);
+  margin-right: 1rem;
+  padding: 0.5rem 0.1rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--couture-pale) left bottom / 236px 8px repeat-x;
+  letter-spacing: 0.08em;
+}
+.compte-effacer > input:focus-visible {
+  background-image: var(--couture);
+  outline: 2px solid var(--encre);
+  outline-offset: 3px;
+}
+.apres-moi-tiers,
+.deces-form {
+  display: grid;
+  gap: 0.7rem;
+  max-width: 34rem;
+}
+.apres-moi-tiers input,
+.apres-moi-tiers textarea,
+.deces-form input,
+.deces-form textarea,
+.deces-form select {
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  min-height: var(--cible);
+  padding: 0.5rem 0.1rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--couture-pale) left bottom / 236px 8px repeat-x;
+}
+.apres-moi-tiers input:focus-visible,
+.apres-moi-tiers textarea:focus-visible,
+.deces-form input:focus-visible,
+.deces-form textarea:focus-visible,
+.deces-form select:focus-visible {
+  background-image: var(--couture);
+  outline: 2px solid var(--encre);
+  outline-offset: 3px;
+}
+.apres-moi-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.2rem;
+  align-items: center;
+  margin-top: 1.1rem;
+}
+.deces {
+  margin-top: 2.4rem;
+}
+
+/* ——— les ateliers du fondateur (hors site public) : comparer, trier, dédoublonner les bulles */
+
+.comparer-trios {
+  grid-template-columns: repeat(var(--colonnes), auto);
+  justify-content: center;
+  max-width: none;
+}
+.comparer-trios li:nth-child(4n) {
+  width: calc(var(--taille) + 1.25rem);
+  padding-right: 1.25rem;
+}
+.tri-compte {
+  margin-top: 0.5rem;
+  font-family: var(--serif);
+  font-size: var(--t-l);
+}
+.tri-planches {
+  margin-top: 0.25rem;
+  color: var(--encre-2);
+  font-size: var(--t-s);
+}
+.tri-pile {
+  position: relative;
+  width: min(100%, 420px);
+  height: calc(var(--taille) + 190px);
+  margin: 1.5rem auto 0;
+}
+.tri-carte {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.6rem;
+  padding: 1.5rem;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition: transform 240ms var(--doux);
+}
+.tri-carte:active {
+  cursor: grabbing;
+}
+.tri-dessous {
+  transform: translateY(10px) scale(0.96);
+  pointer-events: none;
+}
+.tri-cachee {
+  visibility: hidden;
+}
+/* le tampon « garde » / « retire » : une étiquette cousue, penchée */
+.tri-tampon {
+  position: absolute;
+  top: 1.2rem;
+  z-index: 1;
+  padding: 0.35em 0.8em;
+  background: var(--tissu);
+  box-shadow: 0 0 0 2px var(--fil-rouge);
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fil-rouge);
+  opacity: 0;
+}
+.tri-tampon-garde {
+  left: 1.2rem;
+  transform: rotate(-8deg);
+}
+.tri-tampon-retire {
+  right: 1.2rem;
+  transform: rotate(8deg);
+}
+.tri-nom {
+  color: var(--encre-2);
+  font-size: var(--t-s);
+  text-align: center;
+}
+.tri-boutons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.doublons-groupe {
+  margin-top: 2rem;
+  padding-top: 1.4rem;
+  background: var(--couture-pale) left top / 236px 8px repeat-x;
+}
+.doublons-titre {
+  font-family: var(--serif);
+  font-size: var(--t-m);
+  font-weight: 400;
+  color: var(--encre-2);
+  margin: 0 0 0.75rem;
+}
+
+/* ——— introuvable : la phrase au centre */
+
+.introuvable .page-corps {
+  text-align: center;
+}
+
+/* ——— mouvement réduit */
+
+@media (prefers-reduced-motion: reduce) {
+  .chargement-bulle,
+  .squelette span {
+    animation: none;
+  }
+}
+
+/* ——— la coupure des mots au trait d'union ne sert qu'aux écrans étroits : au-delà, les lignes restent entières
+   (Tom, 11 novembre, devant Compte, Juridique et Projet : « j'adore, conserve ») */
+
+@media (min-width: 521px) {
+  .texte-courant p,
+  .projet-paragraphe,
+  .question-reponse p,
+  .element-texte,
+  .citation,
+  .juridique-liste p,
+  .etape-texte {
+    -webkit-hyphens: manual;
+    hyphens: manual;
+  }
+}

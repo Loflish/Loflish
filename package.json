@@ -12,6 +12,12 @@
     "typecheck": "tsc -b",
     "serveur": "npm --prefix server run dev",
     "serveur:test": "npm --prefix server test",
+    "lint": "eslint .",
+    "format": "prettier --write src server/src server/test scripts",
+    "format:check": "prettier --check src server/src server/test scripts",
+    "test:site": "vitest run",
+    "test": "vitest run && npm --prefix server test",
+    "verifier": "node scripts/verifier.mjs",
     "controles": "node design/linge-ecrit/controles/tout.cjs",
     "controles:textes:ecrire": "node design/linge-ecrit/controles/textes.cjs --ecrire"
   },
@@ -27,12 +33,23 @@
     "react-router-dom": "^6.30.6"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",
+    "axe-core": "^4.14.0",
+    "eslint": "^10.14.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "lighthouse": "^13.6.0",
+    "prettier": "^3.9.10",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.1",
     "vite": "^5.4.21",
-    "playwright": "1.63.0",
-    "axe-core": "^4.10.0"
+    "vitest": "^3.2.7",
+    "playwright": "1.63.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

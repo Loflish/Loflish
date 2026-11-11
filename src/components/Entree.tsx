@@ -146,7 +146,7 @@ export function Entree({ eau, pret }: { eau: React.MutableRefObject<FondEau | nu
       ouverte.current = null;
     });
     apres(FIN_HOOK, finir);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [sorte, finir, engine]);
 
   /** le visiteur passe : les gouttes finissent en accéléré, puis on entre directement */
@@ -187,7 +187,7 @@ export function Entree({ eau, pret }: { eau: React.MutableRefObject<FondEau | nu
       setPhrase((o) => (i >= 0 ? (o?.i === i && o.visible ? o : { i, visible: true }) : o && PHRASES[o.i]!.apres === 'gouttes' ? { i: o.i, visible: false } : o));
     }, 100);
     minuteurs.current.push(suivi);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [sorte, pret, eau, peintureFinie]);
 
   // ce qui attend se lit sur la page elle-même (museum.css) : l'interface, les bulles, et le fondu lent
@@ -226,7 +226,7 @@ export function Entree({ eau, pret }: { eau: React.MutableRefObject<FondEau | nu
           presser();
         }}
       >
-        Entrer dans le musée
+        Entrer dans le musée <span className="entree-passer-note">(ou clique n’importe où)</span>
       </button>
     </div>,
     document.body,

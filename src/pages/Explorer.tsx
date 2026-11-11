@@ -18,6 +18,57 @@ function searchable(t: Trace): string {
   return ' ' + norm(parts.join(' ')).replace(/[^a-z0-9]+/g, ' ');
 }
 
+/** L'année de création, lue dans la date en toutes lettres (« 12 juin 2024 »). */
+const anneeDe = (t: Trace) => /(\d{4})/.exec(t.creeLe)?.[1] ?? '';
+
+/** Chaque caractère ramené à sa base (sans accent, en minuscule), un pour un : les positions restent celles du texte d'origine. */
+const base = (chars: string[]) => chars.map((ch) => ch.normalize('NFD')[0]!.toLowerCase()).join('');
+
+/** Le passage où le mot cherché apparaît (le nom mis à part) : quelques mots avant, le mot, quelques mots après. */
+function extrait(t: Trace, mot: string): { avant: string; mot: string; apres: string } | null {
+  if (!mot) return null;
+  const textes = [...(t.questions ?? []), t.memoire?.aperçu ?? '', t.pays ?? ''];
+  for (const list of Object.values(t.rubriques)) for (const e of list ?? []) textes.push(e.titre ?? '', e.texte, e.lieu ?? '');
+  const cible = base([...mot]);
+  for (const texte of textes) {
+    if (!texte) continue;
+    const chars = [...texte];
+    const i = base(chars).indexOf(cible);
+    if (i < 0) continue;
+    const debut = Math.max(0, i - 36);
+    const fin = Math.min(chars.length, i + cible.length + 60);
+    return {
+      avant: (debut > 0 ? '…' : '') + chars.slice(debut, i).join(''),
+      mot: chars.slice(i, i + cible.length).join(''),
+      apres: chars.slice(i + cible.length, fin).join('') + (fin < chars.length ? '…' : ''),
+    };
+  }
+  return null;
+}
+
+/**
+ * Lance un minuteur une fois l'écran d'entrée terminé (classe `entree-en-cours` sur <html>, posée par Entree) :
+ * sinon les aides de la constellation expirent pendant l'entrée, et le visiteur arrive sans consigne.
+ */
+function apresEntree(fn: () => void, delai: number): () => void {
+  const html = document.documentElement;
+  let t = 0;
+  const lancer = () => {
+    t = window.setTimeout(fn, delai);
+  };
+  const obs = new MutationObserver(() => {
+    if (html.classList.contains('entree-en-cours')) return;
+    obs.disconnect();
+    lancer();
+  });
+  if (html.classList.contains('entree-en-cours')) obs.observe(html, { attributes: true, attributeFilter: ['class'] });
+  else lancer();
+  return () => {
+    obs.disconnect();
+    window.clearTimeout(t);
+  };
+}
+
 export function Explorer() {
   useMuseumMode('explore');
   const { engine, enPause, setEnPause } = useMuseum();
@@ -36,6 +87,8 @@ export function Explorer() {
   const maTrace = useMesTraces().find((t) => traces.includes(t));
   const [hint, setHint] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
+  // le visiteur s'est promené ou approché : « Revenir au centre » apparaît
+  const [deplace, setDeplace] = useState(() => !!engine.current?.isMoved);
   // une seule phrase, à la toute première visite, puis elle s'efface
   const [intro, setIntro] = useState(() => {
     try {
@@ -51,16 +104,16 @@ export function Explorer() {
     } catch {
       /* ignore */
     }
-    const t = window.setTimeout(() => setIntro(false), 9400);
-    return () => window.clearTimeout(t);
+    return apresEntree(() => setIntro(false), 9400);
   }, [intro]);
 
   // le fond autour du logo brodé reste calme et clair
   const logoRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    const c = engine.current;
     const place = () => {
       const r = logoRef.current?.getBoundingClientRect();
-      if (r) engine.current?.setCalmZones([{ x: r.left - 10, y: r.top - 10, w: r.width + 20, h: r.height + 20 }]);
+      if (r) c?.setCalmZones([{ x: r.left - 10, y: r.top - 10, w: r.width + 20, h: r.height + 20 }]);
     };
     place();
     const t = window.setTimeout(place, 400);
@@ -68,7 +121,7 @@ export function Explorer() {
     return () => {
       window.clearTimeout(t);
       window.removeEventListener('resize', place);
-      engine.current?.setCalmZones([]);
+      c?.setCalmZones([]);
     };
   }, [engine]);
 
@@ -76,7 +129,10 @@ export function Explorer() {
     const c = engine.current;
     if (!c) return;
     const prev = c.events.onMoved;
-    c.events.onMoved = () => setHint(false);
+    c.events.onMoved = () => {
+      setHint(false);
+      setDeplace(true);
+    };
     return () => {
       c.events.onMoved = prev;
     };
@@ -109,14 +165,41 @@ export function Explorer() {
     return () => window.clearTimeout(t);
   }, [params.bulle, engine, navigate]);
 
+  useEffect(() => apresEntree(() => setHint(false), 9000), []);
+
+  // au clavier : « / » ou Ctrl+K ouvrent la recherche, Échap la ferme
   useEffect(() => {
-    const t = window.setTimeout(() => setHint(false), 9000);
-    return () => window.clearTimeout(t);
-  }, []);
+    const onKey = (e: KeyboardEvent) => {
+      const dansUnChamp = e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]');
+      if (e.key === 'Escape' && searchOpen) {
+        // la recherche et la fiche ouverte se ferment ensemble : un seul Échap pour revenir à la constellation nue
+        engine.current?.select(null);
+        return setSearchOpen(false);
+      }
+      if (dansUnChamp) return;
+      if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [searchOpen]);
+
+  const auHasard = () => {
+    const c = engine.current;
+    const id = c?.auHasard(c.selectedId);
+    if (id) c!.focusOn(id);
+  };
+  const recentrer = () => {
+    engine.current?.select(null);
+    engine.current?.resetView();
+    setDeplace(false);
+  };
 
   return (
     <div className="explorer" role="main">
-      <h1 className="sr-only">Nos Mots Mémoriaux, {edition ? `archives, édition ${edition.titre}` : 'la constellation des présences'}</h1>
+      <h1 className="sr-only">Nos Mots Mémoriaux, {edition ? `archives, édition ${edition.titre}` : 'la constellation des traces'}</h1>
       <div className="explorer-logo" ref={logoRef}>
         <Logo />
         {edition && (
@@ -124,21 +207,31 @@ export function Explorer() {
             <Link to="/archives" className="lien-discret petit">
               <Icon name="archive" size={14} /> Archives, édition {edition.titre}
             </Link>
-            <span>{traces.length.toLocaleString('fr-FR')} présences</span>
+            <span>{traces.length.toLocaleString('fr-FR')} bulles</span>
           </p>
         )}
       </div>
 
       <div className="explorer-actions">
-        <button className="lien-discret" onClick={() => setSearchOpen(true)} aria-expanded={searchOpen}>
+        <button className="lien-discret" onClick={() => setSearchOpen(true)} aria-expanded={searchOpen} aria-keyshortcuts="/ Control+K">
           <Icon name="recherche" size={18} /> <span className="action-nom">Rechercher</span>
         </button>
         <button className="lien-discret" onClick={() => setEnPause(!enPause)}>
           <Icon name={enPause ? 'play' : 'pause'} size={18} /> <span className="action-nom">{enPause ? 'Reprendre le mouvement' : 'Mettre en pause'}</span>
         </button>
+        {traces.length > 1 && (
+          <button className="lien-discret" onClick={auHasard}>
+            <Icon name="onde" size={18} /> <span className="action-nom">Une bulle au hasard</span>
+          </button>
+        )}
         {maTrace && (
           <button className="lien-discret" onClick={() => engine.current?.focusOn(maTrace.id)}>
             <Icon name="lieu" size={18} /> <span className="action-nom">Retrouver ma bulle</span>
+          </button>
+        )}
+        {deplace && (
+          <button className="lien-discret" onClick={recentrer} aria-keyshortcuts="Home">
+            <Icon name="retour" size={18} /> <span className="action-nom">Revenir au centre</span>
           </button>
         )}
       </div>
@@ -156,7 +249,7 @@ export function Explorer() {
 
       {traces.length === 0 && (
         <p className="explorer-vide">
-          {edition ? 'Cette édition ne garde encore aucune présence.' : 'Le musée attend sa première présence.'}{' '}
+          {edition ? 'Cette édition ne garde encore aucune bulle.' : 'Le musée attend sa première bulle.'}{' '}
           {!edition && <Link to="/creer">Déposer la tienne</Link>}
         </p>
       )}
@@ -173,12 +266,23 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
   const [type, setType] = useState<'tous' | Trace['type']>('tous');
   const [rubs, setRubs] = useState<RubriqueId[]>([]);
   const [pays, setPays] = useState('');
+  // la période de création (cahier §12.4) : l'année où la trace a rejoint le musée
+  const [annee, setAnnee] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const traces = useMemo(() => source.map((t) => ({ t, text: searchable(t) })), [source]);
+  const traces = useMemo(() => source.map((t) => ({ t, text: searchable(t), annee: anneeDe(t) })), [source]);
   const allPays = useMemo(() => [...new Set(traces.map((x) => x.t.pays).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b, 'fr')), [traces]);
+  const annees = useMemo(() => [...new Set(traces.map((x) => x.annee).filter(Boolean))].sort((a, b) => b.localeCompare(a)), [traces]);
 
-  const active = q.trim() !== '' || type !== 'tous' || rubs.length > 0 || pays !== '';
+  const active = q.trim() !== '' || type !== 'tous' || rubs.length > 0 || pays !== '' || annee !== '';
+  const vider = () => {
+    setQ('');
+    setType('tous');
+    setRubs([]);
+    setPays('');
+    setAnnee('');
+    input.current?.focus();
+  };
 
   // En ligne, les bulles ne portent qu'un aperçu : le texte des fragments et les
   // rubriques remplies sont cherchés par le serveur.
@@ -208,15 +312,17 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
     if (!active) return [];
     const nq = norm(q.trim());
     return traces
-      .filter(({ t, text }) =>
-        (serveur
-          ? serveur.has(t.id) || (rubs.length === 0 && !!nq && text.includes(' ' + nq))
-          : (!nq || text.includes(' ' + nq)) && rubs.every((r) => (t.rubriques[r]?.length ?? 0) > 0)) &&
-        (type === 'tous' || t.type === type) &&
-        (!pays || t.pays === pays),
+      .filter(
+        ({ t, text, annee: a }) =>
+          (serveur
+            ? serveur.has(t.id) || (rubs.length === 0 && !!nq && text.includes(' ' + nq))
+            : (!nq || text.includes(' ' + nq)) && rubs.every((r) => (t.rubriques[r]?.length ?? 0) > 0)) &&
+          (type === 'tous' || t.type === type) &&
+          (!pays || t.pays === pays) &&
+          (!annee || a === annee),
       )
       .map((x) => x.t);
-  }, [traces, q, type, rubs, pays, active, serveur]);
+  }, [traces, q, type, rubs, pays, annee, active, serveur]);
 
   useEffect(() => {
     input.current?.focus();
@@ -224,7 +330,10 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
   useEffect(() => {
     engine.current?.setMatch(active ? new Set(results.map((r) => r.id)) : null);
   }, [results, active, engine]);
-  useEffect(() => () => engine.current?.setMatch(null), [engine]);
+  useEffect(() => {
+    const c = engine.current;
+    return () => c?.setMatch(null);
+  }, [engine]);
 
   // Pas de classement : les présences trouvées sont mélangées au hasard (jamais la popularité),
   // puis montrées par séries ; la liste défile dans le panneau.
@@ -238,7 +347,16 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
   }, [results]);
   const [combien, setCombien] = useState(30);
   useEffect(() => setCombien(30), [results]);
+  // la bulle trouvée se cadre toujours dans la constellation, même si elle n'y était pas (téléphone : 150 bulles sur 422) ;
+  // sans constellation, la page s'ouvre directement
+  const rencontrer = (t: Trace) => {
+    const c = engine.current;
+    if (!c) return navigate(`/trace/${t.id}`);
+    if (!c.has(t.id)) c.addPresence({ id: t.id, nom: t.nom, hex: colorById(t.couleur).hex, matiere: t.matiere });
+    c.focusOn(t.id);
+  };
   const shown = melange.slice(0, combien);
+  const mot = q.trim();
 
   return (
     <aside className="search-panel" aria-label="Rechercher et filtrer" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
@@ -248,10 +366,59 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
           <Icon name="fermer" size={18} />
         </button>
       </div>
-      <label className="field">
-        <span className="sr-only">Un nom, un mot, un lieu</span>
-        <input ref={input} type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Un nom, un mot, un lieu…" />
-      </label>
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          // Entrée avec une seule présence trouvée : on va la voir
+          const seule = results.length === 1 ? results[0]! : null;
+          if (seule) rencontrer(seule);
+        }}
+      >
+        <label className="field">
+          <span className="sr-only">Un nom, un mot, un lieu</span>
+          <input ref={input} type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Un nom, un mot, un lieu…" autoComplete="off" />
+        </label>
+        <p className="search-total">Parmi {source.length.toLocaleString('fr-FR')} traces.</p>
+      </form>
+
+      {active && (
+        <div className="search-results" aria-live="polite">
+          <p className="muted">
+            {results.length === 0
+              ? 'Aucune trace ne correspond, pour l’instant.'
+              : `${results.length} trace${results.length > 1 ? 's' : ''} correspond${results.length > 1 ? 'ent' : ''}.`}
+          </p>
+          <button className="lien-discret petit search-vider" onClick={vider}>
+            <Icon name="fermer" size={14} /> Effacer la recherche
+          </button>
+          <ul>
+            {shown.map((t) => {
+              const ex = mot.length >= 2 ? extrait(t, mot) : null;
+              return (
+                <li key={t.id}>
+                  <button className="result" onClick={() => rencontrer(t)}>
+                    <span className="result-nom">{t.nom}</span>
+                    <span className="result-meta">{t.pays ?? TYPE_LABEL[t.type]}</span>
+                    {ex && (
+                      <span className="result-extrait" dir="auto">
+                        {ex.avant}
+                        <mark>{ex.mot}</mark>
+                        {ex.apres}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {melange.length > combien && (
+            <button className="lien-discret search-plus" onClick={() => setCombien((n) => n + 30)}>
+              Voir d’autres traces ({(melange.length - combien).toLocaleString('fr-FR')})
+            </button>
+          )}
+        </div>
+      )}
 
       <fieldset className="filter">
         <legend>Type de trace</legend>
@@ -286,6 +453,22 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
         </div>
       </fieldset>
 
+      {annees.length > 1 && (
+        <fieldset className="filter filter-annees">
+          <legend>Arrivée dans le musée</legend>
+          <div className="chips">
+            <button className="chip" aria-pressed={annee === ''} onClick={() => setAnnee('')}>
+              Toutes les années
+            </button>
+            {annees.map((a) => (
+              <button key={a} className="chip" aria-pressed={annee === a} onClick={() => setAnnee(annee === a ? '' : a)}>
+                {a}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      )}
+
       <label className="field">
         <span className="field-label">Pays associé</span>
         <select value={pays} onChange={(e) => setPays(e.target.value)}>
@@ -295,37 +478,6 @@ function SearchPanel({ traces: source, onClose }: { traces: Trace[]; onClose: ()
           ))}
         </select>
       </label>
-
-      {active && (
-        <div className="search-results" aria-live="polite">
-          <p className="muted">
-            {results.length === 0 ? 'Aucune présence ne correspond, pour l’instant.' : `${results.length} présence${results.length > 1 ? 's' : ''} correspond${results.length > 1 ? 'ent' : ''}.`}
-          </p>
-          <ul>
-            {shown.map((t) => (
-              <li key={t.id}>
-                <button
-                  className="result"
-                  onClick={() => {
-                    if (!engine.current?.has(t.id)) return navigate(`/trace/${t.id}`);
-                    engine.current.focusOn(t.id);
-                    // sur téléphone la recherche couvre tout l'écran : elle se referme pour laisser voir la bulle trouvée
-                    if (window.matchMedia('(max-width: 699px)').matches) onClose();
-                  }}
-                >
-                  <span className="result-nom">{t.nom}</span>
-                  <span className="result-meta">{t.pays ?? TYPE_LABEL[t.type]}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          {melange.length > combien && (
-            <button className="lien-discret search-plus" onClick={() => setCombien((n) => n + 30)}>
-              Voir d’autres présences ({(melange.length - combien).toLocaleString('fr-FR')})
-            </button>
-          )}
-        </div>
-      )}
     </aside>
   );
 }

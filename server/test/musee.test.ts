@@ -40,7 +40,19 @@ function visiteur() {
     return r;
   };
   const req = async (method: string, url: string, payload?: unknown, headers: Record<string, string> = {}) =>
-    garder((await app.inject({ method: method as 'GET', url, payload: payload as never, headers: { ...headers, cookie: Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ') } })) as unknown as Rep);
+    garder(
+      (await app.inject({
+        method: method as 'GET',
+        url,
+        payload: payload as never,
+        headers: {
+          ...headers,
+          cookie: Object.entries(cookies)
+            .map(([k, v]) => `${k}=${v}`)
+            .join('; '),
+        },
+      })) as unknown as Rep,
+    );
   return {
     get: (u: string, h?: Record<string, string>) => req('GET', u, undefined, h),
     post: (u: string, p?: unknown, h?: Record<string, string>) => req('POST', u, p ?? {}, h),
@@ -89,7 +101,12 @@ function png(): Buffer {
   ihdr.writeUInt32BE(1, 4);
   ihdr[8] = 8;
   ihdr[9] = 2;
-  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), bloc('IHDR', ihdr), bloc('IDAT', deflateSync(Buffer.from([0, 200, 180, 170]))), bloc('IEND', Buffer.alloc(0))]);
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    bloc('IHDR', ihdr),
+    bloc('IDAT', deflateSync(Buffer.from([0, 200, 180, 170]))),
+    bloc('IEND', Buffer.alloc(0)),
+  ]);
 }
 
 /** Un formulaire avec des données et un fichier, comme l'enverrait le navigateur. */
@@ -97,7 +114,11 @@ function formulaire(donnees: unknown, fichier?: { nom: string; contenu: Buffer; 
   const limite = '----nmm' + Math.random().toString(16).slice(2);
   const morceaux: Buffer[] = [Buffer.from(`--${limite}\r\nContent-Disposition: form-data; name="donnees"\r\n\r\n${JSON.stringify(donnees)}\r\n`)];
   if (fichier) {
-    morceaux.push(Buffer.from(`--${limite}\r\nContent-Disposition: form-data; name="fichier"; filename="${fichier.nom}"\r\nContent-Type: ${fichier.type}\r\n\r\n`), fichier.contenu, Buffer.from('\r\n'));
+    morceaux.push(
+      Buffer.from(`--${limite}\r\nContent-Disposition: form-data; name="fichier"; filename="${fichier.nom}"\r\nContent-Type: ${fichier.type}\r\n\r\n`),
+      fichier.contenu,
+      Buffer.from('\r\n'),
+    );
   }
   morceaux.push(Buffer.from(`--${limite}--\r\n`));
   return { corps: Buffer.concat(morceaux), entetes: { 'content-type': `multipart/form-data; boundary=${limite}` } };
@@ -173,11 +194,47 @@ describe('traces', () => {
   it('deux bulles au plus : une trace, une mémoire', async () => {
     expect((await auteur.post('/api/traces', personnelle('Encore'))).statusCode).toBe(409);
     // une mémoire : ce que l'on peut dire de la personne, 500 caractères au plus
-    expect((await auteur.post('/api/traces', { type: 'memoire', nom: 'Jeannot', couleur: 'v3', memoire: { deposeePar: 'Léa', aperçu: 'x'.repeat(501) } })).statusCode).toBe(400);
-    const m = await auteur.post('/api/traces', { type: 'memoire', nom: 'Jeannot', couleur: 'v3', memoire: { deposeePar: 'Léa', aperçu: 'Il semait des radis. '.repeat(20).trim() } });
+    expect(
+      (await auteur.post('/api/traces', { type: 'memoire', nom: 'Jeannot', couleur: 'v3', memoire: { deposeePar: 'Léa', aperçu: 'x'.repeat(501) } }))
+        .statusCode,
+    ).toBe(400);
+    // le lien avec la personne est exigé (il reste privé)
+    expect(
+      (await auteur.post('/api/traces', { type: 'memoire', nom: 'Jeannot', couleur: 'v3', memoire: { deposeePar: 'Léa', aperçu: 'Il semait des radis.' } }))
+        .statusCode,
+    ).toBe(400);
+    const m = await auteur.post('/api/traces', {
+      type: 'memoire',
+      nom: 'Jeannot',
+      couleur: 'v3',
+      memoire: { deposeePar: 'Léa', relation: 'sa petite-fille', aperçu: 'Il semait des radis. '.repeat(20).trim() },
+    });
     expect(m.statusCode).toBe(200);
     expect(m.json().trace.memoire.aperçu.length).toBeGreaterThan(400);
-    expect((await auteur.post('/api/traces', { type: 'memoire', nom: 'Autre', couleur: 'v3', memoire: { deposeePar: 'Léa', aperçu: 'x' } })).statusCode).toBe(409);
+    expect(
+      (
+        await auteur.post('/api/traces', {
+          type: 'memoire',
+          nom: 'Autre',
+          couleur: 'v3',
+          memoire: { deposeePar: 'Léa', relation: 'son ami', aperçu: 'x' },
+        })
+      ).statusCode,
+    ).toBe(409);
+    // une mémoire attend l'examen du fondateur (cahier §43.1) : l'auteur la voit, le musée pas encore
+    const mid = m.json().trace.id;
+    expect(m.json().trace.statut).toBe('en_attente');
+    expect((await visiteur().get('/api/presences')).json().presences.find((p: any) => p.id === mid)).toBeUndefined();
+    expect((await visiteur().get(`/api/traces/${mid}`)).statusCode).toBe(404);
+    expect((await auteur.get(`/api/traces/${mid}`)).statusCode).toBe(200);
+    const admin = visiteur();
+    await admin.connecter('admin@musee.test');
+    expect((await admin.get('/api/admin/traces?statut=en_attente')).json().traces.map((t: any) => t.id)).toContain(mid);
+    expect((await admin.post(`/api/admin/traces/${mid}/statut`, { statut: 'publiee' })).statusCode).toBe(200);
+    expect((await visiteur().get('/api/presences')).json().presences.find((p: any) => p.id === mid)).toBeDefined();
+    // le lien avec la personne reste privé
+    expect((await visiteur().get(`/api/traces/${mid}`)).json().trace.memoire.relation).toBeUndefined();
+    expect((await auteur.get(`/api/traces/${mid}`)).json().trace.memoire.relation).toBe('sa petite-fille');
   });
 
   it('les réponses restent scellées cinq ans', async () => {
@@ -224,7 +281,7 @@ describe('traces', () => {
   });
 
   it('dépose une vraie photo, refuse un faux fichier, sert le fichier', async () => {
-    const f = formulaire({ rubrique: 'voir', texte: 'Le soleil sur l’océan.' }, { nom: 'ocean.png', contenu: png(), type: 'image/png' });
+    const f = formulaire({ rubrique: 'voir', texte: 'Le soleil sur l’océan.', droits: true }, { nom: 'ocean.png', contenu: png(), type: 'image/png' });
     const r = await auteur.post(`/api/traces/${id}/fragments`, f.corps, f.entetes);
     expect(r.statusCode).toBe(200);
     const m = r.json().trace.medias.find((x: any) => x.kind === 'image');
@@ -233,7 +290,10 @@ describe('traces', () => {
     expect(fichier.statusCode).toBe(200);
     expect(fichier.headers['content-type']).toBe('image/png');
     // un texte déguisé en photo est refusé
-    const faux = formulaire({ rubrique: 'voir', texte: 'x' }, { nom: 'faux.png', contenu: Buffer.from('<script>alert(1)</script>'), type: 'image/png' });
+    const faux = formulaire(
+      { rubrique: 'voir', texte: 'x', droits: true },
+      { nom: 'faux.png', contenu: Buffer.from('<script>alert(1)</script>'), type: 'image/png' },
+    );
     expect((await auteur.post(`/api/traces/${id}/fragments`, faux.corps, faux.entetes)).statusCode).toBe(415);
   });
 
@@ -357,7 +417,7 @@ describe('RGPD', () => {
     await v.connecter('partir@exemple.fr');
     await v.post('/api/moi/majeur', { majeur: true });
     const t = (await v.post('/api/traces', personnelle('Partir'))).json().trace;
-    const f = formulaire({ rubrique: 'voir', texte: 'Une photo.' }, { nom: 'p.png', contenu: png(), type: 'image/png' });
+    const f = formulaire({ rubrique: 'voir', texte: 'Une photo.', droits: true }, { nom: 'p.png', contenu: png(), type: 'image/png' });
     const src = (await v.post(`/api/traces/${t.id}/fragments`, f.corps, f.entetes)).json().trace.medias[0].src;
     const exp = (await v.get('/api/moi/export')).json();
     expect(exp.traces[0].id).toBe(t.id);
@@ -367,6 +427,80 @@ describe('RGPD', () => {
     expect((await visiteur().get(src)).statusCode).toBe(404);
     const reste = await pool.query('select count(*) from traces where id = $1', [t.id]);
     expect(Number(reste.rows[0].count)).toBe(0);
+  });
+});
+
+describe('après moi (loi Informatique et Libertés, article 85)', () => {
+  it('un choix distinct, horodaté, modifiable et révocable ; confier exige l’adresse de la personne', async () => {
+    const v = visiteur();
+    await v.connecter('apres-moi@exemple.fr');
+    expect((await v.get('/api/moi/apres-moi')).json().directives).toBeNull();
+    const refus = await v.put('/api/moi/apres-moi', { choix: 'transmettre', versionTexte: '2026-11-05' });
+    expect(refus.statusCode).toBe(400);
+    const ok = await v.put('/api/moi/apres-moi', { choix: 'transmettre', tiersNom: 'Léa', tiersEmail: 'Lea@Exemple.fr', versionTexte: '2026-11-05' });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json().directives).toMatchObject({ choix: 'transmettre', tiersNom: 'Léa', tiersEmail: 'lea@exemple.fr', versionTexte: '2026-11-05' });
+    expect(typeof ok.json().directives.consentiLe).toBe('string');
+    const maj = await v.put('/api/moi/apres-moi', { choix: 'effacer', versionTexte: '2026-11-05' });
+    expect(maj.json().directives.choix).toBe('effacer');
+    expect((await v.get('/api/moi/export')).json().apresMoi.choix).toBe('effacer');
+    expect((await v.del('/api/moi/apres-moi')).statusCode).toBe(200);
+    expect((await v.get('/api/moi/apres-moi')).json().directives).toBeNull();
+    expect((await visiteur().get('/api/moi/apres-moi')).statusCode).toBe(401);
+  });
+
+  it('un proche signale un décès : la demande est gardée', async () => {
+    const r = await visiteur().post('/api/deces', {
+      email: 'Proche@Exemple.fr',
+      nomDefunt: 'Jean',
+      lien: 'fils',
+      demande: 'cloturer',
+      message: 'Il nous a quittés en octobre.',
+    });
+    expect(r.statusCode).toBe(200);
+    const rangee = await pool.query('select email, demande, statut from demandes_deces where nom_defunt = $1', ['Jean']);
+    expect(rangee.rows[0]).toMatchObject({ email: 'proche@exemple.fr', demande: 'cloturer', statut: 'recue' });
+    expect((await visiteur().post('/api/deces', { email: 'pas-une-adresse', nomDefunt: 'Jean', lien: 'fils', demande: 'cloturer' })).statusCode).toBe(400);
+  });
+});
+
+describe('droits au dépôt, opposition, retrait motivé', () => {
+  it('un fichier sans déclaration de droits est refusé ; un lien n’en demande pas', async () => {
+    const v = visiteur();
+    await v.connecter('droits@exemple.fr');
+    await v.post('/api/moi/majeur', { majeur: true });
+    const t = (await v.post('/api/traces', personnelle('Droits'))).json().trace;
+    const sans = formulaire({ rubrique: 'voir', texte: 'Sans droits.' }, { nom: 'p.png', contenu: png(), type: 'image/png' });
+    const r = await v.post(`/api/traces/${t.id}/fragments`, sans.corps, sans.entetes);
+    expect(r.statusCode).toBe(400);
+    expect(r.json().code).toBe('droits');
+    expect((await v.post(`/api/traces/${t.id}/medias`, { lien: 'exemple.fr/sans-droits' })).statusCode).toBe(200);
+    const avec = formulaire({ titre: 'Avec droits', droits: true }, { nom: 'p.png', contenu: png(), type: 'image/png' });
+    expect((await v.post(`/api/traces/${t.id}/medias`, avec.corps, avec.entetes)).statusCode).toBe(200);
+    const m = await pool.query('select droits_le, ip from medias where trace_id = $1 and cle is not null', [t.id]);
+    expect(m.rows[0].droits_le).toBeTruthy();
+    expect(m.rows[0].ip).toBeTruthy();
+    const tr = await pool.query('select ip from traces where id = $1', [t.id]);
+    expect(tr.rows[0].ip).toBeTruthy();
+  });
+
+  it('une personne concernée s’oppose, avec une adresse pour lui répondre', async () => {
+    const v = visiteur();
+    await v.connecter('opposition@exemple.fr');
+    await v.post('/api/moi/majeur', { majeur: true });
+    const t = (await v.post('/api/traces', personnelle('Opposition'))).json().trace;
+    expect((await visiteur().post('/api/signalements', { traceId: t.id, motif: 'vie_privee', message: 'On parle de ma maladie.' })).statusCode).toBe(400);
+    expect(
+      (await visiteur().post('/api/signalements', { traceId: t.id, motif: 'vie_privee', message: 'On parle de ma maladie.', email: 'Moi@Exemple.fr' }))
+        .statusCode,
+    ).toBe(200);
+    const s = await pool.query('select motif, email from signalements where trace_id = $1', [t.id]);
+    expect(s.rows[0]).toMatchObject({ motif: 'vie_privee', email: 'moi@exemple.fr' });
+  });
+
+  it('le ménage des durées annoncées passe sans erreur', async () => {
+    const { menage } = await import('../src/app');
+    await expect(menage()).resolves.toBeUndefined();
   });
 });
 
@@ -381,7 +515,7 @@ describe('rapidité et lecture des médias', () => {
     await v.post('/api/moi/majeur', { majeur: true });
     id = (await v.post('/api/traces', personnelle('Rapide'))).json().trace.id;
     const image = png();
-    const f = formulaire({ rubrique: 'voir', texte: 'Une image.' }, { nom: 'i.png', contenu: image, type: 'image/png' });
+    const f = formulaire({ rubrique: 'voir', texte: 'Une image.', droits: true }, { nom: 'i.png', contenu: image, type: 'image/png' });
     src = (await v.post(`/api/traces/${id}/fragments`, f.corps, f.entetes)).json().trace.medias[0].src;
 
     const tout = await visiteur().get(src);
@@ -404,7 +538,10 @@ describe('rapidité et lecture des médias', () => {
   });
 
   it('propose un nom de téléchargement sans risque pour les documents', async () => {
-    const f = formulaire({ titre: 'Lettre' }, { nom: 'lettre à Jeannot.txt', contenu: Buffer.from('Cher Jeannot,\nà bientôt.'), type: 'text/plain' });
+    const f = formulaire(
+      { titre: 'Lettre', droits: true },
+      { nom: 'lettre à Jeannot.txt', contenu: Buffer.from('Cher Jeannot,\nà bientôt.'), type: 'text/plain' },
+    );
     const r = await v.post(`/api/traces/${id}/medias`, f.corps, f.entetes);
     expect(r.statusCode).toBe(200);
     doc = r.json().trace.medias.find((m: any) => m.kind === 'document').src;
@@ -440,12 +577,15 @@ describe('rapidité et lecture des médias', () => {
     expect((await v.post(`/api/traces/${id}/fragments`, corps, { 'content-type': `multipart/form-data; boundary=${limite}` })).statusCode).toBe(400);
     const intrus = visiteur();
     await intrus.connecter('intrus@exemple.fr');
-    const f = formulaire({ rubrique: 'voir', texte: 'x' }, { nom: 'i.png', contenu: png(), type: 'image/png' });
+    const f = formulaire({ rubrique: 'voir', texte: 'x', droits: true }, { nom: 'i.png', contenu: png(), type: 'image/png' });
     expect((await intrus.post(`/api/traces/${id}/fragments`, f.corps, f.entetes)).statusCode).toBe(404);
   });
 
   it('un formulaire illisible ne laisse aucun fichier temporaire sur le serveur', async () => {
-    const temporaires = () => readdirSync(tmpdir()).filter((n) => n.startsWith('nmm-')).sort();
+    const temporaires = () =>
+      readdirSync(tmpdir())
+        .filter((n) => n.startsWith('nmm-'))
+        .sort();
     const avant = temporaires();
     const limite = '----nmmt';
     const corps = Buffer.concat([
@@ -461,9 +601,19 @@ describe('rapidité et lecture des médias', () => {
     const c = await pool.connect();
     try {
       await c.query('set enable_seqscan = off');
-      const plan = (await c.query(`explain select id from traces where texte_recherche_trace(nom, pays, q1, q2, q3, q4, memoire_apercu) like lower(sans_accents('%ocean%'))`)).rows.map((r) => r['QUERY PLAN']).join('\n');
+      const plan = (
+        await c.query(
+          `explain select id from traces where texte_recherche_trace(nom, pays, q1, q2, q3, q4, memoire_apercu) like lower(sans_accents('%ocean%'))`,
+        )
+      ).rows
+        .map((r) => r['QUERY PLAN'])
+        .join('\n');
       expect(plan).toContain('traces_recherche');
-      const planF = (await c.query(`explain select trace_id from fragments where texte_recherche_fragment(titre, texte, lieu) like lower(sans_accents('%ocean%'))`)).rows.map((r) => r['QUERY PLAN']).join('\n');
+      const planF = (
+        await c.query(`explain select trace_id from fragments where texte_recherche_fragment(titre, texte, lieu) like lower(sans_accents('%ocean%'))`)
+      ).rows
+        .map((r) => r['QUERY PLAN'])
+        .join('\n');
       expect(planF).toContain('fragments_recherche');
     } finally {
       await c.query('reset enable_seqscan');
@@ -506,8 +656,16 @@ describe('bannir', () => {
     const t = (await fautif.post('/api/traces', personnelle('Fautif'))).json().trace;
     const admin = visiteur();
     await admin.connecter('admin@musee.test');
+    // l'export emporte tout ce qui fait le musée, sans les empreintes (ici : cinq codes par quart d'heure, on réutilise ce compte)
+    const ex = await admin.get('/api/admin/export');
+    expect(ex.statusCode).toBe(200);
+    for (const cle of ['traces', 'fragments', 'medias', 'traits', 'editions', 'signalements', 'comptes', 'directives', 'deces', 'journal']) expect(Array.isArray(ex.json()[cle])).toBe(true);
+    expect(ex.json().comptes.length).toBeGreaterThan(0);
+    expect(ex.json().comptes[0]).not.toHaveProperty('derniere_ip');
+    expect((await visiteur().get('/api/admin/export')).statusCode).toBe(401);
     expect((await admin.post(`/api/admin/traces/${t.id}/bannir`, { raison: '' })).statusCode).toBe(400);
-    const r = await admin.post(`/api/admin/traces/${t.id}/bannir`, { raison: 'Harcèlement répété' });
+    // sans « adresses », seul le compte est banni ; avec, ses adresses IP aussi
+    const r = await admin.post(`/api/admin/traces/${t.id}/bannir`, { raison: 'Harcèlement répété', adresses: true });
     expect(r.statusCode).toBe(200);
     expect(r.json().adresses).toBeGreaterThan(0);
     // les tests viennent tous de la même adresse : désormais, plus rien ne passe
@@ -515,6 +673,9 @@ describe('bannir', () => {
     expect(ferme.statusCode).toBe(403);
     expect(ferme.json().code).toBe('banni');
     expect((await visiteur().get('/')).statusCode).toBe(403);
+    // l'équipe du musée, elle, n'est jamais fermée dehors : le fondateur partage souvent l'adresse (foyer, réseau mobile)
+    expect((await admin.get('/api/admin/etat')).statusCode).toBe(200);
+    expect((await admin.get('/')).statusCode).not.toBe(403);
     // on lève le bannissement directement dans la base (l'adresse du fondateur est la même ici)
     await pool.query('delete from bannissements');
     const { relireBannissements } = await import('../src/bannis');

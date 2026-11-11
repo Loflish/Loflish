@@ -20,37 +20,50 @@ import './styles/base.css';
 import './styles/museum.css';
 import './styles/trace.css';
 import './styles/pages.css';
+// le linge écrit (11 novembre) remplace la feuille « design-fable » du 3 novembre ; les finitions et l'impression restent
+import './styles/finitions.css';
+import './styles/linge-fusion.css';
+import './styles/print.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import { App } from './App';
 import { Panne } from './components/Panne';
-import { estRouteExplorer, MuseumProvider } from './lib/museum';
-import { installSurfaces, loadTaches, poserMatieresDesPages } from './lib/hd';
+import { MuseumProvider } from './lib/museum';
+import { FOND_DES_PAGES, FONDS, installSurfaces, poserMatieresDesPages } from './lib/hd';
 import { chargerMusee } from './data/store';
 
 installSurfaces();
-// les taches d'aquarelle des bulles se chargent avant tout le reste, quand on arrive sur la constellation ;
-// une page de texte ou un profil ne les télécharge pas (chaque bulle en image charge la sienne)
-if (estRouteExplorer(window.location.hash.replace(/^#/, '').split('?')[0] || '/')) void loadTaches();
+// hors de la constellation, le papier des pages (fond-tissu) est demandé dès maintenant, avant même que React ne monte :
+// sur une trace, c'est la plus grande image de l'écran, et elle arrivait 1,2 s après le reste (Lighthouse, 3 novembre)
+const chemin = window.location.hash.replace(/^#/, '');
+if (FOND_DES_PAGES && chemin && chemin !== '/' && !chemin.startsWith('/bulle/') && !chemin.startsWith('/archives/')) {
+  const l = document.createElement('link');
+  l.rel = 'preload';
+  l.as = 'image';
+  l.href = window.matchMedia('(max-aspect-ratio: 3/4)').matches ? FONDS.tissu.haut : FONDS.tissu.large;
+  l.fetchPriority = 'high';
+  document.head.append(l);
+}
 
 // en ligne, les présences du musée arrivent avant la constellation (au plus 4 s d'attente)
 const attente = new Promise((r) => setTimeout(r, 4000));
 void Promise.race([chargerMusee().catch(() => undefined), attente]).then(() => afficher());
 
 function afficher() {
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <HashRouter>
-      <MuseumProvider>
-        <Panne>
-          <App />
-        </Panne>
-      </MuseumProvider>
-    </HashRouter>
-  </StrictMode>,
-);
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      {/* les changements de page passent par startTransition : la page qui part reste réactive jusqu'à ce que la suivante soit prête */}
+      <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <MuseumProvider>
+          <Panne>
+            <App />
+          </Panne>
+        </MuseumProvider>
+      </HashRouter>
+    </StrictMode>,
+  );
   // après le premier rendu : les polices sont demandées, les matières des pages passent après elles
   requestAnimationFrame(() => poserMatieresDesPages());
 }

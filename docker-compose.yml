@@ -51,8 +51,10 @@ services:
   web:
     image: caddy:2-alpine
     restart: unless-stopped
+    # Caddy n'ouvre la porte qu'une fois le musée en bonne santé (/api/sante) : pas d'erreur 502 au démarrage
     depends_on:
-      - musee
+      musee:
+        condition: service_healthy
     ports:
       - '80:80'
       - '443:443'

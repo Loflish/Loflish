@@ -64,11 +64,11 @@ const PAGES_MARBRE = parametres?.get('pages') === 'marbre';
  */
 const TISSU_ESSAI = parametres?.get('tissu');
 /**
- * Le linge écrit (11 novembre) : les pages sont une mousseline écrue, sans image dessous. Le tissu du 5 novembre
- * (« aura-37 ») reste à comparer : `?tissu=aura` le rend derrière les pages, avec un voile de lecture plus léger
- * (classe `tissu-visible`). `?tissu=coton`, `?tissu=<essai>` et `?pages=marbre` montrent aussi leur image.
+ * Les pages gardent la mousseline nue du linge écrit (Tom, 11 novembre, devant Compte, Juridique et Projet :
+ * « j'adore, conserve »). Le tissu « aura-37 » du 5 novembre reste un essai derrière `?tissu=aura-37`
+ * (ou `?tissu=coton`, `?tissu=<nom>`) : la toile écrue s'allège alors pour le laisser voir (classe `tissu-visible`).
  */
-export const FOND_DES_PAGES = PAGES_MARBRE || !!TISSU_ESSAI;
+export const FOND_DES_PAGES = !!TISSU_ESSAI && TISSU_ESSAI !== 'aucun';
 if (FOND_DES_PAGES && typeof document !== 'undefined') document.documentElement.classList.add('tissu-visible');
 /**
  * La constellation sur une toile plus brute (Tom, 21 octobre au soir : « un tissu encore plus brut »,
@@ -118,7 +118,7 @@ export const FONDS: Record<Fond, { large: string; haut: string; largeHD?: string
   tissu:
     TISSU_ESSAI === 'coton'
       ? { large: `${base}fond-tissu-coton-16x9.webp`, haut: `${base}fond-tissu-coton-9x16.webp` }
-      : TISSU_ESSAI
+      : TISSU_ESSAI && TISSU_ESSAI !== 'aura-37' && TISSU_ESSAI !== 'aucun'
         ? { large: `${base}essais/tissu-${TISSU_ESSAI}-16x9.webp`, haut: `${base}essais/tissu-${TISSU_ESSAI}-9x16.webp` }
         : PAGES_MARBRE
           ? { large: `${base}palerme/page-marbre-16x9.webp`, haut: `${base}palerme/page-marbre-9x16.webp` }

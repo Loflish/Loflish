@@ -1,0 +1,667 @@
+{
+ "date": "2026-11-05",
+ "seuil": 0.84,
+ "methode": "corrélation normalisée de la couverture et de la densité, 48 px, meilleure de 24 rotations et du miroir",
+ "groupes": [
+  {
+   "id": 1,
+   "score": 0.998,
+   "bulles": [
+    {
+     "n": 3003,
+     "planche": 2,
+     "nom": "Le quart de cercle rayé au sol, là où la porte s'ouvre depuis toujours"
+    },
+    {
+     "n": 3098,
+     "planche": 2,
+     "nom": "Les deux marques grises que laisse le dossier d'une chaise qu'on balance en arrière contre un mur"
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "score": 0.995,
+   "bulles": [
+    {
+     "n": 3001,
+     "planche": 2,
+     "nom": "Les fines rayures en étoile autour d'une serrure, laissées par des clés qui cherchent le trou dans le noir"
+    },
+    {
+     "n": 3055,
+     "planche": 2,
+     "nom": "Les plis en éventail d'un tissu après des heures passées assis"
+    },
+    {
+     "n": 3094,
+     "planche": 2,
+     "nom": "Les coins arrondis et grisés d'un vieux jeu de cartes"
+    },
+    {
+     "n": 3096,
+     "planche": 2,
+     "nom": "La traînée grise qui suit la pente d'un escalier, sur le mur, à hauteur de main"
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "score": 0.993,
+   "bulles": [
+    {
+     "n": 3002,
+     "planche": 2,
+     "nom": "Le halo grisé autour d'un interrupteur, là où des doigts se posent depuis des années"
+    },
+    {
+     "n": 3051,
+     "planche": 2,
+     "nom": "Le trou de pouce dans le poignet d'une manche"
+    },
+    {
+     "n": 3077,
+     "planche": 2,
+     "nom": "Les quatre petits creux dans le tapis, là où un meuble a longtemps reposé"
+    },
+    {
+     "n": 3097,
+     "planche": 2,
+     "nom": "Quelques confettis restés au fond d'un pli, longtemps après la fête"
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "score": 0.966,
+   "bulles": [
+    {
+     "n": 3004,
+     "planche": 2,
+     "nom": "La poignée de porte éclaircie à l'endroit exact où la main se referme"
+    },
+    {
+     "n": 3071,
+     "planche": 2,
+     "nom": "Les petits creux de bouts de doigts dans une boule de pâte à modeler"
+    },
+    {
+     "n": 3099,
+     "planche": 2,
+     "nom": "La forme sèche que quelqu'un laisse sur un banc mouillé en se levant"
+    },
+    {
+     "n": 4007,
+     "planche": 3,
+     "nom": "Rires et oiseaux"
+    },
+    {
+     "n": 4023,
+     "planche": 3,
+     "nom": "Pain et collines"
+    },
+    {
+     "n": 4039,
+     "planche": 3,
+     "nom": "Points avant et pluie"
+    },
+    {
+     "n": 4053,
+     "planche": 3,
+     "nom": "Lune et eau"
+    },
+    {
+     "n": 4059,
+     "planche": 3,
+     "nom": "Galets et planètes"
+    },
+    {
+     "n": 4073,
+     "planche": 3,
+     "nom": "Souvenir et eau"
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "score": 0.964,
+   "bulles": [
+    {
+     "n": 3005,
+     "planche": 2,
+     "nom": "Le rebord de fenêtre adouci aux deux endroits où l'on s'accoude"
+    },
+    {
+     "n": 3100,
+     "planche": 2,
+     "nom": "L'empreinte d'un doigt curieux dans une peinture encore fraîche"
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "score": 0.946,
+   "bulles": [
+    {
+     "n": 4005,
+     "planche": 3,
+     "nom": "Lait et nuages"
+    },
+    {
+     "n": 4031,
+     "planche": 3,
+     "nom": "Tapis et jardin"
+    },
+    {
+     "n": 4034,
+     "planche": 3,
+     "nom": "Miettes et étoiles"
+    },
+    {
+     "n": 4050,
+     "planche": 3,
+     "nom": "Marée et respiration"
+    },
+    {
+     "n": 4057,
+     "planche": 3,
+     "nom": "Étourneaux et encre"
+    },
+    {
+     "n": 4058,
+     "planche": 3,
+     "nom": "Vent et herbes"
+    },
+    {
+     "n": 4062,
+     "planche": 3,
+     "nom": "Larme et océan"
+    },
+    {
+     "n": 4067,
+     "planche": 3,
+     "nom": "Graine sous la neige"
+    }
+   ]
+  },
+  {
+   "id": 7,
+   "score": 0.932,
+   "bulles": [
+    {
+     "n": 3009,
+     "planche": 2,
+     "nom": "Les stries du pinceau dans la peinture d'une porte, laissées par celui qui l'a peinte"
+    },
+    {
+     "n": 3024,
+     "planche": 2,
+     "nom": "L'épluchure restée d'une seule pièce, en spirale"
+    },
+    {
+     "n": 3058,
+     "planche": 2,
+     "nom": "Les peluches feutrées qui s'amassent au fond d'une poche"
+    },
+    {
+     "n": 3060,
+     "planche": 2,
+     "nom": "Le fil tiré dans un tricot, qui fronce la maille tout autour"
+    },
+    {
+     "n": 3065,
+     "planche": 2,
+     "nom": "Le gribouillis de crayon sur le bas d'un mur"
+    },
+    {
+     "n": 3078,
+     "planche": 2,
+     "nom": "La constellation de petits trous de punaise sur un mur"
+    },
+    {
+     "n": 3095,
+     "planche": 2,
+     "nom": "Les mailles un peu inégales d'un tricot fait par quelqu'un qui vous aime"
+    },
+    {
+     "n": 4086,
+     "planche": 3,
+     "nom": "Nuages dans l'étang"
+    }
+   ]
+  },
+  {
+   "id": 8,
+   "score": 0.927,
+   "bulles": [
+    {
+     "n": 3038,
+     "planche": 2,
+     "nom": "Le coin de feuille roulé en petit tube par une main qui s'ennuie"
+    },
+    {
+     "n": 3091,
+     "planche": 2,
+     "nom": "Le brin de laine d'un passant, resté accroché à une planche rugueuse"
+    },
+    {
+     "n": 4014,
+     "planche": 3,
+     "nom": "Lettre et pluie"
+    },
+    {
+     "n": 4048,
+     "planche": 3,
+     "nom": "Nuages et laine"
+    },
+    {
+     "n": 4088,
+     "planche": 3,
+     "nom": "Motifs et lumière"
+    }
+   ]
+  },
+  {
+   "id": 9,
+   "score": 0.926,
+   "bulles": [
+    {
+     "n": 4022,
+     "planche": 3,
+     "nom": "Ombres au crépuscule"
+    },
+    {
+     "n": 4036,
+     "planche": 3,
+     "nom": "Filet et toile"
+    },
+    {
+     "n": 4041,
+     "planche": 3,
+     "nom": "Ville et nervures"
+    },
+    {
+     "n": 4071,
+     "planche": 3,
+     "nom": "Braises et oiseaux"
+    },
+    {
+     "n": 4081,
+     "planche": 3,
+     "nom": "Maison et brouillard"
+    }
+   ]
+  },
+  {
+   "id": 10,
+   "score": 0.925,
+   "bulles": [
+    {
+     "n": 3012,
+     "planche": 2,
+     "nom": "La tache grise derrière le crochet où le même manteau pend chaque jour"
+    },
+    {
+     "n": 3019,
+     "planche": 2,
+     "nom": "La cuillère en bois usée en biais d'un seul côté"
+    },
+    {
+     "n": 3021,
+     "planche": 2,
+     "nom": "La serviette en papier déchirée en fines lanières par une main distraite"
+    },
+    {
+     "n": 3023,
+     "planche": 2,
+     "nom": "Les noyaux posés en rang au bord d'une assiette"
+    },
+    {
+     "n": 3028,
+     "planche": 2,
+     "nom": "Les pas nus mouillés sur un carrelage, déjà en train de sécher"
+    },
+    {
+     "n": 3036,
+     "planche": 2,
+     "nom": "Le croissant dentelé d'une bouchée dans une tartine"
+    },
+    {
+     "n": 3037,
+     "planche": 2,
+     "nom": "La petite bosse qu'un orteil a poussée dans le bout d'un soulier devenu trop petit"
+    },
+    {
+     "n": 3048,
+     "planche": 2,
+     "nom": "Les larges arcs d'un chiffon humide sur une table en train de sécher"
+    },
+    {
+     "n": 3053,
+     "planche": 2,
+     "nom": "Le bouton recousu avec un fil d'un autre ton"
+    },
+    {
+     "n": 3063,
+     "planche": 2,
+     "nom": "Les tirets au crayon sur un montant de porte, un à chaque fois qu'un enfant a grandi"
+    },
+    {
+     "n": 3072,
+     "planche": 2,
+     "nom": "La ligne pâle de l'ancien ourlet, sur un pantalon rallongé parce que l'enfant a grandi"
+    },
+    {
+     "n": 3075,
+     "planche": 2,
+     "nom": "Les plis d'un avion en papier qu'on a déplié pour le relancer"
+    },
+    {
+     "n": 3080,
+     "planche": 2,
+     "nom": "Le trapèze pâle que le soleil a imprimé au sol à force d'entrer par la même fenêtre"
+    },
+    {
+     "n": 3087,
+     "planche": 2,
+     "nom": "Le bord à petits trous déchiré d'une feuille de cahier à spirale"
+    },
+    {
+     "n": 3089,
+     "planche": 2,
+     "nom": "Le cheveu d'un autre, resté sur une manche"
+    }
+   ]
+  },
+  {
+   "id": 11,
+   "score": 0.914,
+   "bulles": [
+    {
+     "n": 3014,
+     "planche": 2,
+     "nom": "Les taches de gras translucides sur le papier d'un sachet de pain ou de beignets"
+    },
+    {
+     "n": 3081,
+     "planche": 2,
+     "nom": "Le filet de rouille sous un clou"
+    }
+   ]
+  },
+  {
+   "id": 12,
+   "score": 0.899,
+   "bulles": [
+    {
+     "n": 3010,
+     "planche": 2,
+     "nom": "Le faisceau d'éraflures que les pieds d'une chaise tracent en reculant, jour après jour"
+    },
+    {
+     "n": 3050,
+     "planche": 2,
+     "nom": "Le petit nid de points qu'un stylo laisse quand on réfléchit, la pointe posée sur le papier"
+    },
+    {
+     "n": 4033,
+     "planche": 3,
+     "nom": "Fenêtre et ciel"
+    }
+   ]
+  },
+  {
+   "id": 13,
+   "score": 0.899,
+   "bulles": [
+    {
+     "n": 3061,
+     "planche": 2,
+     "nom": "Le liseré de sel séché sur le bas d'un pantalon ou d'une sandale, après la mer"
+    },
+    {
+     "n": 4006,
+     "planche": 3,
+     "nom": "Petits pas et marée"
+    },
+    {
+     "n": 4008,
+     "planche": 3,
+     "nom": "Craie et étoiles"
+    },
+    {
+     "n": 4020,
+     "planche": 3,
+     "nom": "Draps et dunes"
+    }
+   ]
+  },
+  {
+   "id": 14,
+   "score": 0.891,
+   "bulles": [
+    {
+     "n": 4003,
+     "planche": 3,
+     "nom": "Ventre et lune"
+    },
+    {
+     "n": 4066,
+     "planche": 3,
+     "nom": "Pansement et nuages"
+    },
+    {
+     "n": 4072,
+     "planche": 3,
+     "nom": "Souffle et lac"
+    },
+    {
+     "n": 4085,
+     "planche": 3,
+     "nom": "Nénuphars et mondes"
+    }
+   ]
+  },
+  {
+   "id": 15,
+   "score": 0.89,
+   "bulles": [
+    {
+     "n": 4029,
+     "planche": 3,
+     "nom": "Lampe et lune"
+    },
+    {
+     "n": 4068,
+     "planche": 3,
+     "nom": "Lumière sous la pluie"
+    },
+    {
+     "n": 4070,
+     "planche": 3,
+     "nom": "Vague et couverture"
+    }
+   ]
+  },
+  {
+   "id": 16,
+   "score": 0.881,
+   "bulles": [
+    {
+     "n": 4012,
+     "planche": 3,
+     "nom": "Deux nuages"
+    },
+    {
+     "n": 4013,
+     "planche": 3,
+     "nom": "Vagues et chevelure"
+    },
+    {
+     "n": 4078,
+     "planche": 3,
+     "nom": "Album et strates"
+    },
+    {
+     "n": 4080,
+     "planche": 3,
+     "nom": "Berceuse et vent"
+    }
+   ]
+  },
+  {
+   "id": 17,
+   "score": 0.88,
+   "bulles": [
+    {
+     "n": 4042,
+     "planche": 3,
+     "nom": "Tuiles et écailles"
+    },
+    {
+     "n": 4051,
+     "planche": 3,
+     "nom": "Montagne et dos"
+    },
+    {
+     "n": 4090,
+     "planche": 3,
+     "nom": "Ronds et carrés tissés"
+    }
+   ]
+  },
+  {
+   "id": 18,
+   "score": 0.878,
+   "bulles": [
+    {
+     "n": 4027,
+     "planche": 3,
+     "nom": "Linge et voiles"
+    },
+    {
+     "n": 4043,
+     "planche": 3,
+     "nom": "Pinceau et blé"
+    }
+   ]
+  },
+  {
+   "id": 19,
+   "score": 0.876,
+   "bulles": [
+    {
+     "n": 4001,
+     "planche": 3,
+     "nom": "Berceau et nid"
+    },
+    {
+     "n": 4037,
+     "planche": 3,
+     "nom": "Tour de potier et galaxie"
+    }
+   ]
+  },
+  {
+   "id": 20,
+   "score": 0.873,
+   "bulles": [
+    {
+     "n": 4055,
+     "planche": 3,
+     "nom": "Glace et carte"
+    },
+    {
+     "n": 4077,
+     "planche": 3,
+     "nom": "Écorce et mains"
+    },
+    {
+     "n": 4083,
+     "planche": 3,
+     "nom": "Encre et chemins"
+    }
+   ]
+  },
+  {
+   "id": 21,
+   "score": 0.87,
+   "bulles": [
+    {
+     "n": 4032,
+     "planche": 3,
+     "nom": "Papier peint et feuillage"
+    },
+    {
+     "n": 4097,
+     "planche": 3,
+     "nom": "Laine et brume"
+    }
+   ]
+  },
+  {
+   "id": 22,
+   "score": 0.862,
+   "bulles": [
+    {
+     "n": 3017,
+     "planche": 2,
+     "nom": "La fine ligne claire d'une assiette cassée puis recollée"
+    },
+    {
+     "n": 3049,
+     "planche": 2,
+     "nom": "La spirale griffonnée machinalement au coin d'une feuille"
+    }
+   ]
+  },
+  {
+   "id": 23,
+   "score": 0.861,
+   "bulles": [
+    {
+     "n": 3039,
+     "planche": 2,
+     "nom": "Le papier plié en quatre dont le croisement des plis a blanchi à l'usage"
+    },
+    {
+     "n": 4025,
+     "planche": 3,
+     "nom": "Soupe et brume"
+    }
+   ]
+  },
+  {
+   "id": 24,
+   "score": 0.856,
+   "bulles": [
+    {
+     "n": 4063,
+     "planche": 3,
+     "nom": "Fissures réparées"
+    },
+    {
+     "n": 4065,
+     "planche": 3,
+     "nom": "Exil et oiseaux"
+    }
+   ]
+  },
+  {
+   "id": 25,
+   "score": 0.855,
+   "bulles": [
+    {
+     "n": 3033,
+     "planche": 2,
+     "nom": "Les arcs gras de pouces sur un écran noir"
+    },
+    {
+     "n": 3084,
+     "planche": 2,
+     "nom": "Le quadrillage de plis d'un linge resté longtemps plié dans l'armoire"
+    }
+   ]
+  }
+ ]
+}
