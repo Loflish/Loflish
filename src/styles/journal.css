@@ -1,0 +1,156 @@
+/*
+ * Le journal (16 novembre 2026) : un cahier de toile cousu. Chaque entrée est une page : sa date en cartel dans la
+ * marge, son texte en caractères de lecture, et entre deux pages un fil de reliure. Une entrée gardée pour soi
+ * porte un voile plus gris et une petite étiquette (que seul son auteur voit).
+ * Une seule feuille : retirer son import dans main.tsx et le composant <Journal> rend le profil d'avant.
+ */
+
+.journal .bloc-note {
+  max-width: 38rem;
+}
+.journal-liste {
+  list-style: none;
+  margin: clamp(1.4rem, 3vw, 2.2rem) 0 0;
+  padding: 0;
+  max-width: 46rem;
+  /* la reliure : un fil vertical qui court le long de toutes les pages */
+  background: var(--couture-v-pale) left top / 8px 236px repeat-y;
+}
+.journal-entree {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.45rem;
+  padding: 0 0 1.9rem 1.5rem;
+}
+.journal-entree + .journal-entree {
+  padding-top: 1.7rem;
+  /* entre deux pages, un fil pâle */
+  background: var(--couture-pale) 1.5rem top / 236px 8px repeat-x;
+}
+.journal-date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 1rem;
+  margin: 0;
+  font-family: var(--sans);
+  font-size: var(--cartel-taille);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--encre-2);
+}
+.journal-date time {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 0.7em;
+}
+.journal-jour,
+.journal-heure {
+  white-space: nowrap;
+}
+.journal-heure {
+  color: var(--encre-3);
+}
+.journal-prive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--encre-2);
+}
+.journal-corps {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+  min-width: 0;
+}
+.journal-texte {
+  margin: 0;
+  max-width: 36rem;
+  font-family: var(--serif);
+  font-size: 1.12rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+/* une longue entrée se replie sur neuf lignes ; le texte entier reste dans la page pour les lecteurs d'écran */
+.journal-texte.est-repliee {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 9;
+  line-clamp: 9;
+  overflow: hidden;
+}
+.journal-entree.est-privee .journal-texte {
+  color: var(--encre-2);
+}
+.journal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 1.2rem;
+  margin-top: 0.1rem;
+}
+.journal-actions .lien-discret,
+.journal-corps > .lien-discret {
+  min-height: var(--cible);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+.journal-effacer {
+  color: var(--fil-rouge);
+}
+.journal-suite {
+  margin: 0.4rem 0 0 1.5rem;
+}
+
+/* écrire : une page blanche lignée, deux choix sans rien de coché d'avance */
+.journal-ecrire {
+  max-width: 40rem;
+  margin-top: 1.2rem;
+}
+.journal-choix {
+  border: 0;
+  padding: 0;
+  margin: 0.9rem 0 0;
+  display: grid;
+  gap: 0.15rem;
+}
+.journal-choix .check {
+  min-height: var(--cible);
+  align-items: center;
+}
+
+/* sur grand écran, la date passe dans la marge, comme dans un registre */
+@media (min-width: 760px) {
+  .journal-entree {
+    grid-template-columns: 11.5rem minmax(0, 1fr);
+    gap: 0 1.6rem;
+  }
+  .journal-date {
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-top: 0.42rem;
+  }
+  .journal-date time {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+}
+
+/* le mode lecture ne garde que les mots des quatre réponses */
+.trace.lecture .journal {
+  display: none;
+}
+
+@media print {
+  .journal-actions,
+  .journal-ecrire,
+  .journal-suite,
+  .journal-prive,
+  .journal-entree.est-privee {
+    display: none;
+  }
+}

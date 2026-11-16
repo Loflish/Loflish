@@ -9,6 +9,14 @@ modifié ; le moteur (feutre, eau, bulles) est inchangé. Charte, sources et vé
 La version du 30 octobre reste intacte sur `refonte-octobre`.
 Prochaine étape : Tom regarde la refonte sur son téléphone et dit ce qu'il garde.
 
+## Point de reprise — 16 novembre 2026
+
+- **Les fils** sont dans la constellation par défaut (`?fils=0` les retire) : voir la charte.
+- **Le journal** d'une trace est en place, site et serveur : `docs/journal-2026-11-16.md` (décisions de Tom, textes à
+  relire, ce qui reste à décider).
+- **Fluidité** : `npm run controles:fluidite`. **Manques d'un site moderne** : `docs/manques-site-moderne-2026-11-16.md`.
+- Corrigé : en ligne, publier avec une bulle du catalogue était refusé par le serveur (migration 009).
+
 ## Point de reprise — 11 novembre 2026, après-midi
 
 - La version du PC et le linge écrit sont **fusionnés** sur `claude/vibrant-galileo-h4yjfn` (voir

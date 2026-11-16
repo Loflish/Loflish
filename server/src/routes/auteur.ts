@@ -11,8 +11,21 @@ import { z } from 'zod';
 import { exigerCompte, publicCompte, Refus, type Compte } from '../auth';
 import { empreinteIp } from '../securite';
 import { journaliser, pool, requete, transaction, une, type Client } from '../db';
-import { LIMITES, MAX_MEDIAS, TAILLES_MAX, couleurValide, estRubrique, lienValide, limiteDe, natureDe, reouverture, scelleEncore } from '../regles';
-import { trace as serialiserTrace, type LigneFragment, type LigneMedia, type LigneTrace } from '../serialiser';
+import {
+  JOURNAL_PAR_JOUR,
+  LIMITE_JOURNAL,
+  LIMITES,
+  MAX_MEDIAS,
+  TAILLES_MAX,
+  couleurValide,
+  estRubrique,
+  lienValide,
+  limiteDe,
+  natureDe,
+  reouverture,
+  scelleEncore,
+} from '../regles';
+import { entreeJournal, trace as serialiserTrace, type LigneEntreeJournal, type LigneFragment, type LigneMedia, type LigneTrace } from '../serialiser';
 import { idTrace } from '../securite';
 import { stockage } from '../stockage';
 
@@ -38,7 +51,7 @@ const schemaCreation = z.discriminatedUnion('type', [
     nom: texte(80),
     pseudo: facultatif(60),
     couleur: z.string().refine(couleurValide, 'couleur inconnue'),
-    matiere: z.number().int().min(0).max(999).optional(),
+    matiere: z.number().int().min(0).max(9999).optional(),
     pays: facultatif(80),
     questions: z.tuple([texte(LIMITES.q), texte(LIMITES.q), texte(LIMITES.q), texte(LIMITES.q4)]),
     q2Destinataire: facultatif(120),
@@ -48,7 +61,7 @@ const schemaCreation = z.discriminatedUnion('type', [
     type: z.literal('memoire'),
     nom: texte(80),
     couleur: z.string().refine(couleurValide, 'couleur inconnue'),
-    matiere: z.number().int().min(0).max(999).optional(),
+    matiere: z.number().int().min(0).max(9999).optional(),
     pays: facultatif(80),
     // le lien avec la personne est exigé (il reste privé) : c'est ce que le fondateur lit avant de publier (cahier §43.1)
     memoire: z.object({ deposeePar: texte(80), relation: texte(80), origine: facultatif(1200), aperçu: texte(LIMITES.memoire) }),
@@ -78,6 +91,8 @@ const schemaMedia = z.object({
   lien: z.string().max(2000).optional(),
   droits: z.boolean().optional(),
 });
+/** Une entrée du journal : son texte, et le choix de son auteur (visible par tous, ou gardée pour lui) — jamais décidé à sa place. */
+const schemaEntree = z.object({ texte: texte(LIMITE_JOURNAL), visible: z.boolean() });
 const DROITS = 'Confirme que tu as les droits sur ce fichier et l’accord des personnes qu’on y voit ou qu’on y entend.';
 
 /** La trace de l'auteur, verrouillée pour la durée de l'écriture (deux dépôts simultanés ne dépassent jamais une limite). */
@@ -461,11 +476,89 @@ export async function routesAuteur(app: FastifyInstance) {
     return { ok: true };
   });
 
+  // ——— le journal : des blocs de texte datés, écrits au fil du temps sur sa propre trace (la lecture, par paquets,
+  // est dans routes/public.ts)
+
+  // écrire une entrée : scellée aussitôt (son texte ne change plus, sa date est posée ici)
+  app.post('/api/traces/:id/journal', async (req) => {
+    const c = exigerCompte(req);
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const d = schemaEntree.parse(req.body);
+    const e = await transaction(async (tx) => {
+      const t = await maTrace(tx, c, id);
+      if (t.type !== 'personnelle') throw new Refus(409, 'Le journal s’écrit sur ta propre trace, pas sur une mémoire.', 'pas-personnelle');
+      if (t.statut !== 'publiee') throw new Refus(409, 'Ta trace n’est pas publiée : tu ne peux pas écrire dans ton journal pour le moment.', 'pas-publiee');
+      const n = await une<{ n: string }>(
+        `select count(*) n from journal_entrees e join traces t on t.id = e.trace_id
+          where t.compte_id = $1 and e.ecrit_le > now() - interval '24 hours'`,
+        [c.id],
+        tx,
+      );
+      if (Number(n!.n) >= JOURNAL_PAR_JOUR)
+        throw new Refus(429, `Tu as déjà écrit ${JOURNAL_PAR_JOUR} entrées dans ton journal en 24 heures. Tu pourras écrire la suivante un peu plus tard.`, 'trop');
+      // la date est celle du serveur, à la milliseconde, et toujours après celle de l'entrée précédente : la trace est
+      // verrouillée (maTrace), deux écritures simultanées ne reçoivent donc jamais la même date
+      const e = (await une<LigneEntreeJournal>(
+        `insert into journal_entrees (trace_id, texte, visible, ip, ecrit_le)
+         values ($1, $2, $3, $4, greatest(date_trunc('milliseconds', clock_timestamp()),
+                                          (select max(ecrit_le) + interval '1 millisecond' from journal_entrees where trace_id = $1)))
+         returning id, texte, visible, ecrit_le`,
+        [id, d.texte, d.visible, empreinteIp(req.ip)],
+        tx,
+      ))!;
+      // une entrée gardée pour soi ne change rien à ce que le public voit du profil, pas même sa date de mise à jour
+      if (d.visible) await requete('update traces set maj_le = now() where id = $1', [id], tx);
+      // le journal d'audit garde qui a écrit, quand, et le choix de visibilité : jamais le texte
+      await journaliser(c.id, 'journal.ecrit', e.id, { trace: id, visible: d.visible }, tx);
+      return e;
+    });
+    return { entree: entreeJournal(e) };
+  });
+
+  // changer d'avis : montrer à tous une entrée, ou la garder pour soi (son texte et sa date ne changent pas)
+  app.put('/api/journal/:eid/visibilite', async (req) => {
+    const c = exigerCompte(req);
+    const { eid } = z.object({ eid: z.string().uuid() }).parse(req.params);
+    const { visible } = z.object({ visible: z.boolean() }).parse(req.body);
+    const e = await transaction(async (tx) => {
+      const avant = await une<{ trace_id: string; visible: boolean }>('select trace_id, visible from journal_entrees where id = $1', [eid], tx);
+      if (!avant) throw new Refus(404, 'Cette entrée n’existe pas.', 'introuvable');
+      await maTrace(tx, c, avant.trace_id);
+      const e = await une<LigneEntreeJournal>('update journal_entrees set visible = $2 where id = $1 returning id, texte, visible, ecrit_le', [eid, visible], tx);
+      if (!e) throw new Refus(404, 'Cette entrée n’existe pas.', 'introuvable');
+      if (avant.visible !== visible) await journaliser(c.id, 'journal.visibilite', eid, { trace: avant.trace_id, visible }, tx);
+      return e;
+    });
+    return { entree: entreeJournal(e) };
+  });
+
+  // supprimer une entrée : toujours possible pour son auteur (elle est scellée, pas retenue)
+  app.delete('/api/journal/:eid', async (req) => {
+    const c = exigerCompte(req);
+    const { eid } = z.object({ eid: z.string().uuid() }).parse(req.params);
+    await transaction(async (tx) => {
+      const e = await une<{ trace_id: string }>('select trace_id from journal_entrees where id = $1', [eid], tx);
+      if (!e) throw new Refus(404, 'Cette entrée n’existe pas.', 'introuvable');
+      await maTrace(tx, c, e.trace_id);
+      await requete('delete from journal_entrees where id = $1', [eid], tx);
+      await journaliser(c.id, 'journal.supprime', eid, { trace: e.trace_id }, tx);
+    });
+    return { ok: true };
+  });
+
   // ——— RGPD : emporter toutes ses données, ou tout effacer
   app.get('/api/moi/export', async (req, rep) => {
     const c = exigerCompte(req);
     const ids = await requete<{ id: string }>('select id from traces where compte_id = $1', [c.id]);
-    const traces = await Promise.all(ids.map((t) => traceComplete(t.id)));
+    // chaque trace part avec tout son journal : les entrées visibles comme celles gardées pour soi
+    const traces = await Promise.all(
+      ids.map(async (t) => ({
+        ...(await traceComplete(t.id)),
+        journal: (
+          await requete<LigneEntreeJournal>('select id, texte, visible, ecrit_le from journal_entrees where trace_id = $1 order by ecrit_le desc', [t.id])
+        ).map(entreeJournal),
+      })),
+    );
     const trait = await une('select x1, y1, x2, y2, cousu_le from traits where compte_id = $1', [c.id]);
     rep.header('content-disposition', 'attachment; filename="mes-donnees-nos-mots-memoriaux.json"');
     const apresMoi = publicApresMoi(await lireApresMoi(c.id));

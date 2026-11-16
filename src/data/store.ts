@@ -8,7 +8,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { appel, DEMO, depuisPresence, EN_LIGNE, ErreurApi, normaliserTrace, type Presence } from '../lib/api';
 import { creerMedia, preparerEnvoi } from '../lib/fichiers';
 import type { MediaChoisi } from '../components/Media';
-import { MAX_EN_AVANT, MAX_MEDIAS, placesRestantes, type Element, type Media, type RubriqueId, type Trace } from './types';
+import { JOURNAL_PAR_JOUR, JOURNAL_PAR_PAGE, LIMITE_JOURNAL, MAX_EN_AVANT, MAX_MEDIAS, placesRestantes, type Element, type EntreeJournal, type Media, type RubriqueId, type Trace } from './types';
 
 /**
  * Registre des traces.
@@ -684,6 +684,44 @@ export async function deposerFragment(traceId: string, rubrique: RubriqueId, e: 
       ? await appel<{ trace: Trace }>('POST', `/api/traces/${traceId}/fragments`, formulaire(donnees, (await preparerEnvoi(choix.file)).fichier))
       : await appel<{ trace: Trace }>('POST', `/api/traces/${traceId}/fragments`, donnees);
   retenir(r.trace);
+}
+
+// ——— le journal : des blocs de texte datés, scellés à l'écriture, lus par paquets
+
+/** Un paquet du journal d'une trace, des entrées les plus récentes aux plus anciennes ; `avant` : la date de la dernière entrée déjà lue. */
+export async function lireJournal(traceId: string, avant?: string): Promise<{ entrees: EntreeJournal[]; suite: boolean }> {
+  if (!EN_LIGNE) {
+    const moi = isMine(traceId);
+    const tout = (getTrace(traceId)?.journal ?? []).filter((e) => moi || e.visible).sort((a, b) => b.ecritLe.localeCompare(a.ecritLe));
+    const reste = avant ? tout.filter((e) => e.ecritLe < avant) : tout;
+    return { entrees: reste.slice(0, JOURNAL_PAR_PAGE), suite: reste.length > JOURNAL_PAR_PAGE };
+  }
+  return appel<{ entrees: EntreeJournal[]; suite: boolean }>('GET', `/api/traces/${traceId}/journal${avant ? `?avant=${encodeURIComponent(avant)}` : ''}`);
+}
+
+/** Écrire une entrée : elle est scellée aussitôt (son texte ne change plus, sa date fait foi). Lève une erreur lisible si c'est refusé. */
+export async function ecrireJournal(traceId: string, texte: string, visible: boolean): Promise<EntreeJournal> {
+  if (!EN_LIGNE) {
+    const depuisHier = Date.now() - 24 * 3600 * 1000;
+    const duJour = (getTrace(traceId)?.journal ?? []).filter((e) => new Date(e.ecritLe).getTime() > depuisHier).length;
+    if (duJour >= JOURNAL_PAR_JOUR) throw new Error(`Tu as déjà écrit ${JOURNAL_PAR_JOUR} entrées aujourd’hui. Reviens demain.`);
+    const e: EntreeJournal = { id: `j-${Date.now().toString(36)}`, texte: texte.trim().slice(0, LIMITE_JOURNAL), ecritLe: new Date().toISOString(), visible };
+    updateLocal(traceId, (t) => ({ ...t, journal: [e, ...(t.journal ?? [])] }));
+    return e;
+  }
+  return (await appel<{ entree: EntreeJournal }>('POST', `/api/traces/${traceId}/journal`, { texte, visible })).entree;
+}
+
+/** Montrer une entrée à tous, ou la garder pour soi : ce choix n'est pas scellé. */
+export async function changerVisibiliteJournal(traceId: string, entreeId: string, visible: boolean): Promise<void> {
+  if (!EN_LIGNE) return updateLocal(traceId, (t) => ({ ...t, journal: (t.journal ?? []).map((e) => (e.id === entreeId ? { ...e, visible } : e)) }));
+  await appel('PUT', `/api/journal/${entreeId}/visibilite`, { visible });
+}
+
+/** Supprimer une entrée : le scellement n'empêche jamais d'effacer ce qu'on a écrit. */
+export async function supprimerEntreeJournal(traceId: string, entreeId: string): Promise<void> {
+  if (!EN_LIGNE) return updateLocal(traceId, (t) => ({ ...t, journal: (t.journal ?? []).filter((e) => e.id !== entreeId) }));
+  await appel('DELETE', `/api/journal/${entreeId}`);
 }
 
 /** Déposer un média ou un document dans « Médias & documents ». */

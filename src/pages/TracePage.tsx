@@ -8,6 +8,7 @@ import { Icon } from '../components/Icon';
 import { FragmentEditor } from '../components/FragmentEditor';
 import { Panneau } from '../components/Panneau';
 import { Signaler } from '../components/Signaler';
+import { Journal } from '../components/Journal';
 import { ChoixMedia, MediaThumb, MediaVue, OuvrirMedia, type MediaChoisi } from '../components/Media';
 import {
   dateLongue,
@@ -333,6 +334,9 @@ export function TracePage() {
             );
           })()}
         </section>
+
+        {/* ——— le journal : des blocs de texte datés, écrits au fil du temps (trace personnelle seulement) */}
+        <Journal trace={trace} auteur={canAjouter} />
 
         {/* ——— Photos, vidéos, sons & documents ; les choix de confidentialité (pour l'auteur seulement) */}
         <div className={`trace-bas${auteur && editable ? '' : ' sans-parametres'}`}>

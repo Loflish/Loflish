@@ -3,10 +3,21 @@
  * c'est ici qu'elles font foi. Les limites viennent du même fichier que le
  * site (src/data/types.ts), pour qu'elles ne divergent jamais.
  */
-import { LIMITES, MAX_EN_AVANT, MAX_MEDIAS, RUBRIQUES, limiteDe, type RubriqueId } from '../../src/data/types';
+import {
+  JOURNAL_PAR_JOUR,
+  JOURNAL_PAR_PAGE,
+  LIMITE_JOURNAL,
+  LIMITES,
+  MAX_EN_AVANT,
+  MAX_MEDIAS,
+  RUBRIQUES,
+  limiteDe,
+  type EntreeJournal,
+  type RubriqueId,
+} from '../../src/data/types';
 
-export { LIMITES, MAX_EN_AVANT, MAX_MEDIAS, limiteDe };
-export type { RubriqueId };
+export { JOURNAL_PAR_JOUR, JOURNAL_PAR_PAGE, LIMITE_JOURNAL, LIMITES, MAX_EN_AVANT, MAX_MEDIAS, limiteDe };
+export type { EntreeJournal, RubriqueId };
 
 export const RUBRIQUE_IDS = new Set<string>(RUBRIQUES.map((r) => r.id));
 export const estRubrique = (r: string): r is RubriqueId => RUBRIQUE_IDS.has(r);

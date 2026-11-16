@@ -4,6 +4,8 @@
  * différence entre le prototype et le vrai musée.
  */
 
+import type { EntreeJournal } from './regles';
+
 const date = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
 /** « 1er octobre 2026 », « 2 novembre 2025 » */
 export const dateFr = (d: Date | string) => date.format(new Date(d)).replace(/^1 /, '1er ');
@@ -65,6 +67,18 @@ export interface LigneMedia {
   en_avant: boolean;
   ordre: number;
   scelle_le: Date;
+}
+
+export interface LigneEntreeJournal {
+  id: string;
+  texte: string;
+  visible: boolean;
+  ecrit_le: Date;
+}
+
+/** Une entrée du journal, telle que le site la lit (sa date complète : c'est aussi le repère pour lire la suite). */
+export function entreeJournal(e: LigneEntreeJournal): EntreeJournal {
+  return { id: e.id, texte: e.texte, ecritLe: e.ecrit_le.toISOString(), visible: e.visible };
 }
 
 const sansVide = <T extends Record<string, unknown>>(o: T): T => {

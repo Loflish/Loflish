@@ -202,6 +202,27 @@ export const SAKINAH: Trace = {
     { id: 'f19', kind: 'lien', titre: 'Les Glaneurs et la Glaneuse', url: 'https://fr.wikipedia.org/wiki/Les_Glaneurs_et_la_Glaneuse', teinte: '#E2DCCB' },
     { id: 'f20', kind: 'lien', titre: 'Le Petit Prince', url: 'https://fr.wikipedia.org/wiki/Le_Petit_Prince', teinte: '#DAD6E6' },
   ],
+  // le journal : des entrées de démonstration, pour montrer la partie dans l'aperçu (à réécrire ou retirer par Tom)
+  journal: [
+    {
+      id: 'j3',
+      ecritLe: '2025-03-02T21:40:00+01:00',
+      visible: true,
+      texte: 'Mamani aurait eu quatre-vingt-dix ans aujourd’hui. J’ai remonté la boîte à musique. La note manque toujours, et c’est très bien comme ça.',
+    },
+    {
+      id: 'j2',
+      ecritLe: '2024-11-17T07:15:00+01:00',
+      visible: true,
+      texte: 'Premier matin de gel. J’ai dessiné la buée sur la vitre avant qu’elle parte. Huitième carnet, première page.',
+    },
+    {
+      id: 'j1',
+      ecritLe: '2024-06-12T23:05:00+02:00',
+      visible: true,
+      texte: 'J’ai déposé ma trace ce soir. Je croyais écrire pour plus tard ; j’ai surtout appris ce à quoi je tiens maintenant.',
+    },
+  ],
   parametres: {
     droitsReutilisation: true,
     archivageLongueDuree: true,

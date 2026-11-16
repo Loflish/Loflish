@@ -199,6 +199,28 @@ const note = (nom, ok, detail = '') => { res.push({ nom, ok: !!ok }); console.lo
     await sw.first().click({ force: true }); await p.waitForTimeout(250); const c = await sw.first().isChecked();
     return n === 4 && a !== c;
   });
+  await essai('ma nouvelle trace : journal (rien de pré-coché, deux temps, scellé, privé caché au visiteur, suppression)', async () => {
+    const j = p.locator('.journal'); await j.scrollIntoViewIfNeeded();
+    const bouton = j.locator('.journal-ecrire .bouton');
+    await j.locator('textarea').fill('Première entrée, pour tous.');
+    const sansChoix = await bouton.isDisabled();
+    const coches = await j.locator('.journal-choix input:checked').count();
+    await j.locator('.journal-choix input').nth(0).check(); await bouton.click();
+    const avert = await j.locator('.editeur-scelle').count(); const avant = await j.locator('.journal-entree').count();
+    await bouton.click(); await p.waitForTimeout(500);
+    await j.locator('textarea').fill('Seconde entrée, pour moi.'); await j.locator('.journal-choix input').nth(1).check(); await bouton.click(); await bouton.click(); await p.waitForTimeout(500);
+    const auteur = await j.locator('.journal-entree').count(); const privees = await j.locator('.journal-entree.est-privee').count();
+    // en visiteur : l'entrée gardée pour soi disparaît, et on ne peut pas écrire
+    await p.getByRole('radio', { name: /visiteur/i }).click(); await p.waitForTimeout(400);
+    const visiteur = await p.locator('.journal .journal-entree').count(); const formulaire = await p.locator('.journal-ecrire').count();
+    await p.getByRole('radio', { name: /auteur/i }).click(); await p.waitForTimeout(400);
+    // supprimer, en deux temps
+    await j.locator('.journal-entree').first().getByRole('button', { name: /Supprimer/ }).click();
+    await j.getByRole('button', { name: /Oui, supprimer/ }).click(); await p.waitForTimeout(400);
+    const apres = await j.locator('.journal-entree').count();
+    const ok = sansChoix && coches === 0 && avert === 1 && avant === 0 && auteur === 2 && privees === 1 && visiteur === 1 && formulaire === 0 && apres === 1;
+    return ok ? '2 entrées écrites, 1 vue par le visiteur, 1 supprimée' : `sansChoix ${sansChoix} coches ${coches} avert ${avert} avant ${avant} auteur ${auteur} privees ${privees} visiteur ${visiteur} formulaire ${formulaire} apres ${apres}`.length < 0;
+  });
   await va('compte');
   await essai('compte : mes traces, 18 rubriques à compléter, adresse, données', async () => { const n = await p.locator('.ma-trace-rubrique').count(); const nom = await txt('.ma-trace-nom'); const h = await p.locator('main h2').allTextContents(); return n === 18 && /Camille/.test(nom) ? h.join(' · ') : `${n} ${nom}`.length && false; });
   await va('', 3000);

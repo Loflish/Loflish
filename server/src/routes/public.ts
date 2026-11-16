@@ -5,8 +5,8 @@ import { dejaAJour, etiquette, memoire } from '../cache';
 import { config } from '../config';
 import { envoyerDemandeDeces, envoyerSignalement } from '../courriel';
 import { journaliser, requete, une } from '../db';
-import { dansLOeuvre, LONGUEUR_TRAIT, RUBRIQUE_IDS } from '../regles';
-import { presence, trace, type LigneFragment, type LigneMedia, type LigneTrace } from '../serialiser';
+import { dansLOeuvre, JOURNAL_PAR_PAGE, LONGUEUR_TRAIT, RUBRIQUE_IDS } from '../regles';
+import { entreeJournal, presence, trace, type LigneEntreeJournal, type LigneFragment, type LigneMedia, type LigneTrace } from '../serialiser';
 import { empreinte, jeton } from '../securite';
 import { stockage, type Plage } from '../stockage';
 
@@ -64,6 +64,33 @@ export async function routesPubliques(app: FastifyInstance) {
       requete<LigneMedia>('select * from medias where trace_id = $1 order by ordre, cree_le', [id]),
     ]);
     return { trace: trace(t, fragments, medias, auteur) };
+  });
+
+  // le journal d'une trace, par paquets, de l'entrée la plus récente à la plus ancienne. Mêmes règles que le profil :
+  // une trace qui n'est pas publiée reste fermée au public. Les entrées gardées pour soi ne sont lues que par leur auteur.
+  app.get('/api/traces/:id/journal', async (req, rep) => {
+    const { id } = z.object({ id: z.string().max(40) }).parse(req.params);
+    const { avant, limite } = z
+      .object({
+        /** la date (ecritLe) de la dernière entrée déjà lue : on rend celles qui sont strictement plus anciennes */
+        avant: z.iso.datetime({ offset: true }).optional(),
+        limite: z.coerce.number().int().min(1).max(50).default(JOURNAL_PAR_PAGE),
+      })
+      .parse(req.query);
+    const t = await une<{ compte_id: string | null; statut: string }>('select compte_id, statut from traces where id = $1', [id]);
+    const auteur = !!t && !!req.compte && t.compte_id === req.compte.id;
+    const equipe = !!req.compte && ['moderation', 'admin'].includes(req.compte.role);
+    if (!t || (t.statut !== 'publiee' && !auteur && !equipe)) throw new Refus(404, 'Cette trace n’existe pas ou n’est plus visible.', 'introuvable');
+    // la réponse dépend de qui la lit (l'auteur y trouve ses entrées non visibles) : aucun cache ne la garde
+    rep.header('cache-control', 'private, no-store');
+    // une entrée de plus que demandé : sa présence dit s'il en reste de plus anciennes
+    const lignes = await requete<LigneEntreeJournal>(
+      `select id, texte, visible, ecrit_le from journal_entrees
+        where trace_id = $1 and (visible or $2::boolean) and ($3::timestamptz is null or ecrit_le < $3::timestamptz)
+        order by ecrit_le desc limit $4`,
+      [id, auteur, avant ?? null, limite + 1],
+    );
+    return { entrees: lignes.slice(0, limite).map(entreeJournal), suite: lignes.length > limite };
   });
 
   // rechercher un nom, un mot, un lieu (accents et majuscules ignorés),

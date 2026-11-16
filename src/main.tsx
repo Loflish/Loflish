@@ -24,6 +24,7 @@ import './styles/pages.css';
 import './styles/finitions.css';
 import './styles/linge-fusion.css';
 import './styles/ecriture.css';
+import './styles/journal.css';
 import './styles/print.css';
 
 import { StrictMode } from 'react';

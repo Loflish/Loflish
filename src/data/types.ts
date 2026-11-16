@@ -112,6 +112,8 @@ export interface Trace {
   };
   rubriques: Partial<Record<RubriqueId, Element[]>>;
   medias: Media[];
+  /** le journal, dans l'aperçu autonome seulement (en ligne, il se lit par paquets auprès du serveur) */
+  journal?: EntreeJournal[];
   /**
    * Date (ISO) à laquelle l'auteur a scellé ses réponses : la trace devient alors
    * publique, et ses réponses ne changent plus pendant cinq ans.
@@ -212,6 +214,27 @@ export function limiteDe(rubrique: RubriqueId): number {
 export const MAX_EN_AVANT = 3;
 /** Médias & documents : 20 au plus (les médias joints aux fragments ne comptent pas). */
 export const MAX_MEDIAS = 20;
+
+/**
+ * Le journal (16 novembre 2026) : en plus des fragments, la personne peut écrire au fil du temps des blocs de texte
+ * datés. Chaque entrée est scellée à l'écriture (elle ne change plus, sa date fait foi), mais reste supprimable ;
+ * pour chacune, la personne choisit si elle est visible par tous ou gardée pour elle. Texte seul, sans limite de
+ * nombre : c'est ce qui garde le musée léger à héberger, même avec des milliers de personnes.
+ */
+export interface EntreeJournal {
+  id: string;
+  texte: string;
+  /** date et heure d'écriture (ISO), posées par le musée */
+  ecritLe: string;
+  /** vrai : visible par tous sur le profil ; faux : seulement par son auteur */
+  visible: boolean;
+}
+/** longueur d'une entrée, en caractères (environ deux pages) */
+export const LIMITE_JOURNAL = 5000;
+/** le journal se lit par paquets : « comme infini », sans jamais tout charger d'un coup */
+export const JOURNAL_PAR_PAGE = 20;
+/** entrées par personne et par jour : assez pour écrire librement, trop peu pour remplir le musée par automate */
+export const JOURNAL_PAR_JOUR = 20;
 
 /** Combien de fragments peut encore recevoir une rubrique. */
 export function placesRestantes(items: Element[], rubrique: RubriqueId): number {

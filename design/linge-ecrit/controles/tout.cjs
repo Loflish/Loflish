@@ -6,8 +6,8 @@ const ici = __dirname;
 const dist = path.join(ici, '..', '..', '..', 'dist');
 const serveur = spawn(process.execPath, [path.join(ici, 'servir.cjs'), dist, '4174'], { stdio: 'ignore' });
 const etapes = [
-  ['Parcours de 32 gestes, téléphone', ['parcours.cjs', 'http://127.0.0.1:4174/', '390']],
-  ['Parcours de 32 gestes, ordinateur', ['parcours.cjs', 'http://127.0.0.1:4174/', '1440']],
+  ['Parcours de 33 gestes, téléphone', ['parcours.cjs', 'http://127.0.0.1:4174/', '390']],
+  ['Parcours de 33 gestes, ordinateur', ['parcours.cjs', 'http://127.0.0.1:4174/', '1440']],
   ['Textes, liens, contrôles et titres inchangés', ['textes.cjs']],
   ['Accessibilité (axe), débordements, cibles tactiles', ['mesurer.cjs']],
   ['Chaque page ne charge que ce qu’elle montre', ['demarrage.cjs']],
