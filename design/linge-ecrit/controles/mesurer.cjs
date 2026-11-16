@@ -17,7 +17,7 @@ const formats = [['320', { width: 320, height: 640 }, true], ['390', { width: 39
     p.on('pageerror', (e) => errs.push(String(e)));
     p.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
     for (const r of routes) {
-      await p.goto(base + '?entree=0#/' + r);
+      await p.goto(base + '?entree=0&fils=0#/' + r);
       await p.waitForTimeout(r === '' ? 3500 : 1800);
       await p.addScriptTag({ content: axe });
       const a = await p.evaluate(async () => {

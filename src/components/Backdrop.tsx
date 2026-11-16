@@ -18,8 +18,9 @@ import { Icon } from './Icon';
 
 // le fond qui coule comme une eau calme (?eau=0 le retire, pour comparer)
 const EAU = reglagesEau();
-/** essai du 11 novembre : des fils de broderie cousus dans la peinture, qui bougent avec elle (`?fils=1`, `?fils=2` plus dense) */
-const VARIANTE_FILS = varianteFils();
+/** les fils dessinés dans la peinture de la constellation, qui bougent avec elle (`?fils=0` les retire, `?fils=2` en met davantage) */
+// en mode « économiseur de données », pas de fils sans qu'on les demande : ils coûtent du calcul à la carte graphique
+const VARIANTE_FILS = varianteFils(typeof navigator === 'undefined' || (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData !== true);
 if (VARIANTE_FILS && typeof document !== 'undefined') document.documentElement.classList.add('avec-fils');
 
 /**
@@ -107,6 +108,8 @@ function FondsPeints({ actif }: { actif: Fond }) {
   useEffect(() => {
     if (!VARIANTE_FILS || !eauPrete || !filsRef.current || fils.current) return;
     const ids = allTraces().map((t) => t.id);
+    let logo: DOMRect | undefined;
+    let logoLu = -1000;
     const vues = () => {
       const c = engine.current;
       const l: { x: number; y: number; r: number; bord?: number }[] = [];
@@ -118,7 +121,11 @@ function FondsPeints({ actif }: { actif: Fond }) {
       }
       // autour du logo brodé, les fils s'écartent en douceur, sans cadre : ses traits rouges restent lisibles
       // (Tom, 11 novembre : « sans encadré, mais visible avec ses traits rouges »)
-      const logo = document.querySelector('.explorer-logo .logo img')?.getBoundingClientRect();
+      // la place du logo n'est relue que deux fois par seconde : la mesurer à chaque image forçait une mise en page
+      if (performance.now() - logoLu > 500) {
+        logoLu = performance.now();
+        logo = document.querySelector('.explorer-logo .logo img')?.getBoundingClientRect();
+      }
       if (logo && logo.width > 0) {
         const r = logo.height * 1.15;
         const n = Math.max(2, Math.ceil(logo.width / (r * 0.7)));

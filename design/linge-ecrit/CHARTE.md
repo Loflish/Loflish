@@ -110,12 +110,16 @@ La performance mesurée est celle d'un navigateur sans carte graphique : à refa
   d'écriture brodées au point avant, illisibles, avec le fil qui pend. Sur le profil, dans la couleur de la
   personne ; dans la marge de « Créer ma trace » (grand écran), deux lignes de plus à chaque étape.
   Décor seulement, jamais sous un texte à lire. Retirer l'import de `ecriture.css` rend le site d'avant.
-- **Essai « filaments »** (`src/engine/filaments.ts`, `?fils=1`, `?fils=2` plus dense) : des fils de broderie
-  cousus dans la peinture de la constellation. Chaque point d'un fil est attaché à un point de la peinture et bouge
-  du déplacement que l'eau donne au pigment à cet endroit (même calcul que `eau.ts`, même phase, lu par
-  `FondEau.mouvement()`). 26 000 fils sur ordinateur, 12 000 sur téléphone, d'un pixel d'écran, allégés pour
-  laisser voir la couleur ; ils prennent la teinte du pigment qu'ils portent et s'effacent sous les bulles.
-  Autour du logo, les fils s’écartent en douceur, sans cadre. Sans le drapeau, rien n’est créé.
+- **Les fils** (`src/engine/filaments.ts`) : par défaut depuis le 16 novembre (`?fils=0` les retire, `?fils=2` en
+  met davantage). Des traits très fins, comme un dessin au crayon de couleur, cousus dans la peinture de la
+  constellation : chaque point d'un trait est attaché à un point de la peinture et bouge du déplacement que l'eau
+  donne au pigment à cet endroit (même calcul que `eau.ts`, même phase, lu par `FondEau.mouvement()`).
+  46 000 traits sur ordinateur, 20 000 sur téléphone. La toile est plus dense que l'écran (deux à trois pixels par
+  point) : un trait fait un demi à un tiers de point d'écran. Les traits prennent la teinte du pigment qu'ils
+  portent, s'effacent sous les bulles et s'écartent autour du logo. En mode « économiseur de données », ils ne
+  viennent que si l'adresse les demande ; si l'appareil peine, des traits sont retirés.
+- **Fluidité** (16 novembre) : `npm run controles:fluidite` mesure le délai de réponse de 25 gestes, processeur
+  ralenti quatre fois. Voir `docs/manques-site-moderne-2026-11-16.md`.
 - **Passe de finition** d'après trois guides de design lus à la source (Impeccable, Taste Skill,
   awesome-design-md) : aucune étiquette sous 12 px (`--cartel-taille` 0,78rem), curseur d'écriture et barres de
   défilement aux couleurs du linge. Non repris, par choix : la règle « pas de sur-titre en petites capitales »

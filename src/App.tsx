@@ -1,4 +1,5 @@
 import { useCoutures } from './lib/couture';
+import { usePrechargement } from './lib/prechargement';
 import { lazy, Suspense, useLayoutEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Backdrop } from './components/Backdrop';
@@ -64,6 +65,8 @@ export function App() {
   const location = useLocation();
   // les coutures du linge écrit se cousent quand elles entrent dans l'écran
   useCoutures();
+  // le code d'une page arrive dès qu'on approche de son lien
+  usePrechargement();
   const lent = (el: React.ReactNode) => <Suspense fallback={<Attente />}>{el}</Suspense>;
   return (
     <>

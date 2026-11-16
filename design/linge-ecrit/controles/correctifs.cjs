@@ -7,7 +7,7 @@ console.log = (...a) => { if (String(a[0]).startsWith('ÉCHEC')) echecs++; journ
 const init = () => { try { localStorage.setItem('nmm:vu', '1'); localStorage.setItem('nmm:visites', '5'); sessionStorage.setItem('nmm:entree-vue', '1'); } catch {} };
 (async () => {
   const b = await chromium.launch();
-  const ouvrir = async (w, h, r, mobile = true) => { const c = await b.newContext({ viewport: { width: w, height: h }, isMobile: mobile, hasTouch: mobile }); await c.addInitScript(init); const p = await c.newPage(); await p.goto(base + '?entree=0#/' + r); await p.waitForTimeout(r === '' ? 3500 : 2200); return p; };
+  const ouvrir = async (w, h, r, mobile = true) => { const c = await b.newContext({ viewport: { width: w, height: h }, isMobile: mobile, hasTouch: mobile }); await c.addInitScript(init); const p = await c.newPage(); await p.goto(base + '?entree=0&fils=0#/' + r); await p.waitForTimeout(r === '' ? 3500 : 2200); return p; };
   // 1. petit écran : « Ouvrir la trace » reste au-dessus du ruban, sur 12 cartes
   let p = await ouvrir(375, 553, 'se-perdre'); let pire = 1e9;
   for (let i = 0; i < 12; i++) { const m = await p.evaluate(() => { const l = document.querySelector('.perdre-carte .lien-entrer').getBoundingClientRect(); const a = document.querySelector('.perdre-actions').getBoundingClientRect(); return a.top - l.bottom; }); pire = Math.min(pire, m); await p.getByRole('button', { name: 'Suivant' }).click(); await p.waitForTimeout(250); }

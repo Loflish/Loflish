@@ -8,7 +8,7 @@ const routes = ['', 'trace/sakinah', 'trace/jeannot', 'creer', 'projet', 'ressou
 const lire = async (ctx, base) => {
   const p = await ctx.newPage(); const o = {};
   for (const r of routes) {
-    await p.goto('about:blank'); await p.goto(base + '?entree=0#/' + r); await p.waitForTimeout(r === '' ? 3000 : 1600);
+    await p.goto('about:blank'); await p.goto(base + '?entree=0&fils=0#/' + r); await p.waitForTimeout(r === '' ? 3000 : 1600);
     // la création enregistre son brouillon après une demi-seconde : attendre l'état stable
     if (r === 'creer') await p.waitForSelector('.brouillon.is-saved', { timeout: 5000 }).catch(() => {});
     o[r || 'explorer'] = await p.evaluate(() => {

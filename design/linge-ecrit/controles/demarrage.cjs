@@ -11,7 +11,7 @@ const note = (nom, bon, detail = '') => { total++; if (bon) ok++; console.log((b
     await c.addInitScript(() => { try { localStorage.setItem('nmm:vu', '1'); localStorage.setItem('nmm:visites', '5'); sessionStorage.setItem('nmm:entree-vue', '1'); } catch {} });
     const p = await c.newPage(); const req = []; const err = [];
     p.on('request', (q) => req.push(q.url())); p.on('pageerror', (e) => err.push(String(e)));
-    await p.goto(base + '?entree=0#/' + r); await p.waitForTimeout(3500);
+    await p.goto(base + '?entree=0&fils=0#/' + r); await p.waitForTimeout(3500);
     return { p, req, err };
   };
   const compte = (req, motif) => req.filter((u) => motif.test(u)).length;
@@ -47,7 +47,19 @@ const note = (nom, bon, detail = '') => { total++; if (bon) ok++; console.log((b
     note('constellation → Se perdre → constellation : le même moteur, jamais recréé', await p.evaluate(() => window.__nmmDebug.engine.__temoin === 1));
     await p.context().close();
   }
-  // créer une trace en partant d'une page de texte : la bulle rejoint la constellation créée ensuite
+  // les fils dessinés dans la peinture : présents sans rien demander, absents avec ?fils=0, jamais sur une page de texte
+  {
+    const c = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    await c.addInitScript(() => { try { localStorage.setItem('nmm:vu', '1'); localStorage.setItem('nmm:visites', '5'); sessionStorage.setItem('nmm:entree-vue', '1'); } catch {} });
+    const p = await c.newPage(); const err = []; p.on('pageerror', (e) => err.push(String(e)));
+    p.setDefaultTimeout(180000);
+    await p.goto(base + '?entree=0#/');
+    const n = await p.waitForFunction(() => window.__nmmDebug && window.__nmmDebug.fils && window.__nmmDebug.fils.n, null, { timeout: 180000 }).then((h) => h.jsonValue()).catch(() => 0);
+    note('constellation : les fils sont là par défaut', n > 1000 && (await p.locator('canvas.fond-fils').count()) === 1 && err.length === 0, `${n} fils`);
+    await p.goto('about:blank'); await p.goto(base + '?entree=0&fils=0#/'); await p.waitForTimeout(5000);
+    note('constellation : ?fils=0 les retire', (await p.locator('canvas.fond-fils').count()) === 0 && !(await p.evaluate(() => !!(window.__nmmDebug && window.__nmmDebug.fils))));
+    await c.close();
+  }
   await b.close();
   console.log(`\nTOTAL démarrage : ${ok} / ${total}`);
   process.exit(ok === total ? 0 : 1);

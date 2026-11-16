@@ -12,10 +12,35 @@ import { appel, EN_LIGNE } from '../lib/api';
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
+/** Le texte où chercher, calculé une seule fois par trace (ouvrir la recherche ne recalcule rien). */
+const TEXTES = new WeakMap<Trace, string>();
 function searchable(t: Trace): string {
-  const parts = [t.nom, t.pays ?? '', ...(t.questions ?? []), t.memoire?.aperçu ?? ''];
-  for (const list of Object.values(t.rubriques)) for (const e of list ?? []) parts.push(e.titre ?? '', e.texte, e.lieu ?? '');
-  return ' ' + norm(parts.join(' ')).replace(/[^a-z0-9]+/g, ' ');
+  let s = TEXTES.get(t);
+  if (s === undefined) {
+    const parts = [t.nom, t.pays ?? '', ...(t.questions ?? []), t.memoire?.aperçu ?? ''];
+    for (const list of Object.values(t.rubriques)) for (const e of list ?? []) parts.push(e.titre ?? '', e.texte, e.lieu ?? '');
+    s = ' ' + norm(parts.join(' ')).replace(/[^a-z0-9]+/g, ' ');
+    TEXTES.set(t, s);
+  }
+  return s;
+}
+
+/**
+ * Prépare la recherche pendant que le navigateur n'a rien à faire, quelques traces à la fois : ouvrir la recherche
+ * ne fige plus l'écran (mesuré le 16 novembre, processeur ralenti quatre fois : 320 ms avant, dont une tâche de 229 ms).
+ */
+function preparerRecherche(traces: Trace[]): () => void {
+  let i = 0;
+  let minuterie = 0;
+  // des tranches de 4 ms, espacées : jamais assez longues pour retarder un geste, et sans attendre un temps mort
+  // que la constellation, qui dessine à chaque image, ne laisse pas toujours
+  const pas = () => {
+    const fin = performance.now() + 4;
+    while (i < traces.length && performance.now() < fin) searchable(traces[i++]!);
+    if (i < traces.length) minuterie = window.setTimeout(pas, 40);
+  };
+  minuterie = window.setTimeout(pas, 0);
+  return () => window.clearTimeout(minuterie);
 }
 
 /** L'année de création, lue dans la date en toutes lettres (« 12 juin 2024 »). */
@@ -87,6 +112,15 @@ export function Explorer() {
   const maTrace = useMesTraces().find((t) => traces.includes(t));
   const [hint, setHint] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
+  // l'index de la recherche se prépare en arrière-plan, une fois la constellation posée
+  useEffect(() => {
+    let arreter: (() => void) | undefined;
+    const t = window.setTimeout(() => (arreter = preparerRecherche(traces)), 1800);
+    return () => {
+      window.clearTimeout(t);
+      arreter?.();
+    };
+  }, [traces]);
   // le visiteur s'est promené ou approché : « Revenir au centre » apparaît
   const [deplace, setDeplace] = useState(() => !!engine.current?.isMoved);
   // une seule phrase, à la toute première visite, puis elle s'efface

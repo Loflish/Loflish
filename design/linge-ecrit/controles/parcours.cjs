@@ -13,7 +13,7 @@ const note = (nom, ok, detail = '') => { res.push({ nom, ok: !!ok }); console.lo
   const p = await ctx.newPage();
   const erreurs = [];
   p.on('pageerror', (e) => erreurs.push(String(e)));
-  const va = async (r, t = 1800) => { await p.goto('about:blank'); await p.goto(base + '?entree=0#/' + r); await p.waitForTimeout(t); };
+  const va = async (r, t = 1800) => { await p.goto('about:blank'); await p.goto(base + '?entree=0&fils=0#/' + r); await p.waitForTimeout(t); };
   const essai = async (nom, f) => { try { const r = await f(); note(nom, r !== false, typeof r === 'string' ? r : ''); } catch (e) { note(nom, false, String(e).split('\n')[0].slice(0, 110)); } };
   const txt = (sel) => p.locator(sel).first().textContent();
 

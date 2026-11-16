@@ -106,7 +106,7 @@ export function OeuvreCommune() {
   const [anim, setAnim] = useState<{ t: Trait; p: number } | null>(null);
   const vue = useRef<Vue>({ s: 1, x: 0, y: 0 });
   const survol = useRef<[number, number] | null>(null);
-  const [, redessiner] = useState(0);
+  const [tic, redessiner] = useState(0);
   /** le cadrage d'ouverture (le cœur de l'œuvre), pour y revenir d'un clic ou de la touche Début */
   const cadrerRef = useRef<() => void>(() => undefined);
   const [eloigne, setEloigne] = useState(false);
@@ -192,7 +192,11 @@ export function OeuvreCommune() {
     return () => window.removeEventListener('resize', cadrer);
   }, []);
 
-  useEffect(dessinerBase);
+  // la toile du fond porte tous les traits : elle ne se recoud que si les traits ou la vue changent. Poser un point, survoler,
+  // ouvrir le panneau ne la touchent plus (mesuré le 16 novembre, processeur ralenti quatre fois : 208 ms par point posé).
+  const animEnCours = !!anim;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(dessinerBase, [traits, animEnCours, tic]);
   useEffect(dessinerDessus);
 
   // l'aiguille coud le trait, point par point

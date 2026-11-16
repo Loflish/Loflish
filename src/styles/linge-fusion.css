@@ -568,3 +568,40 @@
 .media-duree {
   font-size: 0.76rem;
 }
+
+/* ——— couleurs forcées (mode « contraste élevé » de Windows) : les coutures et les toiles sont des images de fond,
+   que ce mode retire ; les boutons, champs et panneaux reprennent alors un vrai bord (16 novembre, recherche des
+   manques : WCAG 1.4.11) */
+
+@media (forced-colors: active) {
+  .bouton,
+  .chip,
+  .segmented,
+  .dock,
+  .explorer-actions .lien-discret,
+  .apercu,
+  .perdre-carte,
+  .fragment,
+  .question-200,
+  .choix-item,
+  .editeur,
+  .menu-panel,
+  .search-panel,
+  .salle,
+  input,
+  textarea,
+  select {
+    border: 1px solid CanvasText;
+  }
+  .bloc,
+  .site-footer,
+  .projet-section,
+  .juridique-liste > li {
+    border-top: 1px solid CanvasText;
+  }
+  .trace-head::before,
+  .etape-fil::after,
+  canvas.fond-fils {
+    display: none;
+  }
+}

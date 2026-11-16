@@ -18,9 +18,13 @@
 
 export type VarianteFils = 1 | 2;
 
-export function varianteFils(): VarianteFils | null {
+/**
+ * Les fils font partie de la constellation depuis le 16 novembre 2026 (Tom : « mets les fils par défaut »).
+ * `?fils=0` les retire, pour comparer ; `?fils=2` en met davantage. Sur un appareil en mode économe
+ * (`parDefaut` faux), ils ne viennent que si l'adresse les demande.
+ */
+export function varianteFils(parDefaut = true): VarianteFils | null {
   if (typeof window === 'undefined') return null;
-  // l'adresse (?fils=1), ou un essai mémorisé pour l'onglet (bouton d'essai de l'aperçu partagé)
   let v = new URLSearchParams(window.location.search).get('fils');
   // l'aperçu partagé, où l'adresse ne se modifie pas, pose son choix avant le chargement du site
   v ??= (window as unknown as { __nmmEssais?: { fils?: string | null } }).__nmmEssais?.fils ?? null;
@@ -29,7 +33,10 @@ export function varianteFils(): VarianteFils | null {
   } catch {
     /* stockage refusé : l'adresse seule décide */
   }
-  return v === '1' ? 1 : v === '2' ? 2 : null;
+  if (v === '0') return null;
+  if (v === '1') return 1;
+  if (v === '2') return 2;
+  return parDefaut ? 1 : null;
 }
 
 /** Ce qui place et fait couler la peinture à un instant (voir FondEau.mouvement). */
@@ -50,10 +57,12 @@ export interface BulleVue {
   bord?: number;
 }
 
-/** Longueur d'un pas le long d'un fil, en pixels d'écran. */
-const PAS = 22;
-/** Le masque des bulles est quatre fois plus petit que la toile : un disque doux suffit. */
-const REDUCTION = 4;
+/** Longueur d'un pas le long d'un fil, en points d'écran : le courant de l'eau est lisse à cette échelle. */
+const PAS = 38;
+/** Le masque des bulles est six fois plus petit que la toile : un disque doux suffit. */
+const REDUCTION = 6;
+/** Points de la toile des fils au plus : au-delà (très grand écran), elle reste à cette taille. */
+const BUDGET_POINTS = 9_000_000;
 
 /** Le courant de l'eau, recopié de eau.ts : mêmes bruits, mêmes constantes, même phase. */
 const COURANT = `
@@ -87,7 +96,7 @@ vec2 deplacement(vec2 p){
 const SOMMET = `#version 300 es
 precision highp float;
 layout(location = 0) in vec2 aAncre;  // le point de la peinture où ce point du fil est cousu
-layout(location = 1) in vec4 aFil;    // place le long du fil, départ, inutilisé, teinte
+layout(location = 1) in vec4 aFil;    // place le long du fil, départ, longueur du trait, teinte
 layout(location = 2) in vec4 aPlus;   // couture invisible entre deux fils, force du fil
 uniform sampler2D uPeinture;
 uniform vec2 uCadre;
@@ -111,11 +120,12 @@ void main() {
   vec2 s = (p - .5 - uDerive) / uCadre + .5;
   gl_Position = vec4(s.x * 2. - 1., 1. - s.y * 2., 0., 1.);
   // le brin visible parcourt le fil en un tour de la boucle de l'eau : net à la tête, effilé à la queue
-  float longueur = .55;
+  // un trait de crayon : il s'appuie puis se relève, effilé aux deux bouts
+  float longueur = .32 + .4 * aFil.z;
   float tour = fract(aFil.y + uPhase / 6.2831853);
   float derriere = tour * (1. + longueur) - aFil.x;
-  float brin = smoothstep(0., .03, derriere) * (1. - smoothstep(longueur * .4, longueur, derriere));
-  vForce = brin * (1. - aPlus.x) * (.4 + aPlus.y * .6);
+  float brin = smoothstep(0., longueur * .3, derriere) * (1. - smoothstep(longueur * .45, longueur, derriere));
+  vForce = brin * (1. - aPlus.x) * (.35 + aPlus.y * .65);
   vPlace = aFil.x;
   vTeinte = aFil.w;
   vAncre = aAncre;
@@ -135,8 +145,8 @@ in vec2 vAncre;
 out vec4 couleur;
 void main() {
   if (vForce < .02) discard;
-  // le point lancé : le fil plonge un instant dans la toile, puis ressort
-  if (fract(vPlace * uPoints + vTeinte * 9.) < .1) discard;
+  // un fil sur trois est cousu au point lancé (il plonge un instant dans la toile) ; les autres sont des traits continus
+  if (vTeinte < .33 && fract(vPlace * uPoints + vTeinte * 9.) < .12) discard;
   // sous une bulle, pas de fil : sa matière reste nue
   float libre = 1. - texture(uBulles, gl_FragCoord.xy / uToile).r;
   // le fil porte la couleur du pigment où il est cousu : même teinte, plus saturée, un ton plus bas
@@ -179,7 +189,8 @@ export class Filaments {
   private texturePeinture: WebGLTexture | null = null;
   private donneesBulles = new Float32Array(4 * 512);
   private sommets = 0;
-  private points = 24;
+  private points = 15;
+  private petit = false;
   private part = 1;
   private tisse: { w: number; h: number } | null = null;
   private dpr = 1;
@@ -200,7 +211,7 @@ export class Filaments {
     fond: string,
     private toileEau?: () => HTMLCanvasElement | null,
   ) {
-    this.gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: true, depth: false, stencil: false });
+    this.gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false });
     if (!this.gl) return;
     if (!this.preparer()) {
       this.gl = null;
@@ -266,8 +277,9 @@ export class Filaments {
     // l'image entière, à l'échelle où l'écran la montre (l'écran en voit la part « cadre »)
     const iw = cw / m.cadre[0], ih = ch / m.cadre[1];
     const petit = Math.min(window.innerWidth, window.innerHeight) < 700;
-    this.points = petit ? 20 : 26;
-    const fils = Math.round((petit ? 12000 : 26000) * (this.variante === 2 ? 1.8 : 1));
+    this.petit = petit;
+    this.points = petit ? 12 : 15;
+    const fils = Math.round((petit ? 20000 : 46000) * (this.variante === 2 ? 1.6 : 1));
     const M = this.points;
     const parFil = M + 2; // un sommet invisible de chaque côté : tous les fils dans un seul tracé
     const total = fils * parFil;
@@ -290,6 +302,8 @@ export class Filaments {
       const cote = jumeau ? 1.6 : 0;
       const phase = Math.floor((((gPhase % 1) + 1) % 1) * 255);
       const teinte = Math.floor(Math.random() * 255);
+      // des traits de toutes les longueurs, comme une hachure au crayon
+      const longueur = Math.floor(Math.random() * 255);
       const force = Math.floor((jumeau ? 0.5 : 0.3 + Math.random() * 0.7) * 255);
       // le fil part en arrière de son point de départ : le milieu du chemin est là où on l'a tiré
       let x = gx, y = gy;
@@ -308,6 +322,7 @@ export class Filaments {
         vue.setFloat32(o + 4, (y + Math.cos(d) * ecart) / ih, true);
         vue.setUint8(o + 8, Math.round((i / (M - 1)) * 255));
         vue.setUint8(o + 9, phase);
+        vue.setUint8(o + 10, longueur);
         vue.setUint8(o + 11, teinte);
         vue.setUint8(o + 12, invisible ? 255 : 0);
         vue.setUint8(o + 13, force);
@@ -360,9 +375,13 @@ export class Filaments {
   resize() {
     const gl = this.gl;
     if (!gl) return;
-    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = Math.max(1, Math.round(this.canvas.clientWidth * this.dpr));
-    const h = Math.max(1, Math.round(this.canvas.clientHeight * this.dpr));
+    // Un fil fait un pixel de la toile. Pour qu'il soit plus fin qu'un pixel d'écran, la toile est plus dense que
+    // l'écran : deux pixels de toile par point au moins, trois sur un téléphone. Le navigateur la réduit en
+    // l'affichant, et le fil devient un trait d'un demi à un tiers de point, comme une mine de crayon.
+    const cw = Math.max(1, this.canvas.clientWidth), ch = Math.max(1, this.canvas.clientHeight);
+    this.dpr = Math.min(3, Math.max(2, (window.devicePixelRatio || 1) * 1.5), Math.sqrt(BUDGET_POINTS / (cw * ch)));
+    const w = Math.max(1, Math.round(cw * this.dpr));
+    const h = Math.max(1, Math.round(ch * this.dpr));
     this.canvas.width = w;
     this.canvas.height = h;
     gl.bindTexture(gl.TEXTURE_2D, this.textureBulles);
@@ -453,11 +472,11 @@ export class Filaments {
     gl.uniform1f(L.uFlotte!, m.flotte);
     gl.uniform1f(L.uFluide!, m.fluide);
     gl.uniform1f(L.uForce!, m.force);
-    gl.uniform1i(L.uPasses!, this.points > 20 ? 2 : 1);
+    gl.uniform1i(L.uPasses!, this.petit ? 1 : 2);
     gl.uniform2f(L.uToile!, this.canvas.width, this.canvas.height);
-    // un fil d'un pixel d'écran, allégé : plus fin qu'un coup de crayon, la couleur du fond passe au travers
-    gl.uniform1f(L.uOpacite!, this.dpr >= 1.5 ? 0.62 : 0.4);
-    gl.uniform1f(L.uPoints!, this.points * 0.9);
+    // un trait d'un pixel de toile, soit un demi à un tiers de point d'écran : la couleur du fond passe au travers
+    gl.uniform1f(L.uOpacite!, 0.8);
+    gl.uniform1f(L.uPoints!, this.points * 1.6);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.bindVertexArray(this.tableauFils);
     const parFil = this.points + 2;
