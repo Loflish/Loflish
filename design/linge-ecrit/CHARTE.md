@@ -110,8 +110,8 @@ La performance mesurée est celle d'un navigateur sans carte graphique : à refa
   d'écriture brodées au point avant, illisibles, avec le fil qui pend. Sur le profil, dans la couleur de la
   personne ; dans la marge de « Créer ma trace » (grand écran), deux lignes de plus à chaque étape.
   Décor seulement, jamais sous un texte à lire. Retirer l'import de `ecriture.css` rend le site d'avant.
-- **Les fils** (`src/engine/filaments.ts`) : par défaut depuis le 16 novembre (`?fils=0` les retire, `?fils=2` en
-  met davantage). Des traits très fins, comme un dessin au crayon de couleur, cousus dans la peinture de la
+- **Les fils** (`src/engine/filaments.ts`) : un essai, derrière `?fils=1` (`?fils=2` en met davantage). Mis par
+  défaut le 16 novembre puis retirés le même jour : Tom préfère la constellation comme avant. Des traits très fins, comme un dessin au crayon de couleur, cousus dans la peinture de la
   constellation : chaque point d'un trait est attaché à un point de la peinture et bouge du déplacement que l'eau
   donne au pigment à cet endroit (même calcul que `eau.ts`, même phase, lu par `FondEau.mouvement()`).
   46 000 traits sur ordinateur, 20 000 sur téléphone. La toile est plus dense que l'écran (deux à trois pixels par

@@ -18,9 +18,8 @@ import { Icon } from './Icon';
 
 // le fond qui coule comme une eau calme (?eau=0 le retire, pour comparer)
 const EAU = reglagesEau();
-/** les fils dessinés dans la peinture de la constellation, qui bougent avec elle (`?fils=0` les retire, `?fils=2` en met davantage) */
-// en mode « économiseur de données », pas de fils sans qu'on les demande : ils coûtent du calcul à la carte graphique
-const VARIANTE_FILS = varianteFils(typeof navigator === 'undefined' || (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData !== true);
+/** essai : des fils dessinés dans la peinture de la constellation, qui bougent avec elle (`?fils=1`, `?fils=2` plus dense) */
+const VARIANTE_FILS = varianteFils();
 if (VARIANTE_FILS && typeof document !== 'undefined') document.documentElement.classList.add('avec-fils');
 
 /**

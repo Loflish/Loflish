@@ -19,11 +19,11 @@
 export type VarianteFils = 1 | 2;
 
 /**
- * Les fils font partie de la constellation depuis le 16 novembre 2026 (Tom : « mets les fils par défaut »).
- * `?fils=0` les retire, pour comparer ; `?fils=2` en met davantage. Sur un appareil en mode économe
- * (`parDefaut` faux), ils ne viennent que si l'adresse les demande.
+ * Les fils sont un essai : `?fils=1` les met, `?fils=2` en met davantage. Mis par défaut le 16 novembre 2026, puis
+ * retirés le même jour (Tom, devant la constellation sans fils : « au final je préfère comme ça, comme avant »).
+ * Sans le drapeau, rien de ce fichier n'est créé.
  */
-export function varianteFils(parDefaut = true): VarianteFils | null {
+export function varianteFils(parDefaut = false): VarianteFils | null {
   if (typeof window === 'undefined') return null;
   let v = new URLSearchParams(window.location.search).get('fils');
   // l'aperçu partagé, où l'adresse ne se modifie pas, pose son choix avant le chargement du site

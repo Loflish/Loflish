@@ -47,17 +47,17 @@ const note = (nom, bon, detail = '') => { total++; if (bon) ok++; console.log((b
     note('constellation → Se perdre → constellation : le même moteur, jamais recréé', await p.evaluate(() => window.__nmmDebug.engine.__temoin === 1));
     await p.context().close();
   }
-  // les fils dessinés dans la peinture : présents sans rien demander, absents avec ?fils=0, jamais sur une page de texte
+  // les fils dessinés dans la peinture sont un essai : absents sans rien demander, présents avec ?fils=1
   {
     const c = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     await c.addInitScript(() => { try { localStorage.setItem('nmm:vu', '1'); localStorage.setItem('nmm:visites', '5'); sessionStorage.setItem('nmm:entree-vue', '1'); } catch {} });
     const p = await c.newPage(); const err = []; p.on('pageerror', (e) => err.push(String(e)));
     p.setDefaultTimeout(180000);
-    await p.goto(base + '?entree=0#/');
+    await p.goto(base + '?entree=0#/'); await p.waitForTimeout(5000);
+    note('constellation : pas de fils sans les demander', (await p.locator('canvas.fond-fils').count()) === 0 && !(await p.evaluate(() => !!(window.__nmmDebug && window.__nmmDebug.fils))) && err.length === 0);
+    await p.goto('about:blank'); await p.goto(base + '?entree=0&fils=1#/');
     const n = await p.waitForFunction(() => window.__nmmDebug && window.__nmmDebug.fils && window.__nmmDebug.fils.n, null, { timeout: 180000 }).then((h) => h.jsonValue()).catch(() => 0);
-    note('constellation : les fils sont là par défaut', n > 1000 && (await p.locator('canvas.fond-fils').count()) === 1 && err.length === 0, `${n} fils`);
-    await p.goto('about:blank'); await p.goto(base + '?entree=0&fils=0#/'); await p.waitForTimeout(5000);
-    note('constellation : ?fils=0 les retire', (await p.locator('canvas.fond-fils').count()) === 0 && !(await p.evaluate(() => !!(window.__nmmDebug && window.__nmmDebug.fils))));
+    note('constellation : ?fils=1 met les fils (essai)', n > 1000 && (await p.locator('canvas.fond-fils').count()) === 1 && err.length === 0, `${n} fils`);
     await c.close();
   }
   await b.close();
